@@ -1,0 +1,269 @@
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
+import { useState, useEffect } from "react"
+import { trpc } from "../../trpc/client"
+import {
+  formatCurrency as formatCurrencyIntl,
+  formatDate as formatDateIntl,
+} from "../../lib/i18n/format"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card"
+import { Badge } from "../../components/ui/badge"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../../components/ui/table"
+import { DollarSign, Clock, AlertTriangle, Users } from "lucide-react"
+import { useI18n } from "../../lib/i18n/react"
+import type { TranslationKey } from "../../lib/i18n/messages"
+
+export const Route = createFileRoute("/_app/")({
+  component: DashboardPage,
+})
+
+type RecentInvoice = {
+  id: string
+  number: string
+  contactName: string
+  total: number
+  status: string
+  issueDate: string
+  dueDate: string
+}
+
+type DashboardStats = {
+  totalRevenue: number
+  outstanding: number
+  overdueCount: number
+  totalContacts: number
+  recentInvoices: RecentInvoice[]
+}
+
+const statusConfig: Record<string, { key: TranslationKey; className: string }> = {
+  draft: { key: "status.draft", className: "bg-muted text-muted-foreground" },
+  sent: {
+    key: "status.sent",
+    className: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+  },
+  viewed: {
+    key: "status.viewed",
+    className:
+      "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+  },
+  paid: {
+    key: "status.paid",
+    className:
+      "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+  },
+  overdue: {
+    key: "status.overdue",
+    className: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+  },
+}
+
+function formatCurrency(amount: number, locale: string) {
+  return formatCurrencyIntl(amount, "USD", locale)
+}
+
+function formatDate(dateStr: string, locale: string) {
+  return formatDateIntl(dateStr, locale, undefined, { month: "short" })
+}
+
+function StatusBadge({ status, t }: { status: string; t: (key: TranslationKey) => string }) {
+  const config = statusConfig[status] ?? statusConfig.draft
+  return (
+    <Badge variant="outline" className={config.className}>
+      {t(config.key)}
+    </Badge>
+  )
+}
+
+function DashboardPage() {
+  const { t, locale } = useI18n()
+  const navigate = useNavigate()
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        const data = await trpc.dashboard.stats.query()
+        setStats(data as DashboardStats)
+      } catch {
+        // Auth or org errors handled by layout
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadStats()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <h1 className="text-2xl font-bold mb-6">{t("nav.dashboard")}</h1>
+        <p className="text-muted-foreground">{t("dashboard.loading")}</p>
+      </div>
+    )
+  }
+
+  if (!stats) {
+    return (
+      <div className="p-6">
+        <h1 className="text-2xl font-bold mb-6">{t("nav.dashboard")}</h1>
+        <p className="text-muted-foreground">
+          {t("dashboard.loadError")}
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="p-6 space-y-8">
+      <div>
+        <h1 className="text-2xl font-bold">{t("nav.dashboard")}</h1>
+        <p className="text-muted-foreground mt-1">
+          {t("dashboard.subtitle")}
+        </p>
+      </div>
+
+      {/* Stat Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-sm font-medium">{t("dashboard.totalRevenue")}</CardTitle>
+            <DollarSign className="size-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {formatCurrency(stats.totalRevenue, locale)}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {t("dashboard.totalRevenueHint")}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-sm font-medium">{t("dashboard.outstanding")}</CardTitle>
+            <Clock className="size-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {formatCurrency(stats.outstanding, locale)}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {t("dashboard.outstandingHint")}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-sm font-medium">{t("dashboard.overdue")}</CardTitle>
+            <AlertTriangle className="size-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.overdueCount}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {stats.overdueCount === 1
+                ? t("dashboard.overdueSingle")
+                : t("dashboard.overduePlural")}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-sm font-medium">
+              {t("dashboard.totalContacts")}
+            </CardTitle>
+            <Users className="size-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalContacts}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {stats.totalContacts === 1
+                ? t("dashboard.totalContactsSingle")
+                : t("dashboard.totalContactsPlural")}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Recent Invoices */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("dashboard.recentInvoices")}</CardTitle>
+          <CardDescription>{t("dashboard.recentInvoicesDesc")}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {stats.recentInvoices.length === 0 ? (
+            <p className="text-muted-foreground text-sm py-4 text-center">
+              {t("dashboard.noInvoices")}{" "}
+              <Link
+                to="/invoices/new"
+                className="text-primary underline underline-offset-4"
+              >
+                {t("dashboard.createFirstInvoice")}
+              </Link>{" "}
+              {t("dashboard.getStartedSuffix")}
+            </p>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("dashboard.table.number")}</TableHead>
+                    <TableHead>{t("dashboard.table.contact")}</TableHead>
+                    <TableHead>{t("dashboard.table.issueDate")}</TableHead>
+                    <TableHead>{t("dashboard.table.dueDate")}</TableHead>
+                    <TableHead className="text-right">{t("dashboard.table.total")}</TableHead>
+                    <TableHead>{t("dashboard.table.status")}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {stats.recentInvoices.map((invoice) => (
+                    <TableRow
+                      key={invoice.id}
+                      className="cursor-pointer"
+                      onClick={() =>
+                        navigate({
+                          to: "/invoices/$invoiceId",
+                          params: { invoiceId: invoice.id },
+                          search: { emailWarning: undefined },
+                        })
+                      }
+                    >
+                      <TableCell className="font-medium">
+                        {invoice.number}
+                      </TableCell>
+                      <TableCell>{invoice.contactName}</TableCell>
+                      <TableCell>{formatDate(invoice.issueDate, locale)}</TableCell>
+                      <TableCell>{formatDate(invoice.dueDate, locale)}</TableCell>
+                      <TableCell className="text-right">
+                        {formatCurrency(invoice.total, locale)}
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge status={invoice.status} t={t} />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}

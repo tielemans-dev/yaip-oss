@@ -1,0 +1,343 @@
+import { Resend } from "resend"
+import { formatCurrency, formatDate } from "./i18n/format"
+import { translate } from "./i18n/translate"
+import type { TranslationKey } from "./i18n/messages"
+
+let _resend: Resend | null = null
+
+function sanitizeHeader(value: string): string {
+  return value.replace(/[\r\n]+/g, " ").trim()
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;")
+}
+
+function escapeAttribute(value: string): string {
+  return escapeHtml(value)
+}
+
+function formatMultilineHtml(value: string): string {
+  return escapeHtml(value).replaceAll("\n", "<br />")
+}
+
+function getResend(): Resend {
+  if (!_resend) {
+    if (!process.env.RESEND_API_KEY) {
+      throw new Error("RESEND_API_KEY is not configured")
+    }
+    _resend = new Resend(process.env.RESEND_API_KEY)
+  }
+  return _resend
+}
+
+function fromAddress(): string {
+  return sanitizeHeader(process.env.FROM_EMAIL ?? "noreply@yaip.app")
+}
+
+function t(
+  key: TranslationKey,
+  locale?: string | null,
+  vars?: Record<string, string | number>
+) {
+  return translate(key, locale, vars)
+}
+
+function itemsTable(
+  items: { description: string; quantity: number; unitPrice: number; total: number }[],
+  currency: string,
+  locale?: string | null
+) {
+  const rows = items.map((item) => `
+    <tr>
+      <td style="padding:8px 0;border-bottom:1px solid #e5e7eb;">${escapeHtml(item.description)}</td>
+      <td style="padding:8px 0;border-bottom:1px solid #e5e7eb;text-align:right;">${item.quantity}</td>
+      <td style="padding:8px 0;border-bottom:1px solid #e5e7eb;text-align:right;">${formatCurrency(item.unitPrice, currency, locale)}</td>
+      <td style="padding:8px 0;border-bottom:1px solid #e5e7eb;text-align:right;">${formatCurrency(item.total, currency, locale)}</td>
+    </tr>`).join("")
+
+  return `
+    <table style="width:100%;border-collapse:collapse;margin:24px 0;">
+      <thead>
+        <tr style="border-bottom:2px solid #e5e7eb;">
+          <th style="padding:8px 0;text-align:left;color:#6b7280;font-size:12px;text-transform:uppercase;">${t("pdf.description", locale)}</th>
+          <th style="padding:8px 0;text-align:right;color:#6b7280;font-size:12px;text-transform:uppercase;">${t("pdf.qty", locale)}</th>
+          <th style="padding:8px 0;text-align:right;color:#6b7280;font-size:12px;text-transform:uppercase;">${t("pdf.unitPrice", locale)}</th>
+          <th style="padding:8px 0;text-align:right;color:#6b7280;font-size:12px;text-transform:uppercase;">${t("pdf.total", locale)}</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`
+}
+
+function totalsBlock(
+  subtotal: number,
+  taxAmount: number,
+  total: number,
+  currency: string,
+  locale?: string | null
+) {
+  return `
+    <table style="width:100%;border-collapse:collapse;margin-top:8px;">
+      <tr>
+        <td style="padding:4px 0;color:#6b7280;">${t("pdf.subtotal", locale)}</td>
+        <td style="padding:4px 0;text-align:right;">${formatCurrency(subtotal, currency, locale)}</td>
+      </tr>
+      ${taxAmount > 0 ? `
+      <tr>
+        <td style="padding:4px 0;color:#6b7280;">${t("pdf.tax", locale)}</td>
+        <td style="padding:4px 0;text-align:right;">${formatCurrency(taxAmount, currency, locale)}</td>
+      </tr>` : ""}
+      <tr style="border-top:2px solid #e5e7eb;">
+        <td style="padding:8px 0;font-weight:bold;">${t("pdf.total", locale)}</td>
+        <td style="padding:8px 0;text-align:right;font-weight:bold;font-size:18px;">${formatCurrency(total, currency, locale)}</td>
+      </tr>
+    </table>`
+}
+
+function layout(content: string, locale?: string | null) {
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f9fafb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#111827;">
+  <div style="max-width:600px;margin:40px auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+    <div style="background:#111827;padding:24px 32px;">
+      <span style="color:#fff;font-size:20px;font-weight:bold;">YAIP</span>
+    </div>
+    <div style="padding:32px;">
+      ${content}
+    </div>
+    <div style="padding:16px 32px;background:#f9fafb;border-top:1px solid #e5e7eb;font-size:12px;color:#9ca3af;text-align:center;">
+      ${t("email.footer.sentVia", locale)}
+    </div>
+  </div>
+</body>
+</html>`
+}
+
+// ── Invoice email ──────────────────────────────────────────────────
+
+export type SendInvoiceEmailParams = {
+  to: string
+  invoice: {
+    number: string
+    issueDate: Date | string
+    dueDate: Date | string
+    subtotal: number
+    taxAmount: number
+    total: number
+    currency: string
+    notes?: string | null
+    items: { description: string; quantity: number; unitPrice: number; total: number }[]
+  }
+  org: {
+    companyName?: string | null
+    companyEmail?: string | null
+    locale?: string | null
+    timezone?: string | null
+  }
+  contactName: string
+}
+
+export function buildInvoiceEmailContent({
+  invoice,
+  org,
+  contactName,
+}: Omit<SendInvoiceEmailParams, "to">) {
+  const from = sanitizeHeader(org.companyName ?? "YAIP")
+  const safeInvoiceNumber = escapeHtml(invoice.number)
+  const safeContactName = escapeHtml(contactName)
+  const safeCompanyEmail = org.companyEmail ? escapeHtml(org.companyEmail) : null
+  const locale = org.locale
+  const timezone = org.timezone
+  const html = layout(`
+    <h2 style="margin:0 0 4px;font-size:22px;">${t("pdf.invoice", locale)} ${safeInvoiceNumber}</h2>
+    <p style="margin:0 0 24px;color:#6b7280;">${t("email.invoice.greeting", locale, { name: safeContactName })}</p>
+
+    <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+      <div>
+        <div style="font-size:12px;color:#6b7280;text-transform:uppercase;margin-bottom:2px;">${t("pdf.from", locale)}</div>
+        <div style="font-weight:500;">${escapeHtml(from)}</div>
+        ${safeCompanyEmail ? `<div style="color:#6b7280;font-size:14px;">${safeCompanyEmail}</div>` : ""}
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:12px;color:#6b7280;text-transform:uppercase;margin-bottom:2px;">${t("pdf.dueDate", locale)}</div>
+        <div style="font-weight:500;">${formatDate(invoice.dueDate, locale, timezone)}</div>
+      </div>
+    </div>
+
+    ${itemsTable(invoice.items, invoice.currency, locale)}
+    ${totalsBlock(invoice.subtotal, invoice.taxAmount, invoice.total, invoice.currency, locale)}
+
+    ${invoice.notes ? `<p style="margin-top:24px;color:#6b7280;font-size:14px;border-top:1px solid #e5e7eb;padding-top:16px;">${formatMultilineHtml(invoice.notes)}</p>` : ""}
+  `, locale)
+
+  const subject = sanitizeHeader(
+    t("email.invoice.subject", locale, {
+      number: invoice.number,
+      total: formatCurrency(invoice.total, invoice.currency, locale),
+      dueDate: formatDate(invoice.dueDate, locale, timezone),
+    })
+  )
+  const fromAddressValue = `${from} <${fromAddress()}>`
+
+  return { subject, html, fromAddress: fromAddressValue }
+}
+
+export async function sendInvoiceEmail({ to, invoice, org, contactName }: SendInvoiceEmailParams) {
+  const content = buildInvoiceEmailContent({ invoice, org, contactName })
+
+  return getResend().emails.send({
+    from: content.fromAddress,
+    to,
+    subject: content.subject,
+    html: content.html,
+  })
+}
+
+// ── Quote email ────────────────────────────────────────────────────
+
+export type SendQuoteEmailParams = {
+  to: string
+  quote: {
+    number: string
+    issueDate: Date | string
+    expiryDate: Date | string
+    subtotal: number
+    taxAmount: number
+    total: number
+    currency: string
+    notes?: string | null
+    items: { description: string; quantity: number; unitPrice: number; total: number }[]
+  }
+  org: {
+    companyName?: string | null
+    companyEmail?: string | null
+    locale?: string | null
+    timezone?: string | null
+  }
+  contactName: string
+}
+
+export function buildQuoteEmailContent({
+  quote,
+  org,
+  contactName,
+}: Omit<SendQuoteEmailParams, "to">) {
+  const from = sanitizeHeader(org.companyName ?? "YAIP")
+  const safeQuoteNumber = escapeHtml(quote.number)
+  const safeContactName = escapeHtml(contactName)
+  const safeCompanyEmail = org.companyEmail ? escapeHtml(org.companyEmail) : null
+  const locale = org.locale
+  const timezone = org.timezone
+  const html = layout(`
+    <h2 style="margin:0 0 4px;font-size:22px;">${t("email.quote.title", locale)} ${safeQuoteNumber}</h2>
+    <p style="margin:0 0 24px;color:#6b7280;">${t("email.quote.greeting", locale, { name: safeContactName })}</p>
+
+    <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+      <div>
+        <div style="font-size:12px;color:#6b7280;text-transform:uppercase;margin-bottom:2px;">${t("pdf.from", locale)}</div>
+        <div style="font-weight:500;">${escapeHtml(from)}</div>
+        ${safeCompanyEmail ? `<div style="color:#6b7280;font-size:14px;">${safeCompanyEmail}</div>` : ""}
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:12px;color:#6b7280;text-transform:uppercase;margin-bottom:2px;">${t("email.quote.validUntil", locale)}</div>
+        <div style="font-weight:500;">${formatDate(quote.expiryDate, locale, timezone)}</div>
+      </div>
+    </div>
+
+    ${itemsTable(quote.items, quote.currency, locale)}
+    ${totalsBlock(quote.subtotal, quote.taxAmount, quote.total, quote.currency, locale)}
+
+    ${quote.notes ? `<p style="margin-top:24px;color:#6b7280;font-size:14px;border-top:1px solid #e5e7eb;padding-top:16px;">${formatMultilineHtml(quote.notes)}</p>` : ""}
+  `, locale)
+
+  const subject = sanitizeHeader(
+    t("email.quote.subject", locale, {
+      number: quote.number,
+      total: formatCurrency(quote.total, quote.currency, locale),
+      expiryDate: formatDate(quote.expiryDate, locale, timezone),
+    })
+  )
+  const fromAddressValue = `${from} <${fromAddress()}>`
+
+  return { subject, html, fromAddress: fromAddressValue }
+}
+
+export async function sendQuoteEmail({ to, quote, org, contactName }: SendQuoteEmailParams) {
+  const content = buildQuoteEmailContent({ quote, org, contactName })
+
+  return getResend().emails.send({
+    from: content.fromAddress,
+    to,
+    subject: content.subject,
+    html: content.html,
+  })
+}
+
+// ── Invitation email ───────────────────────────────────────────────
+
+type SendInvitationEmailParams = {
+  to: string
+  inviterName: string
+  orgName: string
+  invitationUrl: string
+  locale?: string | null
+}
+
+export function buildInvitationEmailContent({
+  inviterName,
+  orgName,
+  invitationUrl,
+  locale,
+}: Omit<SendInvitationEmailParams, "to">) {
+  const safeInviterName = escapeHtml(inviterName)
+  const safeOrgName = escapeHtml(orgName)
+  const safeInvitationUrl = escapeAttribute(invitationUrl)
+  const html = layout(`
+    <h2 style="margin:0 0 8px;font-size:22px;">${t("email.invitation.title", locale, { orgName: safeOrgName })}</h2>
+    <p style="color:#6b7280;margin-bottom:32px;">${t("email.invitation.body", locale, { inviterName: safeInviterName })}</p>
+    <a href="${safeInvitationUrl}"
+       style="display:inline-block;background:#111827;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:500;">
+      ${t("email.invitation.accept", locale)}
+    </a>
+    <p style="margin-top:24px;font-size:12px;color:#9ca3af;">
+      ${t("email.invitation.expiry", locale)}
+    </p>
+  `, locale)
+
+  return {
+    subject: sanitizeHeader(
+      t("email.invitation.subject", locale, { inviterName, orgName })
+    ),
+    html,
+    fromAddress: `YAIP <${fromAddress()}>`,
+  }
+}
+
+export async function sendInvitationEmail({
+  to,
+  inviterName,
+  orgName,
+  invitationUrl,
+  locale,
+}: SendInvitationEmailParams) {
+  const content = buildInvitationEmailContent({
+    inviterName,
+    orgName,
+    invitationUrl,
+    locale,
+  })
+
+  return getResend().emails.send({
+    from: content.fromAddress,
+    to,
+    subject: content.subject,
+    html: content.html,
+  })
+}
