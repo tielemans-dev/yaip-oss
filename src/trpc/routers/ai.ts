@@ -6,6 +6,7 @@ import {
   generateInvoiceDraftWithOpenRouter,
 } from "../../lib/ai/openrouter"
 import { resolveCatalogItemId, resolveContactId } from "../../lib/ai/matching"
+import { resolveInvoiceDueDate } from "../../lib/ai/due-date"
 import { resolveDraftItemUnitPrice } from "../../lib/ai/pricing"
 import { prisma } from "../../lib/db"
 import { decryptSecret } from "../../lib/secrets"
@@ -53,6 +54,9 @@ export const aiRouter = router({
   generateInvoiceDraft: orgProcedure
     .input(aiGenerateInvoiceDraftInputSchema)
     .mutation(async ({ ctx, input }) => {
+      const now = new Date()
+      const todayIsoDate = now.toISOString().slice(0, 10)
+
       const capabilities = getRuntimeCapabilities()
       if (!capabilities.aiInvoiceDraft.enabled) {
         throw new TRPCError({
@@ -136,6 +140,7 @@ export const aiRouter = router({
         apiKey,
         model,
         prompt: input.prompt,
+        todayIsoDate,
         contacts,
         catalogItems: catalogItemsWithDefaults,
       })
@@ -170,6 +175,11 @@ export const aiRouter = router({
         model,
         draft: {
           ...draft,
+          dueDate: resolveInvoiceDueDate({
+            prompt: input.prompt,
+            modelDueDate: draft.dueDate,
+            now,
+          }),
           contactId: resolvedContactId,
           items: resolvedItems,
         },

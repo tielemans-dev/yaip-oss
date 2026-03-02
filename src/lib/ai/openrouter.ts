@@ -67,6 +67,7 @@ export async function generateInvoiceDraftWithOpenRouter(input: {
   apiKey: string
   model: string
   prompt: string
+  todayIsoDate: string
   contacts: Array<{ id: string; name: string }>
   catalogItems: Array<{
     id: string
@@ -76,7 +77,7 @@ export async function generateInvoiceDraftWithOpenRouter(input: {
   }>
 }) {
   const systemPrompt =
-    "You generate structured invoice drafts. Respond only as JSON object with keys: contactId?, contactName?, dueDate?(YYYY-MM-DD), taxRate?, notes?, items[]. Each item must include description and quantity, may include unitPrice, and may include catalogItemId. If a catalog item applies but the user did not specify a concrete price, omit unitPrice so system defaults can be applied."
+    `You generate structured invoice drafts. Today is ${input.todayIsoDate}. Resolve relative date phrases against today's date. Respond only as JSON object with keys: contactId?, contactName?, dueDate?(YYYY-MM-DD), taxRate?, notes?, items[]. Each item must include description and quantity, may include unitPrice, and may include catalogItemId. If a catalog item applies but the user did not specify a concrete price, omit unitPrice so system defaults can be applied.`
 
   const toolingContext = JSON.stringify(
     {
