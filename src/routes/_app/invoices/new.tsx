@@ -4,6 +4,7 @@ import { trpc } from "../../../trpc/client"
 import { applyCatalogItemToLineItem, type CatalogItemOption } from "../../../lib/catalog"
 import { formatCurrency as formatCurrencyIntl } from "../../../lib/i18n/format"
 import { useOrgCurrency } from "../../../hooks/use-org-currency"
+import { LocalizedDateField } from "../../../components/localized-date-field"
 import { Button } from "../../../components/ui/button"
 import { Input } from "../../../components/ui/input"
 import { Label } from "../../../components/ui/label"
@@ -347,11 +348,13 @@ function NewInvoicePage() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="dueDate">{tm({ en: "Due Date", da: "Forfaldsdato" })} *</Label>
-              <Input
+              <LocalizedDateField
                 id="dueDate"
-                type="date"
                 value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
+                onChange={setDueDate}
+                locale={locale}
+                placeholder={tm({ en: "Select a date", da: "Vælg en dato" })}
+                clearLabel={tm({ en: "Clear", da: "Ryd" })}
                 required
               />
             </div>

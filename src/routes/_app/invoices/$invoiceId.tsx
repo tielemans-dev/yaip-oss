@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useState, useEffect } from "react"
 import { trpc } from "../../../trpc/client"
 import { applyCatalogItemToLineItem, type CatalogItemOption } from "../../../lib/catalog"
+import { LocalizedDateField } from "../../../components/localized-date-field"
 import {
   formatCurrency as formatCurrencyIntl,
   formatDate as formatDateIntl,
@@ -409,11 +410,13 @@ function InvoiceDetailPage() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="editDueDate">{tm({ en: "Due Date", da: "Forfaldsdato" })} *</Label>
-                <Input
+                <LocalizedDateField
                   id="editDueDate"
-                  type="date"
                   value={editDueDate}
-                  onChange={(e) => setEditDueDate(e.target.value)}
+                  onChange={setEditDueDate}
+                  locale={locale}
+                  placeholder={tm({ en: "Select a date", da: "Vælg en dato" })}
+                  clearLabel={tm({ en: "Clear", da: "Ryd" })}
                 />
               </div>
             </div>

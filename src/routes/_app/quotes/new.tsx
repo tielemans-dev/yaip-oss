@@ -4,6 +4,7 @@ import { trpc } from "../../../trpc/client"
 import { applyCatalogItemToLineItem, type CatalogItemOption } from "../../../lib/catalog"
 import { formatCurrency as formatCurrencyIntl } from "../../../lib/i18n/format"
 import { useOrgCurrency } from "../../../hooks/use-org-currency"
+import { LocalizedDateField } from "../../../components/localized-date-field"
 import { Button } from "../../../components/ui/button"
 import { Input } from "../../../components/ui/input"
 import { Label } from "../../../components/ui/label"
@@ -203,11 +204,13 @@ function NewQuotePage() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="expiryDate">{tm({ en: "Expiry Date", da: "Udløbsdato" })} *</Label>
-              <Input
+              <LocalizedDateField
                 id="expiryDate"
-                type="date"
                 value={expiryDate}
-                onChange={(e) => setExpiryDate(e.target.value)}
+                onChange={setExpiryDate}
+                locale={locale}
+                placeholder={tm({ en: "Select a date", da: "Vælg en dato" })}
+                clearLabel={tm({ en: "Clear", da: "Ryd" })}
                 required
               />
             </div>

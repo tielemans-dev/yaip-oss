@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { useState, useEffect } from "react"
 import { trpc } from "../../../trpc/client"
 import { applyCatalogItemToLineItem, type CatalogItemOption } from "../../../lib/catalog"
+import { LocalizedDateField } from "../../../components/localized-date-field"
 import {
   formatCurrency as formatCurrencyIntl,
   formatDate as formatDateIntl,
@@ -405,11 +406,13 @@ function QuoteDetailPage() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="editExpiryDate">{tm({ en: "Expiry Date", da: "Udløbsdato" })} *</Label>
-                <Input
+                <LocalizedDateField
                   id="editExpiryDate"
-                  type="date"
                   value={editExpiryDate}
-                  onChange={(e) => setEditExpiryDate(e.target.value)}
+                  onChange={setEditExpiryDate}
+                  locale={locale}
+                  placeholder={tm({ en: "Select a date", da: "Vælg en dato" })}
+                  clearLabel={tm({ en: "Clear", da: "Ryd" })}
                 />
               </div>
             </div>
