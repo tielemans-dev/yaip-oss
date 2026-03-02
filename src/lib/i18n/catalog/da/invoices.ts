@@ -43,4 +43,22 @@ export const daInvoicesMessages = {
     "Kunne ikke generere kladde med AI.",
   "invoices.new.ai.info.contactNotMatched":
     "Kladde genereret. Kontakt \"{name}\" blev ikke matchet automatisk.",
+  "invoices.detail.editTitle": "Rediger faktura",
+  "invoices.detail.companyLogoAlt": "Virksomhedslogo",
+  "invoices.detail.warning.emailSkipped":
+    "Faktura markeret som sendt — e-mail ikke leveret: {reason}",
+  "invoices.detail.error.notFound": "Faktura blev ikke fundet",
+  "invoices.detail.error.updateFailed": "Kunne ikke opdatere faktura",
+  "invoices.detail.error.sendFailed": "Kunne ikke sende faktura",
+  "invoices.detail.error.markPaidFailed": "Kunne ikke markere som betalt",
+  "invoices.detail.error.deleteFailed": "Kunne ikke slette faktura",
+  "invoices.detail.error.pdfFailed": "Kunne ikke generere PDF",
+  "invoices.detail.action.back": "Tilbage til fakturaer",
+  "invoices.detail.action.print": "Udskriv",
+  "invoices.detail.action.edit": "Rediger",
+  "invoices.detail.action.send": "Send",
+  "invoices.detail.action.sending": "Sender...",
+  "invoices.detail.action.delete": "Slet",
+  "invoices.detail.action.updating": "Opdaterer...",
+  "invoices.detail.action.markPaid": "Marker som betalt",
 } as const

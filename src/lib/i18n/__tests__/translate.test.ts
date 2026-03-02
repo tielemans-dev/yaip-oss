@@ -94,4 +94,22 @@ describe("i18n translate", () => {
       translate("quotes.new.validation.expiryDateRequired", "da-DK")
     ).toBe("Angiv venligst en udløbsdato")
   })
+
+  it("returns localized invoice detail actions", () => {
+    expect(translate("invoices.detail.action.markPaid", "en-US")).toBe(
+      "Mark as Paid"
+    )
+    expect(translate("invoices.detail.action.markPaid", "da-DK")).toBe(
+      "Marker som betalt"
+    )
+  })
+
+  it("returns localized invoice detail not-found message", () => {
+    expect(translate("invoices.detail.error.notFound", "en-US")).toBe(
+      "Invoice not found"
+    )
+    expect(translate("invoices.detail.error.notFound", "da-DK")).toBe(
+      "Faktura blev ikke fundet"
+    )
+  })
 })

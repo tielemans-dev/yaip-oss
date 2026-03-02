@@ -21,6 +21,7 @@ export const daDocFormMessages = {
   "docForm.notes": "Noter",
   "docForm.action.cancel": "Annuller",
   "docForm.action.saving": "Gemmer...",
+  "docForm.action.saveChanges": "Gem ændringer",
   "docForm.action.saveDraft": "Gem som kladde",
   "docForm.action.saveSend": "Gem og send",
   "docForm.validation.contactRequired": "Vælg venligst en kontakt",

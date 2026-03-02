@@ -21,6 +21,7 @@ export const enDocFormMessages = {
   "docForm.notes": "Notes",
   "docForm.action.cancel": "Cancel",
   "docForm.action.saving": "Saving...",
+  "docForm.action.saveChanges": "Save Changes",
   "docForm.action.saveDraft": "Save as Draft",
   "docForm.action.saveSend": "Save & Send",
   "docForm.validation.contactRequired": "Please select a contact",

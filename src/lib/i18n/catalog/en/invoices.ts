@@ -39,4 +39,22 @@ export const enInvoicesMessages = {
   "invoices.new.ai.error.generateFailed": "Failed to generate draft from AI.",
   "invoices.new.ai.info.contactNotMatched":
     "Draft generated. Contact \"{name}\" was not matched automatically.",
+  "invoices.detail.editTitle": "Edit Invoice",
+  "invoices.detail.companyLogoAlt": "Company logo",
+  "invoices.detail.warning.emailSkipped":
+    "Invoice marked as sent — email not delivered: {reason}",
+  "invoices.detail.error.notFound": "Invoice not found",
+  "invoices.detail.error.updateFailed": "Failed to update invoice",
+  "invoices.detail.error.sendFailed": "Failed to send invoice",
+  "invoices.detail.error.markPaidFailed": "Failed to mark as paid",
+  "invoices.detail.error.deleteFailed": "Failed to delete invoice",
+  "invoices.detail.error.pdfFailed": "Failed to generate PDF",
+  "invoices.detail.action.back": "Back to Invoices",
+  "invoices.detail.action.print": "Print",
+  "invoices.detail.action.edit": "Edit",
+  "invoices.detail.action.send": "Send",
+  "invoices.detail.action.sending": "Sending...",
+  "invoices.detail.action.delete": "Delete",
+  "invoices.detail.action.updating": "Updating...",
+  "invoices.detail.action.markPaid": "Mark as Paid",
 } as const

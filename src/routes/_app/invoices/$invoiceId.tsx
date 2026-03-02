@@ -114,44 +114,34 @@ function formatDate(dateStr: string, locale?: string | null, timezone?: string |
   return formatDateIntl(dateStr, locale, timezone)
 }
 
-function StatusBadge({
-  status,
-  tm,
-}: {
-  status: string
-  tm: (messages: { en: string } & Record<string, string | undefined>) => string
-}) {
+function getInvoiceStatusLabel(status: string, t: ReturnType<typeof useI18n>["t"]) {
+  if (status === "sent") return t("invoices.status.sent")
+  if (status === "paid") return t("invoices.status.paid")
+  if (status === "overdue") return t("invoices.status.overdue")
+  return t("invoices.status.draft")
+}
+
+function StatusBadge({ status, label }: { status: string; label: string }) {
   const config = statusConfig[status] ?? statusConfig.draft
   return (
     <Badge variant="outline" className={config.className}>
-      {tm({
-        en: config.label,
-        da:
-          config.label === "Draft"
-            ? "Kladde"
-            : config.label === "Sent"
-              ? "Sendt"
-              : config.label === "Paid"
-                ? "Betalt"
-                : "Forfalden",
-      })}
+      {label}
     </Badge>
   )
 }
 
 function InvoiceDetailPage() {
-  const { tm, locale } = useI18n()
+  const { t, locale } = useI18n()
   const { invoiceId } = Route.useParams()
   const { emailWarning } = Route.useSearch()
   const navigate = useNavigate()
   const [invoice, setInvoice] = useState<Invoice | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(emailWarning
-    ? tm({
-        en: `Invoice marked as sent — email not delivered: ${emailWarning}`,
-        da: `Faktura markeret som sendt — e-mail ikke leveret: ${emailWarning}`,
-      })
-    : null)
+  const [error, setError] = useState<string | null>(
+    emailWarning
+      ? t("invoices.detail.warning.emailSkipped", { reason: emailWarning })
+      : null
+  )
   const [acting, setActing] = useState(false)
   const [editing, setEditing] = useState(false)
   const [downloading, setDownloading] = useState(false)
@@ -192,10 +182,10 @@ function InvoiceDetailPage() {
         })
       })
       .catch(() =>
-        setError(tm({ en: "Invoice not found", da: "Faktura blev ikke fundet" }))
+        setError(t("invoices.detail.error.notFound"))
       )
       .finally(() => setLoading(false))
-  }, [invoiceId])
+  }, [invoiceId, t])
 
   function startEditing() {
     if (!invoice) return
@@ -271,7 +261,7 @@ function InvoiceDetailPage() {
       setError(
         err instanceof Error
           ? err.message
-          : tm({ en: "Failed to update invoice", da: "Kunne ikke opdatere faktura" })
+          : t("invoices.detail.error.updateFailed")
       )
     } finally {
       setActing(false)
@@ -288,9 +278,8 @@ function InvoiceDetailPage() {
       setInvoice(updated as unknown as Invoice)
       if (result.emailSkipReason) {
         setError(
-          tm({
-            en: `Invoice marked as sent — email not delivered: ${result.emailSkipReason}`,
-            da: `Faktura markeret som sendt — e-mail ikke leveret: ${result.emailSkipReason}`,
+          t("invoices.detail.warning.emailSkipped", {
+            reason: result.emailSkipReason,
           })
         )
       }
@@ -298,7 +287,7 @@ function InvoiceDetailPage() {
       setError(
         err instanceof Error
           ? err.message
-          : tm({ en: "Failed to send invoice", da: "Kunne ikke sende faktura" })
+          : t("invoices.detail.error.sendFailed")
       )
     } finally {
       setActing(false)
@@ -316,7 +305,7 @@ function InvoiceDetailPage() {
       setError(
         err instanceof Error
           ? err.message
-          : tm({ en: "Failed to mark as paid", da: "Kunne ikke markere som betalt" })
+          : t("invoices.detail.error.markPaidFailed")
       )
     } finally {
       setActing(false)
@@ -333,7 +322,7 @@ function InvoiceDetailPage() {
       setError(
         err instanceof Error
           ? err.message
-          : tm({ en: "Failed to delete invoice", da: "Kunne ikke slette faktura" })
+          : t("invoices.detail.error.deleteFailed")
       )
       setActing(false)
     }
@@ -346,7 +335,7 @@ function InvoiceDetailPage() {
   if (loading) {
     return (
       <div className="p-6">
-        <p className="text-muted-foreground">{tm({ en: "Loading...", da: "Indlæser..." })}</p>
+        <p className="text-muted-foreground">{t("invoices.loading")}</p>
       </div>
     )
   }
@@ -355,14 +344,14 @@ function InvoiceDetailPage() {
     return (
       <div className="p-6">
         <p className="text-destructive">
-          {error ?? tm({ en: "Invoice not found", da: "Faktura blev ikke fundet" })}
+          {error ?? t("invoices.detail.error.notFound")}
         </p>
         <Button
           variant="outline"
           className="mt-4"
           onClick={() => navigate({ to: "/invoices" })}
         >
-          {tm({ en: "Back to Invoices", da: "Tilbage til fakturaer" })}
+          {t("invoices.detail.action.back")}
         </Button>
       </div>
     )
@@ -382,7 +371,7 @@ function InvoiceDetailPage() {
         <Card>
           <CardHeader>
             <CardTitle>
-              {tm({ en: "Edit Invoice", da: "Rediger faktura" })} {invoice.number}
+              {t("invoices.detail.editTitle")} {invoice.number}
             </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-6">
@@ -394,10 +383,10 @@ function InvoiceDetailPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label>{tm({ en: "Contact", da: "Kontakt" })} *</Label>
+                <Label>{t("docForm.contact")} *</Label>
                 <Select value={editContactId} onValueChange={setEditContactId}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder={tm({ en: "Select a contact", da: "Vælg en kontakt" })} />
+                    <SelectValue placeholder={t("docForm.selectContact")} />
                   </SelectTrigger>
                   <SelectContent>
                     {contacts.map((c) => (
@@ -409,28 +398,28 @@ function InvoiceDetailPage() {
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="editDueDate">{tm({ en: "Due Date", da: "Forfaldsdato" })} *</Label>
+                <Label htmlFor="editDueDate">{t("invoices.new.field.dueDate")} *</Label>
                 <LocalizedDateField
                   id="editDueDate"
                   value={editDueDate}
                   onChange={setEditDueDate}
                   locale={locale}
-                  placeholder={tm({ en: "Select a date", da: "Vælg en dato" })}
-                  clearLabel={tm({ en: "Clear", da: "Ryd" })}
+                  placeholder={t("docForm.selectDate")}
+                  clearLabel={t("docForm.clear")}
                 />
               </div>
             </div>
 
             {/* Line Items */}
             <div className="grid gap-3">
-              <Label>{tm({ en: "Line Items", da: "Linjer" })}</Label>
+              <Label>{t("docForm.lineItems")}</Label>
               <div className="rounded-md border">
                 <div className="grid grid-cols-[180px_1fr_80px_100px_100px_40px] gap-2 p-3 border-b bg-muted/50 text-sm font-medium">
-                  <span>{tm({ en: "Item", da: "Vare" })}</span>
-                  <span>{tm({ en: "Description", da: "Beskrivelse" })}</span>
-                  <span>{tm({ en: "Qty", da: "Antal" })}</span>
-                  <span>{tm({ en: "Unit Price", da: "Enhedspris" })}</span>
-                  <span>{tm({ en: "Total", da: "Total" })}</span>
+                  <span>{t("docForm.column.item")}</span>
+                  <span>{t("docForm.column.description")}</span>
+                  <span>{t("docForm.column.qty")}</span>
+                  <span>{t("docForm.column.unitPrice")}</span>
+                  <span>{t("docForm.column.total")}</span>
                   <span />
                 </div>
                 {editItems.map((item, index) => (
@@ -446,8 +435,8 @@ function InvoiceDetailPage() {
                         <SelectValue
                           placeholder={
                             catalogItems.length > 0
-                              ? tm({ en: "Select item", da: "Vælg vare" })
-                              : tm({ en: "No saved items", da: "Ingen gemte varer" })
+                              ? t("docForm.selectItem")
+                              : t("docForm.noSavedItems")
                           }
                         />
                       </SelectTrigger>
@@ -460,7 +449,7 @@ function InvoiceDetailPage() {
                       </SelectContent>
                     </Select>
                     <Input
-                      placeholder={tm({ en: "Description", da: "Beskrivelse" })}
+                      placeholder={t("docForm.column.description")}
                       value={item.description}
                       onChange={(e) => updateEditItem(index, "description", e.target.value)}
                     />
@@ -505,7 +494,7 @@ function InvoiceDetailPage() {
                 className="w-fit"
               >
                 <Plus className="size-4" />
-                {tm({ en: "Add Item", da: "Tilføj vare" })}
+                {t("docForm.action.addItem")}
               </Button>
             </div>
 
@@ -513,11 +502,11 @@ function InvoiceDetailPage() {
             <div className="flex justify-end">
               <div className="w-64 grid gap-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{tm({ en: "Subtotal", da: "Subtotal" })}</span>
+                  <span className="text-muted-foreground">{t("docForm.summary.subtotal")}</span>
                   <span>{formatCurrency(editSubtotal, invoice.currency, locale)}</span>
                 </div>
                 <div className="flex justify-between items-center gap-2">
-                  <span className="text-muted-foreground">{tm({ en: "Tax", da: "Moms" })}</span>
+                  <span className="text-muted-foreground">{t("docForm.summary.tax")}</span>
                   <div className="flex items-center gap-1">
                     <Input
                       type="number"
@@ -533,7 +522,7 @@ function InvoiceDetailPage() {
                   </div>
                 </div>
                 <div className="flex justify-between font-semibold border-t pt-2">
-                  <span>{tm({ en: "Total", da: "Total" })}</span>
+                  <span>{t("docForm.summary.total")}</span>
                   <span>{formatCurrency(editTotal, invoice.currency, locale)}</span>
                 </div>
               </div>
@@ -541,15 +530,12 @@ function InvoiceDetailPage() {
 
             {/* Notes */}
             <div className="grid gap-2">
-              <Label htmlFor="editNotes">{tm({ en: "Notes", da: "Noter" })}</Label>
+              <Label htmlFor="editNotes">{t("docForm.notes")}</Label>
               <Textarea
                 id="editNotes"
                 value={editNotes}
                 onChange={(e) => setEditNotes(e.target.value)}
-                placeholder={tm({
-                  en: "Payment terms, thank you note, etc.",
-                  da: "Betalingsbetingelser, takkenote osv.",
-                })}
+                placeholder={t("invoices.new.notes.placeholder")}
                 rows={3}
               />
             </div>
@@ -563,12 +549,12 @@ function InvoiceDetailPage() {
                 setError(null)
               }}
             >
-              {tm({ en: "Cancel", da: "Annuller" })}
+              {t("docForm.action.cancel")}
             </Button>
             <Button type="button" disabled={acting} onClick={handleSaveEdit}>
               {acting
-                ? tm({ en: "Saving...", da: "Gemmer..." })
-                : tm({ en: "Save Changes", da: "Gem ændringer" })}
+                ? t("docForm.action.saving")
+                : t("docForm.action.saveChanges")}
             </Button>
           </CardFooter>
         </Card>
@@ -595,12 +581,12 @@ function InvoiceDetailPage() {
       <div className="flex items-center justify-between mb-6 no-print">
         <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/invoices" })}>
           <ArrowLeft className="size-4" />
-          {tm({ en: "Back to Invoices", da: "Tilbage til fakturaer" })}
+          {t("invoices.detail.action.back")}
         </Button>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={handlePrint}>
             <Printer className="size-4" />
-            {tm({ en: "Print", da: "Udskriv" })}
+            {t("invoices.detail.action.print")}
           </Button>
           <Button
             variant="outline"
@@ -612,46 +598,47 @@ function InvoiceDetailPage() {
               try {
                 await downloadInvoicePdf(invoice, orgSettings)
               } catch {
-                setError(tm({ en: "Failed to generate PDF", da: "Kunne ikke generere PDF" }))
+                setError(t("invoices.detail.error.pdfFailed"))
               } finally {
                 setDownloading(false)
               }
             }}
           >
             <Download className="size-4" />
-            {downloading ? tm({ en: "Generating...", da: "Genererer..." }) : "PDF"}
+            {downloading ? t("invoices.new.ai.action.generating") : "PDF"}
           </Button>
           {invoice.status === "draft" && (
             <>
               <Button variant="outline" size="sm" onClick={startEditing}>
                 <Pencil className="size-4" />
-                {tm({ en: "Edit", da: "Rediger" })}
+                {t("invoices.detail.action.edit")}
               </Button>
               <Button size="sm" disabled={acting} onClick={handleSend}>
                 <Send className="size-4" />
-                {acting ? tm({ en: "Sending...", da: "Sender..." }) : tm({ en: "Send", da: "Send" })}
+                {acting
+                  ? t("invoices.detail.action.sending")
+                  : t("invoices.detail.action.send")}
               </Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" size="sm" disabled={acting}>
                     <Trash2 className="size-4" />
-                    {tm({ en: "Delete", da: "Slet" })}
+                    {t("invoices.detail.action.delete")}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>{tm({ en: "Delete invoice", da: "Slet faktura" })}</AlertDialogTitle>
+                    <AlertDialogTitle>{t("invoices.delete.title")}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      {tm({
-                        en: `Are you sure you want to delete invoice ${invoice.number}? This action cannot be undone.`,
-                        da: `Er du sikker på, at du vil slette faktura ${invoice.number}? Denne handling kan ikke fortrydes.`,
+                      {t("invoices.delete.description", {
+                        number: invoice.number,
                       })}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>{tm({ en: "Cancel", da: "Annuller" })}</AlertDialogCancel>
+                    <AlertDialogCancel>{t("docForm.action.cancel")}</AlertDialogCancel>
                     <AlertDialogAction variant="destructive" onClick={handleDelete}>
-                      {tm({ en: "Delete", da: "Slet" })}
+                      {t("invoices.detail.action.delete")}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -662,8 +649,8 @@ function InvoiceDetailPage() {
             <Button size="sm" disabled={acting} onClick={handleMarkPaid}>
               <CheckCircle className="size-4" />
               {acting
-                ? tm({ en: "Updating...", da: "Opdaterer..." })
-                : tm({ en: "Mark as Paid", da: "Marker som betalt" })}
+                ? t("invoices.detail.action.updating")
+                : t("invoices.detail.action.markPaid")}
             </Button>
           )}
         </div>
@@ -683,29 +670,32 @@ function InvoiceDetailPage() {
             <div className="flex items-start justify-between">
               <div>
                 <h1 className="text-2xl font-bold">
-                  {tm({ en: "Invoice", da: "Faktura" })} {invoice.number}
+                  {t("pdf.invoice")} {invoice.number}
                 </h1>
                 <div className="mt-1">
-                  <StatusBadge status={invoice.status} tm={tm} />
+                  <StatusBadge
+                    status={invoice.status}
+                    label={getInvoiceStatusLabel(invoice.status, t)}
+                  />
                 </div>
               </div>
               <div className="text-right text-sm text-muted-foreground">
                 {orgSettings.companyLogo && (
                   <img
                     src={orgSettings.companyLogo}
-                    alt={tm({ en: "Company logo", da: "Virksomhedslogo" })}
+                    alt={t("invoices.detail.companyLogoAlt")}
                     className="ml-auto mb-2 h-12 w-auto max-w-40 object-contain"
                   />
                 )}
                 <p>
                   <span className="font-medium text-foreground">
-                    {tm({ en: "Issue Date:", da: "Udstedelsesdato:" })}
+                    {t("pdf.issueDate")}:
                   </span>{" "}
                   {formatDate(invoice.issueDate, locale, orgSettings.timezone)}
                 </p>
                 <p>
                   <span className="font-medium text-foreground">
-                    {tm({ en: "Due Date:", da: "Forfaldsdato:" })}
+                    {t("pdf.dueDate")}:
                   </span>{" "}
                   {formatDate(invoice.dueDate, locale, orgSettings.timezone)}
                 </p>
@@ -715,7 +705,7 @@ function InvoiceDetailPage() {
             {/* Bill To */}
             <div>
               <h3 className="text-sm font-medium text-muted-foreground mb-1">
-                {tm({ en: "Bill To", da: "Fakturer til" })}
+                {t("pdf.billTo")}
               </h3>
               <p className="font-semibold">{contact.name}</p>
               {contact.company && <p className="text-sm">{contact.company}</p>}
@@ -736,10 +726,10 @@ function InvoiceDetailPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>{tm({ en: "Description", da: "Beskrivelse" })}</TableHead>
-                    <TableHead className="text-right w-[80px]">{tm({ en: "Qty", da: "Antal" })}</TableHead>
-                    <TableHead className="text-right w-[120px]">{tm({ en: "Unit Price", da: "Enhedspris" })}</TableHead>
-                    <TableHead className="text-right w-[120px]">{tm({ en: "Total", da: "Total" })}</TableHead>
+                    <TableHead>{t("pdf.description")}</TableHead>
+                    <TableHead className="text-right w-[80px]">{t("pdf.qty")}</TableHead>
+                    <TableHead className="text-right w-[120px]">{t("pdf.unitPrice")}</TableHead>
+                    <TableHead className="text-right w-[120px]">{t("pdf.total")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -763,17 +753,17 @@ function InvoiceDetailPage() {
             <div className="flex justify-end">
               <div className="w-64 grid gap-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{tm({ en: "Subtotal", da: "Subtotal" })}</span>
+                  <span className="text-muted-foreground">{t("pdf.subtotal")}</span>
                   <span>{formatCurrency(invoice.subtotal, invoice.currency, locale)}</span>
                 </div>
                 {invoice.taxAmount > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{tm({ en: "Tax", da: "Moms" })}</span>
+                    <span className="text-muted-foreground">{t("pdf.tax")}</span>
                     <span>{formatCurrency(invoice.taxAmount, invoice.currency, locale)}</span>
                   </div>
                 )}
                 <div className="flex justify-between font-semibold text-base border-t pt-2">
-                  <span>{tm({ en: "Total", da: "Total" })}</span>
+                  <span>{t("pdf.total")}</span>
                   <span>{formatCurrency(invoice.total, invoice.currency, locale)}</span>
                 </div>
               </div>
@@ -783,7 +773,7 @@ function InvoiceDetailPage() {
             {invoice.notes && (
               <div>
                 <h3 className="text-sm font-medium text-muted-foreground mb-1">
-                  {tm({ en: "Notes", da: "Noter" })}
+                  {t("pdf.notes")}
                 </h3>
                 <p className="text-sm whitespace-pre-wrap">{invoice.notes}</p>
               </div>
