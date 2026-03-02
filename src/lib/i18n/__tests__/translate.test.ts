@@ -21,4 +21,31 @@ describe("i18n translate", () => {
       "Velkommen, Martin"
     )
   })
+
+  it("returns localized contacts labels", () => {
+    expect(translate("contacts.title", "en-US")).toBe("Contacts")
+    expect(translate("contacts.title", "da-DK")).toBe("Kontakter")
+  })
+
+  it("interpolates contact delete confirmation", () => {
+    expect(
+      translate("contacts.delete.description", "en-US", { name: "Emil" })
+    ).toBe(
+      "Are you sure you want to delete Emil? This action cannot be undone."
+    )
+    expect(
+      translate("contacts.delete.description", "da-DK", { name: "Emil" })
+    ).toBe(
+      "Er du sikker på, at du vil slette Emil? Denne handling kan ikke fortrydes."
+    )
+  })
+
+  it("returns localized accept-invitation status", () => {
+    expect(translate("acceptInvitation.pending.title", "en-US")).toBe(
+      "Accepting invitation"
+    )
+    expect(translate("acceptInvitation.pending.title", "da-DK")).toBe(
+      "Accepterer invitation"
+    )
+  })
 })

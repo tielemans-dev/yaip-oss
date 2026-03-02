@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_app/contacts/new")({
 })
 
 function NewContactPage() {
-  const { tm } = useI18n()
+  const { t } = useI18n()
   const navigate = useNavigate()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -50,7 +50,7 @@ function NewContactPage() {
       setError(
         err instanceof Error
           ? err.message
-          : tm({ en: "Failed to create contact", da: "Kunne ikke oprette kontakt" })
+          : t("contacts.new.error.createFailed")
       )
       setSaving(false)
     }
@@ -60,7 +60,7 @@ function NewContactPage() {
     <div className="p-6 max-w-2xl">
       <Card>
         <CardHeader>
-          <CardTitle>{tm({ en: "New Contact", da: "Ny kontakt" })}</CardTitle>
+          <CardTitle>{t("contacts.new.title")}</CardTitle>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="grid gap-4">
@@ -71,80 +71,95 @@ function NewContactPage() {
             )}
 
             <div className="grid gap-2">
-              <Label htmlFor="name">{tm({ en: "Name", da: "Navn" })} *</Label>
+              <Label htmlFor="name">{t("contacts.field.name")} *</Label>
               <Input
                 id="name"
                 name="name"
                 required
                 maxLength={120}
-                placeholder={tm({ en: "John Doe", da: "John Doe" })}
+                placeholder={t("contacts.placeholder.name")}
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="email">{tm({ en: "Email", da: "E-mail" })}</Label>
+                <Label htmlFor="email">{t("contacts.field.email")}</Label>
                 <Input
                   id="email"
                   name="email"
                   type="email"
                   maxLength={254}
-                  placeholder={tm({ en: "john@example.com", da: "john@eksempel.dk" })}
+                  placeholder={t("contacts.placeholder.email")}
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="phone">{tm({ en: "Phone", da: "Telefon" })}</Label>
+                <Label htmlFor="phone">{t("contacts.field.phone")}</Label>
                 <Input
                   id="phone"
                   name="phone"
                   maxLength={40}
                   pattern="^\+?[0-9()\-\s.]{6,20}$"
-                  title={tm({ en: "Enter a valid phone number", da: "Indtast et gyldigt telefonnummer" })}
-                  placeholder={tm({ en: "+1 555 123 4567", da: "+45 12 34 56 78" })}
+                  title={t("contacts.phone.invalid")}
+                  placeholder={t("contacts.placeholder.phone")}
                 />
               </div>
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="company">{tm({ en: "Company", da: "Virksomhed" })}</Label>
-              <Input id="company" name="company" maxLength={120} placeholder={tm({ en: "Acme Inc.", da: "Acme ApS" })} />
+              <Label htmlFor="company">{t("contacts.field.company")}</Label>
+              <Input
+                id="company"
+                name="company"
+                maxLength={120}
+                placeholder={t("contacts.placeholder.company")}
+              />
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="address">{tm({ en: "Address", da: "Adresse" })}</Label>
-              <Input id="address" name="address" maxLength={240} placeholder={tm({ en: "123 Main St", da: "Hovedgade 123" })} />
+              <Label htmlFor="address">{t("contacts.field.address")}</Label>
+              <Input
+                id="address"
+                name="address"
+                maxLength={240}
+                placeholder={t("contacts.placeholder.address")}
+              />
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="city">{tm({ en: "City", da: "By" })}</Label>
+                <Label htmlFor="city">{t("contacts.field.city")}</Label>
                 <Input id="city" name="city" maxLength={120} />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="state">{tm({ en: "State", da: "Region" })}</Label>
+                <Label htmlFor="state">{t("contacts.field.state")}</Label>
                 <Input id="state" name="state" maxLength={120} />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="zip">{tm({ en: "ZIP", da: "Postnr." })}</Label>
+                <Label htmlFor="zip">{t("contacts.field.zip")}</Label>
                 <Input id="zip" name="zip" maxLength={20} />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="country">{tm({ en: "Country", da: "Land" })}</Label>
+                <Label htmlFor="country">{t("contacts.field.country")}</Label>
                 <Input id="country" name="country" maxLength={80} />
               </div>
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="taxId">{tm({ en: "Tax ID", da: "CVR/VAT-nummer" })}</Label>
-              <Input id="taxId" name="taxId" maxLength={40} placeholder={tm({ en: "XX-XXXXXXX", da: "DK12345678" })} />
+              <Label htmlFor="taxId">{t("contacts.field.taxId")}</Label>
+              <Input
+                id="taxId"
+                name="taxId"
+                maxLength={40}
+                placeholder={t("contacts.placeholder.taxId")}
+              />
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="notes">{tm({ en: "Notes", da: "Noter" })}</Label>
+              <Label htmlFor="notes">{t("contacts.field.notes")}</Label>
               <Textarea
                 id="notes"
                 name="notes"
-                placeholder={tm({ en: "Any additional notes...", da: "Eventuelle ekstra noter..." })}
+                placeholder={t("contacts.placeholder.notes")}
                 rows={3}
                 maxLength={5000}
               />
@@ -156,12 +171,10 @@ function NewContactPage() {
               variant="outline"
               onClick={() => navigate({ to: "/contacts" })}
             >
-              {tm({ en: "Cancel", da: "Annuller" })}
+              {t("contacts.action.cancel")}
             </Button>
             <Button type="submit" disabled={saving}>
-              {saving
-                ? tm({ en: "Creating...", da: "Opretter..." })
-                : tm({ en: "Create Contact", da: "Opret kontakt" })}
+              {saving ? t("contacts.action.creating") : t("contacts.action.create")}
             </Button>
           </CardFooter>
         </form>

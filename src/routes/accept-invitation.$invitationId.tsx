@@ -16,7 +16,7 @@ export const Route = createFileRoute('/accept-invitation/$invitationId')({
 })
 
 function AcceptInvitationPage() {
-  const { tm } = useI18n()
+  const { t } = useI18n()
   const { invitationId } = Route.useParams()
   const navigate = useNavigate()
   const [error, setError] = useState<string | null>(null)
@@ -48,10 +48,7 @@ function AcceptInvitationPage() {
 
         setError(
           result.error.message ??
-            tm({
-              en: 'Failed to accept invitation.',
-              da: 'Kunne ikke acceptere invitationen.',
-            })
+            t("acceptInvitation.error.fallback")
         )
         return
       }
@@ -71,7 +68,7 @@ function AcceptInvitationPage() {
     return () => {
       cancelled = true
     }
-  }, [invitationId, navigate])
+  }, [invitationId, navigate, t])
 
   if (error) {
     return (
@@ -79,13 +76,10 @@ function AcceptInvitationPage() {
         <Card className="w-full max-w-sm">
           <CardHeader>
             <CardTitle className="text-2xl">
-              {tm({ en: 'Invitation error', da: 'Invitationsfejl' })}
+              {t("acceptInvitation.error.title")}
             </CardTitle>
             <CardDescription>
-              {tm({
-                en: 'This invitation could not be accepted.',
-                da: 'Denne invitation kunne ikke accepteres.',
-              })}
+              {t("acceptInvitation.error.description")}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
@@ -93,7 +87,7 @@ function AcceptInvitationPage() {
               {error}
             </p>
             <Button variant="outline" onClick={() => navigate({ to: '/' })}>
-              {tm({ en: 'Go home', da: 'Gå til forsiden' })}
+              {t("acceptInvitation.error.goHome")}
             </Button>
           </CardContent>
         </Card>
@@ -106,15 +100,15 @@ function AcceptInvitationPage() {
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-2xl">
-            {tm({ en: 'Accepting invitation', da: 'Accepterer invitation' })}
+            {t("acceptInvitation.pending.title")}
           </CardTitle>
           <CardDescription>
-            {tm({ en: 'Please wait a moment...', da: 'Vent venligst et øjeblik...' })}
+            {t("acceptInvitation.pending.description")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            {tm({ en: 'Accepting invitation...', da: 'Accepterer invitation...' })}
+            {t("acceptInvitation.pending.body")}
           </p>
         </CardContent>
       </Card>

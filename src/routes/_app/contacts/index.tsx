@@ -37,7 +37,7 @@ type Contact = {
 }
 
 function ContactsListPage() {
-  const { tm } = useI18n()
+  const { t } = useI18n()
   const navigate = useNavigate()
   const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(true)
@@ -74,9 +74,9 @@ function ContactsListPage() {
     return (
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">{tm({ en: "Contacts", da: "Kontakter" })}</h1>
+          <h1 className="text-2xl font-bold">{t("contacts.title")}</h1>
         </div>
-        <p className="text-muted-foreground">{tm({ en: "Loading...", da: "Indlæser..." })}</p>
+        <p className="text-muted-foreground">{t("contacts.loading")}</p>
       </div>
     )
   }
@@ -84,11 +84,11 @@ function ContactsListPage() {
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">{tm({ en: "Contacts", da: "Kontakter" })}</h1>
+        <h1 className="text-2xl font-bold">{t("contacts.title")}</h1>
         <Button asChild>
           <Link to="/contacts/new">
             <Plus />
-            {tm({ en: "New Contact", da: "Ny kontakt" })}
+            {t("contacts.action.new")}
           </Link>
         </Button>
       </div>
@@ -97,18 +97,15 @@ function ContactsListPage() {
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <Users className="size-12 text-muted-foreground mb-4" />
           <h2 className="text-lg font-semibold mb-1">
-            {tm({ en: "No contacts yet", da: "Ingen kontakter endnu" })}
+            {t("contacts.empty.title")}
           </h2>
           <p className="text-muted-foreground mb-4">
-            {tm({
-              en: "Add your first contact to start creating invoices and quotes.",
-              da: "Tilføj din første kontakt for at begynde at oprette fakturaer og tilbud.",
-            })}
+            {t("contacts.empty.description")}
           </p>
           <Button asChild>
             <Link to="/contacts/new">
               <Plus />
-              {tm({ en: "Add Contact", da: "Tilføj kontakt" })}
+              {t("contacts.action.add")}
             </Link>
           </Button>
         </div>
@@ -117,10 +114,10 @@ function ContactsListPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{tm({ en: "Name", da: "Navn" })}</TableHead>
-                <TableHead>{tm({ en: "Email", da: "E-mail" })}</TableHead>
-                <TableHead>{tm({ en: "Company", da: "Virksomhed" })}</TableHead>
-                <TableHead>{tm({ en: "Phone", da: "Telefon" })}</TableHead>
+                <TableHead>{t("contacts.field.name")}</TableHead>
+                <TableHead>{t("contacts.field.email")}</TableHead>
+                <TableHead>{t("contacts.field.company")}</TableHead>
+                <TableHead>{t("contacts.field.phone")}</TableHead>
                 <TableHead className="w-[60px]" />
               </TableRow>
             </TableHeader>
@@ -151,21 +148,18 @@ function ContactsListPage() {
                       </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>{tm({ en: "Delete contact", da: "Slet kontakt" })}</AlertDialogTitle>
+                            <AlertDialogTitle>{t("contacts.delete.title")}</AlertDialogTitle>
                             <AlertDialogDescription>
-                              {tm({
-                                en: `Are you sure you want to delete ${contact.name}? This action cannot be undone.`,
-                                da: `Er du sikker på, at du vil slette ${contact.name}? Denne handling kan ikke fortrydes.`,
-                              })}
+                              {t("contacts.delete.description", { name: contact.name })}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>{tm({ en: "Cancel", da: "Annuller" })}</AlertDialogCancel>
+                            <AlertDialogCancel>{t("contacts.action.cancel")}</AlertDialogCancel>
                             <AlertDialogAction
                               variant="destructive"
                               onClick={() => handleDelete(contact.id)}
                             >
-                              {tm({ en: "Delete", da: "Slet" })}
+                              {t("contacts.action.delete")}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>

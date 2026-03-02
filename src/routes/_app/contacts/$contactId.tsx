@@ -34,7 +34,7 @@ type ContactData = {
 }
 
 function EditContactPage() {
-  const { tm } = useI18n()
+  const { t } = useI18n()
   const { contactId } = Route.useParams()
   const navigate = useNavigate()
   const [contact, setContact] = useState<ContactData | null>(null)
@@ -46,7 +46,7 @@ function EditContactPage() {
     trpc.contacts.get
       .query({ id: contactId })
       .then((data) => setContact(data as ContactData))
-      .catch(() => setError(tm({ en: "Contact not found", da: "Kontakt blev ikke fundet" })))
+      .catch(() => setError(t("contacts.edit.error.notFound")))
       .finally(() => setLoading(false))
   }, [contactId])
 
@@ -77,7 +77,7 @@ function EditContactPage() {
       setError(
         err instanceof Error
           ? err.message
-          : tm({ en: "Failed to update contact", da: "Kunne ikke opdatere kontakt" })
+          : t("contacts.edit.error.updateFailed")
       )
       setSaving(false)
     }
@@ -86,7 +86,7 @@ function EditContactPage() {
   if (loading) {
     return (
       <div className="p-6">
-        <p className="text-muted-foreground">{tm({ en: "Loading...", da: "Indlæser..." })}</p>
+        <p className="text-muted-foreground">{t("contacts.loading")}</p>
       </div>
     )
   }
@@ -95,14 +95,14 @@ function EditContactPage() {
     return (
       <div className="p-6">
         <p className="text-destructive">
-          {error ?? tm({ en: "Contact not found", da: "Kontakt blev ikke fundet" })}
+          {error ?? t("contacts.edit.error.notFound")}
         </p>
         <Button
           variant="outline"
           className="mt-4"
           onClick={() => navigate({ to: "/contacts" })}
         >
-          {tm({ en: "Back to Contacts", da: "Tilbage til kontakter" })}
+          {t("contacts.action.back")}
         </Button>
       </div>
     )
@@ -112,7 +112,7 @@ function EditContactPage() {
     <div className="p-6 max-w-2xl">
       <Card>
         <CardHeader>
-          <CardTitle>{tm({ en: "Edit Contact", da: "Rediger kontakt" })}</CardTitle>
+          <CardTitle>{t("contacts.edit.title")}</CardTitle>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="grid gap-4">
@@ -123,7 +123,7 @@ function EditContactPage() {
             )}
 
             <div className="grid gap-2">
-              <Label htmlFor="name">{tm({ en: "Name", da: "Navn" })} *</Label>
+              <Label htmlFor="name">{t("contacts.field.name")} *</Label>
               <Input
                 id="name"
                 name="name"
@@ -135,7 +135,7 @@ function EditContactPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="email">{tm({ en: "Email", da: "E-mail" })}</Label>
+                <Label htmlFor="email">{t("contacts.field.email")}</Label>
                 <Input
                   id="email"
                   name="email"
@@ -145,20 +145,20 @@ function EditContactPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="phone">{tm({ en: "Phone", da: "Telefon" })}</Label>
+                <Label htmlFor="phone">{t("contacts.field.phone")}</Label>
                 <Input
                   id="phone"
                   name="phone"
                   maxLength={40}
                   pattern="^\+?[0-9()\-\s.]{6,20}$"
-                  title={tm({ en: "Enter a valid phone number", da: "Indtast et gyldigt telefonnummer" })}
+                  title={t("contacts.phone.invalid")}
                   defaultValue={contact.phone ?? ""}
                 />
               </div>
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="company">{tm({ en: "Company", da: "Virksomhed" })}</Label>
+              <Label htmlFor="company">{t("contacts.field.company")}</Label>
               <Input
                 id="company"
                 name="company"
@@ -168,7 +168,7 @@ function EditContactPage() {
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="address">{tm({ en: "Address", da: "Adresse" })}</Label>
+              <Label htmlFor="address">{t("contacts.field.address")}</Label>
               <Input
                 id="address"
                 name="address"
@@ -179,7 +179,7 @@ function EditContactPage() {
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="city">{tm({ en: "City", da: "By" })}</Label>
+                <Label htmlFor="city">{t("contacts.field.city")}</Label>
                 <Input
                   id="city"
                   name="city"
@@ -188,7 +188,7 @@ function EditContactPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="state">{tm({ en: "State", da: "Region" })}</Label>
+                <Label htmlFor="state">{t("contacts.field.state")}</Label>
                 <Input
                   id="state"
                   name="state"
@@ -197,7 +197,7 @@ function EditContactPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="zip">{tm({ en: "ZIP", da: "Postnr." })}</Label>
+                <Label htmlFor="zip">{t("contacts.field.zip")}</Label>
                 <Input
                   id="zip"
                   name="zip"
@@ -206,7 +206,7 @@ function EditContactPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="country">{tm({ en: "Country", da: "Land" })}</Label>
+                <Label htmlFor="country">{t("contacts.field.country")}</Label>
                 <Input
                   id="country"
                   name="country"
@@ -217,7 +217,7 @@ function EditContactPage() {
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="taxId">{tm({ en: "Tax ID", da: "CVR/VAT-nummer" })}</Label>
+              <Label htmlFor="taxId">{t("contacts.field.taxId")}</Label>
               <Input
                 id="taxId"
                 name="taxId"
@@ -227,7 +227,7 @@ function EditContactPage() {
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="notes">{tm({ en: "Notes", da: "Noter" })}</Label>
+              <Label htmlFor="notes">{t("contacts.field.notes")}</Label>
               <Textarea
                 id="notes"
                 name="notes"
@@ -243,12 +243,12 @@ function EditContactPage() {
               variant="outline"
               onClick={() => navigate({ to: "/contacts" })}
             >
-              {tm({ en: "Cancel", da: "Annuller" })}
+              {t("contacts.action.cancel")}
             </Button>
             <Button type="submit" disabled={saving}>
               {saving
-                ? tm({ en: "Saving...", da: "Gemmer..." })
-                : tm({ en: "Save Changes", da: "Gem ændringer" })}
+                ? t("contacts.action.saving")
+                : t("contacts.action.saveChanges")}
             </Button>
           </CardFooter>
         </form>
