@@ -33,6 +33,10 @@ check_absent "STRIPE_" \
   "STRIPE_* variables are not allowed in OSS templates/docs" \
   .env.example README.md docker-compose.yml
 
+check_absent "yaip-cloud|@yaip/cloud|cloud-private" \
+  "OSS runtime must not import private cloud modules" \
+  src package.json
+
 if [[ "$status" -ne 0 ]]; then
   exit "$status"
 fi

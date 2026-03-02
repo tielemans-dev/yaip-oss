@@ -1,0 +1,8 @@
+* @tielemans-dev
+
+# OSS/cloud boundary and extension contracts
+/docs/architecture/oss-cloud-boundary.md @tielemans-dev
+/docs/architecture/runtime-extension-interface.md @tielemans-dev
+/scripts/check-oss-boundaries.sh @tielemans-dev
+/src/lib/billing/ @tielemans-dev
+/src/lib/runtime/extensions.ts @tielemans-dev

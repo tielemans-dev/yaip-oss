@@ -132,6 +132,8 @@ pnpm test:integration
 
 Contributions welcome! Please open an issue first to discuss what you'd like to change.
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for OSS/cloud boundary and PR policy.
+
 ## License
 
 [PolyForm Noncommercial 1.0.0](LICENSE)
