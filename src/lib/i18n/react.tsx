@@ -6,6 +6,7 @@ type I18nContextValue = {
   locale: string
   setLocale: (locale: string) => void
   t: (key: TranslationKey, vars?: Record<string, string | number>) => string
+  /** @deprecated Use `t` with catalog keys instead of inline translation objects. */
   tm: (messages: { en: string } & Record<string, string | undefined>) => string
 }
 

@@ -1,0 +1,14 @@
+export const enEmailMessages = {
+  "email.footer.sentVia": "Sent via YAIP — Yet Another Invoicing App",
+  "email.invoice.greeting": "Hi {name}, please find your invoice below.",
+  "email.invoice.subject": "Invoice {number} — {total} due {dueDate}",
+  "email.quote.title": "Quote",
+  "email.quote.greeting": "Hi {name}, please find your quote below.",
+  "email.quote.validUntil": "Valid Until",
+  "email.quote.subject": "Quote {number} — {total} valid until {expiryDate}",
+  "email.invitation.title": "You're invited to join {orgName}",
+  "email.invitation.body": "{inviterName} has invited you to join their organization on YAIP.",
+  "email.invitation.accept": "Accept Invitation",
+  "email.invitation.expiry": "This invitation expires in 48 hours. If you didn't expect this, you can ignore this email.",
+  "email.invitation.subject": "{inviterName} invited you to join {orgName} on YAIP",
+} as const

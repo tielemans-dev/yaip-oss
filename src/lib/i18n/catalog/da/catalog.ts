@@ -1,0 +1,16 @@
+export const daCatalogMessages = {
+  "catalog.title": "Katalog",
+  "catalog.addItem": "Tilføj vare",
+  "catalog.name": "Navn",
+  "catalog.description": "Beskrivelse",
+  "catalog.defaultUnitPrice": "Standard enhedspris",
+  "catalog.defaultPrice": "Standardpris",
+  "catalog.actions": "Handlinger",
+  "catalog.add": "Tilføj vare",
+  "catalog.save": "Gem",
+  "catalog.cancel": "Annuller",
+  "catalog.loading": "Indlæser...",
+  "catalog.empty": "Ingen katalogvarer endnu. Tilføj din første standardvare ovenfor.",
+  "catalog.placeholder.consulting": "Rådgivning",
+  "catalog.placeholder.hourlyConsulting": "Timebaseret rådgivning",
+} as const

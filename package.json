@@ -12,6 +12,8 @@
     "db:start": "./scripts/dev-db-start.sh",
     "db:stop": "docker stop ${YAIP_DB_CONTAINER_NAME:-yaip-postgres}",
     "db:logs": "docker logs -f ${YAIP_DB_CONTAINER_NAME:-yaip-postgres}",
+    "i18n:check": "node scripts/i18n-check.mjs && node scripts/i18n-tm-guard.mjs",
+    "i18n:update-tm-allowlist": "node scripts/update-tm-allowlist.mjs",
     "migrate": "pnpm db:start && pnpm prisma:migrate",
     "predev": "pnpm prisma:generate && node scripts/predev-bootstrap.mjs",
     "prebuild": "pnpm prisma:generate",
@@ -19,7 +21,7 @@
     "dev": "vite dev --port 3000",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest run -c vitest.config.ts",
+    "test": "pnpm i18n:check && vitest run -c vitest.config.ts",
     "test:integration": "vitest run -c vitest.config.ts src/trpc/routers/__tests__/*.integration.test.ts"
   },
   "dependencies": {

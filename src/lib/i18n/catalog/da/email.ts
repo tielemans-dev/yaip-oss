@@ -1,0 +1,14 @@
+export const daEmailMessages = {
+  "email.footer.sentVia": "Sendt via YAIP — Yet Another Invoicing App",
+  "email.invoice.greeting": "Hej {name}, her er din faktura.",
+  "email.invoice.subject": "Faktura {number} — {total} forfalder {dueDate}",
+  "email.quote.title": "Tilbud",
+  "email.quote.greeting": "Hej {name}, her er dit tilbud.",
+  "email.quote.validUntil": "Gyldig til",
+  "email.quote.subject": "Tilbud {number} — {total} gyldigt til {expiryDate}",
+  "email.invitation.title": "Du er inviteret til at blive en del af {orgName}",
+  "email.invitation.body": "{inviterName} har inviteret dig til at blive en del af deres organisation på YAIP.",
+  "email.invitation.accept": "Accepter invitation",
+  "email.invitation.expiry": "Denne invitation udløber om 48 timer. Hvis du ikke forventede den, kan du ignorere denne e-mail.",
+  "email.invitation.subject": "{inviterName} inviterede dig til at blive en del af {orgName} på YAIP",
+} as const

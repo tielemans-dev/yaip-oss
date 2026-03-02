@@ -1,0 +1,16 @@
+export const enCatalogMessages = {
+  "catalog.title": "Catalog",
+  "catalog.addItem": "Add Item",
+  "catalog.name": "Name",
+  "catalog.description": "Description",
+  "catalog.defaultUnitPrice": "Default Unit Price",
+  "catalog.defaultPrice": "Default Price",
+  "catalog.actions": "Actions",
+  "catalog.add": "Add Item",
+  "catalog.save": "Save",
+  "catalog.cancel": "Cancel",
+  "catalog.loading": "Loading...",
+  "catalog.empty": "No catalog items yet. Add your first predefined item above.",
+  "catalog.placeholder.consulting": "Consulting",
+  "catalog.placeholder.hourlyConsulting": "Hourly consulting",
+} as const

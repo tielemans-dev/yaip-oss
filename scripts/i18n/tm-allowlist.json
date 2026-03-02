@@ -1,0 +1,14 @@
+{
+  "src/routes/_app/billing.tsx": 30,
+  "src/routes/_app/contacts/$contactId.tsx": 21,
+  "src/routes/_app/contacts/index.tsx": 15,
+  "src/routes/_app/contacts/new.tsx": 24,
+  "src/routes/_app/invoices/$invoiceId.tsx": 62,
+  "src/routes/_app/invoices/index.tsx": 18,
+  "src/routes/_app/invoices/new.tsx": 42,
+  "src/routes/_app/quotes/$quoteId.tsx": 62,
+  "src/routes/_app/quotes/index.tsx": 18,
+  "src/routes/_app/quotes/new.tsx": 33,
+  "src/routes/_app/settings.tsx": 97,
+  "src/routes/accept-invitation.$invitationId.tsx": 7
+}
