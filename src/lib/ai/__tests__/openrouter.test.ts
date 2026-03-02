@@ -11,13 +11,14 @@ describe("openrouter invoice draft parsing", () => {
 
   it("parses and normalizes invoice draft payload", () => {
     const draft = parseInvoiceDraftFromModelOutput(
-      '{"contactName":"Acme","dueDate":"2030-01-20","taxRate":25,"notes":"Net 14","items":[{"description":"Design","quantity":1,"unitPrice":1200}]}'
+      '{"contactId":"c1","contactName":"Acme","dueDate":"2030-01-20","taxRate":25,"notes":"Net 14","items":[{"description":"Design","quantity":1,"unitPrice":1200,"catalogItemId":"i1"}]}'
     )
 
+    expect(draft.contactId).toBe("c1")
     expect(draft.contactName).toBe("Acme")
     expect(draft.taxRate).toBe(25)
     expect(draft.items).toEqual([
-      { description: "Design", quantity: 1, unitPrice: 1200 },
+      { description: "Design", quantity: 1, unitPrice: 1200, catalogItemId: "i1" },
     ])
   })
 

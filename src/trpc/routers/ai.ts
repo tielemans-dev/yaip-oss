@@ -5,6 +5,7 @@ import {
   fetchOpenRouterModelIds,
   generateInvoiceDraftWithOpenRouter,
 } from "../../lib/ai/openrouter"
+import { resolveCatalogItemId, resolveContactId } from "../../lib/ai/matching"
 import { prisma } from "../../lib/db"
 import { decryptSecret } from "../../lib/secrets"
 import { getRuntimeCapabilities } from "../../lib/runtime/extensions"
@@ -105,17 +106,53 @@ export const aiRouter = router({
       }
 
       const model = settings.aiOpenRouterModel || "openai/gpt-4o-mini"
+      const [contacts, catalogItems] = await Promise.all([
+        prisma.contact.findMany({
+          where: { organizationId: ctx.organizationId },
+          select: { id: true, name: true },
+          take: 200,
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.catalogItem.findMany({
+          where: { organizationId: ctx.organizationId, isActive: true },
+          select: { id: true, name: true, description: true },
+          take: 300,
+          orderBy: { createdAt: "desc" },
+        }),
+      ])
+
       const draft = await generateInvoiceDraftWithOpenRouter({
         apiKey,
         model,
         prompt: input.prompt,
+        contacts,
+        catalogItems,
       })
+
+      const resolvedContactId = resolveContactId({
+        requestedContactId: draft.contactId,
+        requestedContactName: draft.contactName,
+        contacts,
+      })
+
+      const resolvedItems = draft.items.map((item) => ({
+        ...item,
+        catalogItemId: resolveCatalogItemId({
+          requestedCatalogItemId: item.catalogItemId,
+          description: item.description,
+          catalogItems,
+        }),
+      }))
 
       return {
         mode: "byok" as const,
         provider: "openrouter" as const,
         model,
-        draft,
+        draft: {
+          ...draft,
+          contactId: resolvedContactId,
+          items: resolvedItems,
+        },
       }
     }),
 })

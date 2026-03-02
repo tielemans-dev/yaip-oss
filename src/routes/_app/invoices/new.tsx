@@ -154,15 +154,26 @@ function NewInvoicePage() {
       if (draft.items.length > 0) {
         setItems(
           draft.items.map((item) => ({
-            description: item.description,
+            ...applyCatalogItemToLineItem(
+              {
+                description: item.description,
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                catalogItemId: undefined,
+              },
+              item.catalogItemId || "",
+              catalogItems
+            ),
             quantity: item.quantity,
             unitPrice: item.unitPrice,
-            catalogItemId: undefined,
+            catalogItemId: item.catalogItemId,
           }))
         )
       }
 
-      if (draft.contactName) {
+      if (draft.contactId && contacts.some((contact) => contact.id === draft.contactId)) {
+        setContactId(draft.contactId)
+      } else if (draft.contactName) {
         const matchedContact = contacts.find(
           (contact) => contact.name.trim().toLowerCase() === draft.contactName?.trim().toLowerCase()
         )

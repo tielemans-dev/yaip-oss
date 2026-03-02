@@ -4,9 +4,11 @@ const invoiceDraftItemSchema = z.object({
   description: z.string().trim().min(1).max(500),
   quantity: z.number().positive().max(1_000_000),
   unitPrice: z.number().min(0).max(1_000_000_000),
+  catalogItemId: z.string().trim().min(1).max(100).optional(),
 })
 
 const invoiceDraftSchema = z.object({
+  contactId: z.string().trim().min(1).max(100).optional(),
   contactName: z.string().trim().max(200).optional(),
   dueDate: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   taxRate: z.number().min(0).max(100).optional(),
@@ -65,9 +67,20 @@ export async function generateInvoiceDraftWithOpenRouter(input: {
   apiKey: string
   model: string
   prompt: string
+  contacts: Array<{ id: string; name: string }>
+  catalogItems: Array<{ id: string; name: string; description?: string | null }>
 }) {
   const systemPrompt =
-    "You generate structured invoice drafts. Respond only as JSON object with keys: contactName?, dueDate?(YYYY-MM-DD), taxRate?, notes?, items[]. Each item must include description, quantity, unitPrice."
+    "You generate structured invoice drafts. Respond only as JSON object with keys: contactId?, contactName?, dueDate?(YYYY-MM-DD), taxRate?, notes?, items[]. Each item must include description, quantity, unitPrice and may include catalogItemId. Prefer using provided contact/catalog IDs when possible."
+
+  const toolingContext = JSON.stringify(
+    {
+      availableContacts: input.contacts.slice(0, 200),
+      availableCatalogItems: input.catalogItems.slice(0, 300),
+    },
+    null,
+    2
+  )
 
   const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
@@ -79,6 +92,7 @@ export async function generateInvoiceDraftWithOpenRouter(input: {
       model: input.model,
       messages: [
         { role: "system", content: systemPrompt },
+        { role: "system", content: `Context JSON:\n${toolingContext}` },
         { role: "user", content: input.prompt },
       ],
       temperature: 0.2,
