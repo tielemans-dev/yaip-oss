@@ -13,7 +13,7 @@
     "db:stop": "docker stop ${YAIP_DB_CONTAINER_NAME:-yaip-postgres}",
     "db:logs": "docker logs -f ${YAIP_DB_CONTAINER_NAME:-yaip-postgres}",
     "migrate": "pnpm db:start && pnpm prisma:migrate",
-    "predev": "pnpm prisma:generate",
+    "predev": "pnpm prisma:generate && node scripts/predev-bootstrap.mjs",
     "prebuild": "pnpm prisma:generate",
     "pretest": "pnpm prisma:generate",
     "dev": "vite dev --port 3000",

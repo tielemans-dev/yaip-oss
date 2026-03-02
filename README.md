@@ -54,7 +54,8 @@ Source-available invoicing for freelancers and small businesses.
    openssl rand -base64 32
    ```
 
-4. Start PostgreSQL (or use an existing instance):
+4. If `DATABASE_URL` points to localhost, Docker will be used to auto-start Postgres when running `pnpm dev`.
+   You can still start it manually:
 
    ```bash
    docker run -d --name yaip-postgres \
@@ -65,17 +66,13 @@ Source-available invoicing for freelancers and small businesses.
      postgres:16-alpine
    ```
 
-5. Run database migrations:
-
-   ```bash
-   npx prisma migrate dev
-   ```
-
-6. Start the dev server:
+5. Start the dev server:
 
    ```bash
    pnpm dev
    ```
+
+   `pnpm dev` now runs a preflight that applies Prisma migrations automatically.
 
 7. Open [http://localhost:3000](http://localhost:3000)
 
