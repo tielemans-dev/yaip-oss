@@ -4,6 +4,7 @@ import { Package, Pencil, Trash2 } from "lucide-react"
 import { trpc } from "../../trpc/client"
 import { formatCurrency } from "../../lib/i18n/format"
 import { useI18n } from "../../lib/i18n/react"
+import { useOrgCurrency } from "../../hooks/use-org-currency"
 import { Button } from "../../components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card"
 import { Input } from "../../components/ui/input"
@@ -24,6 +25,7 @@ type CatalogItem = {
 
 function CatalogPage() {
   const { t, locale } = useI18n()
+  const currency = useOrgCurrency()
   const [items, setItems] = useState<CatalogItem[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -248,7 +250,7 @@ function CatalogPage() {
                             onChange={(e) => setEditPrice(e.target.value)}
                           />
                         ) : (
-                          formatCurrency(item.defaultUnitPrice, "USD", locale)
+                          formatCurrency(item.defaultUnitPrice, currency, locale)
                         )}
                       </TableCell>
                       <TableCell className="text-right">

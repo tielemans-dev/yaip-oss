@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router"
 import { useEffect, useMemo, useState } from "react"
 import { trpc } from "../../trpc/client"
 import { authClient, useSession } from "../../lib/auth-client"
+import { validateSettingsFormInput } from "../../lib/validation/settings-form"
 import {
   COUNTRY_OPTIONS,
   LOCALE_OPTIONS,
@@ -246,7 +247,14 @@ function SettingsPage() {
     setSaving(true)
 
     const form = new FormData(e.currentTarget)
-    const taxRateRaw = form.get("taxRate") as string
+    const timezoneInput = ((form.get("timezone") as string) || timezone).trim() || "UTC"
+    const taxRateRaw = ((form.get("taxRate") as string) || "").trim()
+    const companyNameInput = ((form.get("companyName") as string) || "").trim()
+    const companyAddressInput = ((form.get("companyAddress") as string) || "").trim()
+    const companyEmailInput = ((form.get("companyEmail") as string) || "").trim()
+    const companyPhoneInput = ((form.get("companyPhone") as string) || "").trim()
+    const invoicePrefixInput = ((form.get("invoicePrefix") as string) || "").trim()
+    const quotePrefixInput = ((form.get("quotePrefix") as string) || "").trim()
     const normalizedCompanyLogo = companyLogo.trim()
 
     if (
@@ -264,11 +272,38 @@ function SettingsPage() {
       return
     }
 
+    const formValidationError = validateSettingsFormInput({
+      timezone: timezoneInput,
+      taxRateRaw,
+      companyEmail: companyEmailInput,
+      companyPhone: companyPhoneInput,
+      invoicePrefix: invoicePrefixInput,
+      quotePrefix: quotePrefixInput,
+    })
+
+    if (formValidationError) {
+      setSaving(false)
+      setError(
+        formValidationError === "invalid_timezone"
+          ? tm({ en: "Please enter a valid IANA time zone (e.g. Europe/Copenhagen).", da: "Angiv en gyldig IANA-tidszone (f.eks. Europe/Copenhagen)." })
+          : formValidationError === "invalid_tax_rate"
+            ? tm({ en: "Tax rate must be a number between 0 and 100.", da: "Momssatsen skal være et tal mellem 0 og 100." })
+            : formValidationError === "invalid_company_email"
+              ? tm({ en: "Please enter a valid company email address.", da: "Angiv en gyldig virksomheds-e-mailadresse." })
+              : formValidationError === "invalid_company_phone"
+                ? tm({ en: "Please enter a valid company phone number.", da: "Angiv et gyldigt virksomhedsnummer." })
+                : formValidationError === "invalid_invoice_prefix"
+                  ? tm({ en: "Invoice prefix must be 1-10 uppercase letters, numbers, or hyphens.", da: "Fakturapræfikset skal være 1-10 store bogstaver, tal eller bindestreger." })
+                  : tm({ en: "Quote prefix must be 1-10 uppercase letters, numbers, or hyphens.", da: "Tilbudspræfikset skal være 1-10 store bogstaver, tal eller bindestreger." })
+      )
+      return
+    }
+
     try {
       await trpc.settings.update.mutate({
         countryCode,
         locale,
-        timezone: (form.get("timezone") as string) || timezone,
+        timezone: timezoneInput,
         defaultCurrency,
         taxRegime,
         pricesIncludeTax,
@@ -276,15 +311,15 @@ function SettingsPage() {
         primaryTaxIdScheme,
         currency: defaultCurrency,
         taxRate: taxRateRaw ? parseFloat(taxRateRaw) : null,
-        companyName: (form.get("companyName") as string) || undefined,
-        companyAddress: (form.get("companyAddress") as string) || undefined,
-        companyEmail: (form.get("companyEmail") as string) || undefined,
-        companyPhone: (form.get("companyPhone") as string) || undefined,
+        companyName: companyNameInput || undefined,
+        companyAddress: companyAddressInput || undefined,
+        companyEmail: companyEmailInput || undefined,
+        companyPhone: companyPhoneInput || undefined,
         companyLogo: normalizedCompanyLogo || null,
-        invoicePrefix: (form.get("invoicePrefix") as string) || undefined,
-        quotePrefix: (form.get("quotePrefix") as string) || undefined,
+        invoicePrefix: invoicePrefixInput || undefined,
+        quotePrefix: quotePrefixInput || undefined,
       })
-      setTimezone(((form.get("timezone") as string) || timezone).trim() || "UTC")
+      setTimezone(timezoneInput)
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
     } catch (err) {

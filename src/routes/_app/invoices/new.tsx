@@ -3,6 +3,7 @@ import { useState, useEffect } from "react"
 import { trpc } from "../../../trpc/client"
 import { applyCatalogItemToLineItem, type CatalogItemOption } from "../../../lib/catalog"
 import { formatCurrency as formatCurrencyIntl } from "../../../lib/i18n/format"
+import { useOrgCurrency } from "../../../hooks/use-org-currency"
 import { Button } from "../../../components/ui/button"
 import { Input } from "../../../components/ui/input"
 import { Label } from "../../../components/ui/label"
@@ -37,12 +38,9 @@ type LineItem = {
   catalogItemId?: string
 }
 
-function formatCurrency(amount: number) {
-  return formatCurrencyIntl(amount, "USD")
-}
-
 function NewInvoicePage() {
-  const { tm } = useI18n()
+  const { tm, locale } = useI18n()
+  const currency = useOrgCurrency()
   const navigate = useNavigate()
   const [contacts, setContacts] = useState<Contact[]>([])
   const [contactId, setContactId] = useState("")
@@ -279,7 +277,7 @@ function NewInvoicePage() {
                     }
                   />
                   <span className="text-sm text-right pr-2">
-                    {formatCurrency(item.quantity * item.unitPrice)}
+                    {formatCurrencyIntl(item.quantity * item.unitPrice, currency, locale)}
                   </span>
                   <Button
                     type="button"
@@ -304,7 +302,7 @@ function NewInvoicePage() {
             <div className="w-64 grid gap-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{tm({ en: "Subtotal", da: "Subtotal" })}</span>
-                <span>{formatCurrency(subtotal)}</span>
+                <span>{formatCurrencyIntl(subtotal, currency, locale)}</span>
               </div>
               <div className="flex justify-between items-center gap-2">
                 <span className="text-muted-foreground">{tm({ en: "Tax", da: "Moms" })}</span>
@@ -319,12 +317,12 @@ function NewInvoicePage() {
                     className="w-16 h-7 text-xs"
                   />
                   <span className="text-muted-foreground text-xs">%</span>
-                  <span className="ml-auto">{formatCurrency(taxAmount)}</span>
+                  <span className="ml-auto">{formatCurrencyIntl(taxAmount, currency, locale)}</span>
                 </div>
               </div>
               <div className="flex justify-between font-semibold border-t pt-2">
                 <span>{tm({ en: "Total", da: "Total" })}</span>
-                <span>{formatCurrency(total)}</span>
+                <span>{formatCurrencyIntl(total, currency, locale)}</span>
               </div>
             </div>
           </div>

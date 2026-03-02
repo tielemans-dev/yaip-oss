@@ -5,6 +5,7 @@ import {
   formatCurrency as formatCurrencyIntl,
   formatDate as formatDateIntl,
 } from "../../lib/i18n/format"
+import { useOrgCurrency } from "../../hooks/use-org-currency"
 import {
   Card,
   CardContent,
@@ -34,6 +35,7 @@ type RecentInvoice = {
   number: string
   contactName: string
   total: number
+  currency: string
   status: string
   issueDate: string
   dueDate: string
@@ -69,8 +71,8 @@ const statusConfig: Record<string, { key: TranslationKey; className: string }> =
   },
 }
 
-function formatCurrency(amount: number, locale: string) {
-  return formatCurrencyIntl(amount, "USD", locale)
+function formatCurrency(amount: number, currency: string, locale: string) {
+  return formatCurrencyIntl(amount, currency, locale)
 }
 
 function formatDate(dateStr: string, locale: string) {
@@ -88,6 +90,7 @@ function StatusBadge({ status, t }: { status: string; t: (key: TranslationKey) =
 
 function DashboardPage() {
   const { t, locale } = useI18n()
+  const currency = useOrgCurrency()
   const navigate = useNavigate()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -144,7 +147,7 @@ function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {formatCurrency(stats.totalRevenue, locale)}
+              {formatCurrency(stats.totalRevenue, currency, locale)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               {t("dashboard.totalRevenueHint")}
@@ -159,7 +162,7 @@ function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {formatCurrency(stats.outstanding, locale)}
+              {formatCurrency(stats.outstanding, currency, locale)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               {t("dashboard.outstandingHint")}
@@ -251,7 +254,7 @@ function DashboardPage() {
                       <TableCell>{formatDate(invoice.issueDate, locale)}</TableCell>
                       <TableCell>{formatDate(invoice.dueDate, locale)}</TableCell>
                       <TableCell className="text-right">
-                        {formatCurrency(invoice.total, locale)}
+                        {formatCurrency(invoice.total, invoice.currency, locale)}
                       </TableCell>
                       <TableCell>
                         <StatusBadge status={invoice.status} t={t} />

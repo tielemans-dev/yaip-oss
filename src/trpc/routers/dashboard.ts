@@ -40,6 +40,7 @@ export const dashboardRouter = router({
         number: inv.number,
         contactName: inv.contact.name,
         total: inv.totalGross.toNumber(),
+        currency: inv.currency,
         status: inv.status,
         issueDate: inv.issueDate.toISOString(),
         dueDate: inv.dueDate.toISOString(),

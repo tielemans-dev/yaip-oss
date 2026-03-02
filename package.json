@@ -8,6 +8,11 @@
   },
   "scripts": {
     "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "db:start": "./scripts/dev-db-start.sh",
+    "db:stop": "docker stop ${YAIP_DB_CONTAINER_NAME:-yaip-postgres}",
+    "db:logs": "docker logs -f ${YAIP_DB_CONTAINER_NAME:-yaip-postgres}",
+    "migrate": "pnpm db:start && pnpm prisma:migrate",
     "predev": "pnpm prisma:generate",
     "prebuild": "pnpm prisma:generate",
     "pretest": "pnpm prisma:generate",
