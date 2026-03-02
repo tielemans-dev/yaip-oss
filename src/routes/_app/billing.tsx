@@ -27,7 +27,7 @@ type SubscriptionData = {
 }
 
 function BillingPage() {
-  const { tm } = useI18n()
+  const { t } = useI18n()
   const search = useSearch({ from: "/_app/billing" })
   const [subscription, setSubscription] = useState<SubscriptionData | null>(
     null
@@ -45,31 +45,23 @@ function BillingPage() {
       .query()
       .then((data) => setSubscription(data))
       .catch(() =>
-        setError(
-          tm({
-            en: "Failed to load subscription info",
-            da: "Kunne ikke indlæse abonnementsoplysninger",
-          })
-        )
+        setError(t("billing.error.loadSubscription"))
       )
       .finally(() => setLoading(false))
-  }, [])
+  }, [t])
 
   if (!billingEnabled) {
     return (
       <div className="p-6 max-w-2xl">
         <div className="flex items-center gap-2 mb-6">
           <CreditCard className="size-6" />
-          <h1 className="text-2xl font-bold">{tm({ en: "Billing", da: "Abonnement" })}</h1>
+          <h1 className="text-2xl font-bold">{t("billing.title")}</h1>
         </div>
         <Card>
           <CardHeader>
-            <CardTitle>{tm({ en: "Self-host billing", da: "Self-host abonnement" })}</CardTitle>
+            <CardTitle>{t("billing.selfHost.title")}</CardTitle>
             <CardDescription>
-              {tm({
-                en: "This OSS distribution does not include hosted billing. You can still create unlimited invoices and quotes.",
-                da: "Denne OSS-distribution inkluderer ikke hosted abonnement. Du kan stadig oprette ubegrænsede fakturaer og tilbud.",
-              })}
+              {t("billing.selfHost.description")}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -89,10 +81,7 @@ function BillingPage() {
       setError(
         err instanceof Error
           ? err.message
-          : tm({
-              en: "Failed to create checkout session",
-              da: "Kunne ikke oprette checkout-session",
-            })
+          : t("billing.error.checkout")
       )
     } finally {
       setActionLoading(false)
@@ -111,10 +100,7 @@ function BillingPage() {
       setError(
         err instanceof Error
           ? err.message
-          : tm({
-              en: "Failed to open billing portal",
-              da: "Kunne ikke åbne abonnementsportal",
-            })
+          : t("billing.error.portal")
       )
     } finally {
       setActionLoading(false)
@@ -126,9 +112,9 @@ function BillingPage() {
       <div className="p-6">
         <div className="flex items-center gap-2 mb-6">
           <CreditCard className="size-6" />
-          <h1 className="text-2xl font-bold">{tm({ en: "Billing", da: "Abonnement" })}</h1>
+          <h1 className="text-2xl font-bold">{t("billing.title")}</h1>
         </div>
-        <p className="text-muted-foreground">{tm({ en: "Loading...", da: "Indlæser..." })}</p>
+        <p className="text-muted-foreground">{t("billing.loading")}</p>
       </div>
     )
   }
@@ -136,10 +122,10 @@ function BillingPage() {
   const status = subscription?.status ?? "free"
 
   const statusLabels: Record<string, { label: string; className: string }> = {
-    free: { label: tm({ en: "Free", da: "Gratis" }), className: "text-muted-foreground" },
-    active: { label: tm({ en: "Active", da: "Aktiv" }), className: "text-green-600" },
-    canceled: { label: tm({ en: "Canceled", da: "Opsagt" }), className: "text-orange-600" },
-    past_due: { label: tm({ en: "Past Due", da: "Forfalden" }), className: "text-destructive" },
+    free: { label: t("billing.status.free"), className: "text-muted-foreground" },
+    active: { label: t("billing.status.active"), className: "text-green-600" },
+    canceled: { label: t("billing.status.canceled"), className: "text-orange-600" },
+    past_due: { label: t("billing.status.pastDue"), className: "text-destructive" },
   }
 
   const statusInfo = statusLabels[status] ?? {
@@ -151,20 +137,17 @@ function BillingPage() {
     <div className="p-6 max-w-2xl">
       <div className="flex items-center gap-2 mb-6">
         <CreditCard className="size-6" />
-        <h1 className="text-2xl font-bold">{tm({ en: "Billing", da: "Abonnement" })}</h1>
+        <h1 className="text-2xl font-bold">{t("billing.title")}</h1>
       </div>
 
       {search.success && (
         <div className="mb-4 rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-800">
-          {tm({
-            en: "Subscription activated successfully.",
-            da: "Abonnement blev aktiveret.",
-          })}
+          {t("billing.flash.success")}
         </div>
       )}
       {search.canceled && (
         <div className="mb-4 rounded-md border border-orange-200 bg-orange-50 p-3 text-sm text-orange-800">
-          {tm({ en: "Checkout was canceled.", da: "Checkout blev annulleret." })}
+          {t("billing.flash.canceled")}
         </div>
       )}
       {error && (
@@ -175,18 +158,15 @@ function BillingPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>{tm({ en: "Subscription", da: "Abonnement" })}</CardTitle>
+          <CardTitle>{t("billing.subscription.title")}</CardTitle>
           <CardDescription>
-            {tm({
-              en: "Manage your subscription and billing details.",
-              da: "Administrer dit abonnement og betalingsoplysninger.",
-            })}
+            {t("billing.subscription.description")}
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium">{tm({ en: "Current Plan", da: "Nuværende plan" })}</p>
+              <p className="text-sm font-medium">{t("billing.currentPlan")}</p>
               <p className={`text-lg font-semibold ${statusInfo.className}`}>
                 {statusInfo.label}
               </p>
@@ -196,15 +176,12 @@ function BillingPage() {
           {status === "free" && (
             <div className="grid gap-2">
               <p className="text-sm text-muted-foreground">
-                {tm({
-                  en: "Free plan is limited to 5 invoices per month. Upgrade to remove limits.",
-                  da: "Gratisplanen er begrænset til 5 fakturaer pr. måned. Opgrader for at fjerne begrænsninger.",
-                })}
+                {t("billing.free.description")}
               </p>
               <Button onClick={handleUpgrade} disabled={actionLoading}>
                 {actionLoading
-                  ? tm({ en: "Redirecting...", da: "Omdirigerer..." })
-                  : tm({ en: "Upgrade", da: "Opgrader" })}
+                  ? t("billing.action.redirecting")
+                  : t("billing.action.upgrade")}
               </Button>
             </div>
           )}
@@ -212,10 +189,7 @@ function BillingPage() {
           {status === "active" && (
             <div className="grid gap-2">
               <p className="text-sm text-muted-foreground">
-                {tm({
-                  en: "Your subscription is active. Manage your billing details, payment method, or cancel your subscription.",
-                  da: "Dit abonnement er aktivt. Administrer betalingsoplysninger, betalingsmetode eller opsig abonnementet.",
-                })}
+                {t("billing.active.description")}
               </p>
               <Button
                 variant="outline"
@@ -223,8 +197,8 @@ function BillingPage() {
                 disabled={actionLoading}
               >
                 {actionLoading
-                  ? tm({ en: "Redirecting...", da: "Omdirigerer..." })
-                  : tm({ en: "Manage Subscription", da: "Administrer abonnement" })}
+                  ? t("billing.action.redirecting")
+                  : t("billing.action.manage")}
               </Button>
             </div>
           )}
@@ -232,15 +206,12 @@ function BillingPage() {
           {status === "canceled" && (
             <div className="grid gap-2">
               <p className="text-sm text-muted-foreground">
-                {tm({
-                  en: "Your subscription has been canceled. Resubscribe to continue using premium features.",
-                  da: "Dit abonnement er opsagt. Genaktiver for fortsat at bruge premium-funktioner.",
-                })}
+                {t("billing.canceled.description")}
               </p>
               <Button onClick={handleUpgrade} disabled={actionLoading}>
                 {actionLoading
-                  ? tm({ en: "Redirecting...", da: "Omdirigerer..." })
-                  : tm({ en: "Resubscribe", da: "Genaktiver abonnement" })}
+                  ? t("billing.action.redirecting")
+                  : t("billing.action.resubscribe")}
               </Button>
             </div>
           )}
@@ -248,10 +219,7 @@ function BillingPage() {
           {status === "past_due" && (
             <div className="grid gap-2">
               <p className="text-sm text-muted-foreground">
-                {tm({
-                  en: "Your payment is past due. Please update your payment method to keep your subscription active.",
-                  da: "Din betaling er forfalden. Opdater din betalingsmetode for at holde abonnementet aktivt.",
-                })}
+                {t("billing.pastDue.description")}
               </p>
               <Button
                 variant="outline"
@@ -259,8 +227,8 @@ function BillingPage() {
                 disabled={actionLoading}
               >
                 {actionLoading
-                  ? tm({ en: "Redirecting...", da: "Omdirigerer..." })
-                  : tm({ en: "Update Payment Method", da: "Opdater betalingsmetode" })}
+                  ? t("billing.action.redirecting")
+                  : t("billing.action.updatePaymentMethod")}
               </Button>
             </div>
           )}

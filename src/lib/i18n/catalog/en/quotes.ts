@@ -1,0 +1,25 @@
+export const enQuotesMessages = {
+  "quotes.title": "Quotes",
+  "quotes.loading": "Loading...",
+  "quotes.action.new": "New Quote",
+  "quotes.action.create": "Create Quote",
+  "quotes.empty.title": "No quotes yet",
+  "quotes.empty.description":
+    "Create your first quote to start sending proposals to your clients.",
+  "quotes.table.number": "Number",
+  "quotes.table.contact": "Contact",
+  "quotes.table.issueDate": "Issue Date",
+  "quotes.table.expiryDate": "Expiry Date",
+  "quotes.table.total": "Total",
+  "quotes.table.status": "Status",
+  "quotes.status.draft": "Draft",
+  "quotes.status.sent": "Sent",
+  "quotes.status.accepted": "Accepted",
+  "quotes.status.rejected": "Rejected",
+  "quotes.status.expired": "Expired",
+  "quotes.delete.title": "Delete quote",
+  "quotes.delete.description":
+    "Are you sure you want to delete quote {number}? This action cannot be undone.",
+  "quotes.action.cancel": "Cancel",
+  "quotes.action.delete": "Delete",
+} as const

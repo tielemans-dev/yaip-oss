@@ -48,4 +48,27 @@ describe("i18n translate", () => {
       "Accepterer invitation"
     )
   })
+
+  it("returns localized billing title", () => {
+    expect(translate("billing.title", "en-US")).toBe("Billing")
+    expect(translate("billing.title", "da-DK")).toBe("Abonnement")
+  })
+
+  it("interpolates invoice delete confirmation", () => {
+    expect(
+      translate("invoices.delete.description", "en-US", { number: "INV-001" })
+    ).toBe(
+      "Are you sure you want to delete invoice INV-001? This action cannot be undone."
+    )
+    expect(
+      translate("invoices.delete.description", "da-DK", { number: "INV-001" })
+    ).toBe(
+      "Er du sikker på, at du vil slette faktura INV-001? Denne handling kan ikke fortrydes."
+    )
+  })
+
+  it("returns localized quote accepted status", () => {
+    expect(translate("quotes.status.accepted", "en-US")).toBe("Accepted")
+    expect(translate("quotes.status.accepted", "da-DK")).toBe("Accepteret")
+  })
 })

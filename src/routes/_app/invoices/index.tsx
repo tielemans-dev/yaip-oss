@@ -59,27 +59,24 @@ function formatDate(dateStr: string, locale?: string) {
   return formatDateIntl(dateStr, locale, undefined, { month: "short" })
 }
 
-function StatusBadge({ status, tm }: { status: string; tm: (messages: { en: string } & Record<string, string | undefined>) => string }) {
+function getInvoiceStatusLabel(status: string, t: ReturnType<typeof useI18n>["t"]) {
+  if (status === "sent") return t("invoices.status.sent")
+  if (status === "paid") return t("invoices.status.paid")
+  if (status === "overdue") return t("invoices.status.overdue")
+  return t("invoices.status.draft")
+}
+
+function StatusBadge({ status, label }: { status: string; label: string }) {
   const config = statusConfig[status] ?? statusConfig.draft
   return (
     <Badge variant="outline" className={config.className}>
-      {tm({
-        en: config.label,
-        da:
-          config.label === "Draft"
-            ? "Kladde"
-            : config.label === "Sent"
-              ? "Sendt"
-              : config.label === "Paid"
-                ? "Betalt"
-                : "Forfalden",
-      })}
+      {label}
     </Badge>
   )
 }
 
 function InvoicesListPage() {
-  const { tm, locale } = useI18n()
+  const { t, locale } = useI18n()
   const navigate = useNavigate()
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [loading, setLoading] = useState(true)
@@ -117,9 +114,9 @@ function InvoicesListPage() {
     return (
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">{tm({ en: "Invoices", da: "Fakturaer" })}</h1>
+          <h1 className="text-2xl font-bold">{t("invoices.title")}</h1>
         </div>
-        <p className="text-muted-foreground">{tm({ en: "Loading...", da: "Indlæser..." })}</p>
+        <p className="text-muted-foreground">{t("invoices.loading")}</p>
       </div>
     )
   }
@@ -127,11 +124,11 @@ function InvoicesListPage() {
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">{tm({ en: "Invoices", da: "Fakturaer" })}</h1>
+        <h1 className="text-2xl font-bold">{t("invoices.title")}</h1>
         <Button asChild>
           <Link to="/invoices/new">
             <Plus />
-            {tm({ en: "New Invoice", da: "Ny faktura" })}
+            {t("invoices.action.new")}
           </Link>
         </Button>
       </div>
@@ -139,17 +136,14 @@ function InvoicesListPage() {
       {invoices.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <FileText className="size-12 text-muted-foreground mb-4" />
-          <h2 className="text-lg font-semibold mb-1">{tm({ en: "No invoices yet", da: "Ingen fakturaer endnu" })}</h2>
+          <h2 className="text-lg font-semibold mb-1">{t("invoices.empty.title")}</h2>
           <p className="text-muted-foreground mb-4">
-            {tm({
-              en: "Create your first invoice to start billing your clients.",
-              da: "Opret din første faktura for at begynde at fakturere dine kunder.",
-            })}
+            {t("invoices.empty.description")}
           </p>
           <Button asChild>
             <Link to="/invoices/new">
               <Plus />
-              {tm({ en: "Create Invoice", da: "Opret faktura" })}
+              {t("invoices.action.create")}
             </Link>
           </Button>
         </div>
@@ -158,12 +152,12 @@ function InvoicesListPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{tm({ en: "Number", da: "Nummer" })}</TableHead>
-                <TableHead>{tm({ en: "Contact", da: "Kontakt" })}</TableHead>
-                <TableHead>{tm({ en: "Issue Date", da: "Udstedelsesdato" })}</TableHead>
-                <TableHead>{tm({ en: "Due Date", da: "Forfaldsdato" })}</TableHead>
-                <TableHead className="text-right">{tm({ en: "Total", da: "Total" })}</TableHead>
-                <TableHead>{tm({ en: "Status", da: "Status" })}</TableHead>
+                <TableHead>{t("invoices.table.number")}</TableHead>
+                <TableHead>{t("invoices.table.contact")}</TableHead>
+                <TableHead>{t("invoices.table.issueDate")}</TableHead>
+                <TableHead>{t("invoices.table.dueDate")}</TableHead>
+                <TableHead className="text-right">{t("invoices.table.total")}</TableHead>
+                <TableHead>{t("invoices.table.status")}</TableHead>
                 <TableHead className="w-[60px]" />
               </TableRow>
             </TableHeader>
@@ -188,7 +182,10 @@ function InvoicesListPage() {
                     {formatCurrency(invoice.total, invoice.currency)}
                   </TableCell>
                   <TableCell>
-                    <StatusBadge status={invoice.status} tm={tm} />
+                    <StatusBadge
+                      status={invoice.status}
+                      label={getInvoiceStatusLabel(invoice.status, t)}
+                    />
                   </TableCell>
                   <TableCell>
                     {invoice.status === "draft" && (
@@ -205,21 +202,20 @@ function InvoicesListPage() {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>{tm({ en: "Delete invoice", da: "Slet faktura" })}</AlertDialogTitle>
+                            <AlertDialogTitle>{t("invoices.delete.title")}</AlertDialogTitle>
                             <AlertDialogDescription>
-                              {tm({
-                                en: `Are you sure you want to delete invoice ${invoice.number}? This action cannot be undone.`,
-                                da: `Er du sikker på, at du vil slette faktura ${invoice.number}? Denne handling kan ikke fortrydes.`,
+                              {t("invoices.delete.description", {
+                                number: invoice.number,
                               })}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>{tm({ en: "Cancel", da: "Annuller" })}</AlertDialogCancel>
+                            <AlertDialogCancel>{t("invoices.action.cancel")}</AlertDialogCancel>
                             <AlertDialogAction
                               variant="destructive"
                               onClick={() => handleDelete(invoice.id)}
                             >
-                              {tm({ en: "Delete", da: "Slet" })}
+                              {t("invoices.action.delete")}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>

@@ -60,29 +60,25 @@ function formatDate(dateStr: string, locale?: string) {
   return formatDateIntl(dateStr, locale, undefined, { month: "short" })
 }
 
-function StatusBadge({ status, tm }: { status: string; tm: (messages: { en: string } & Record<string, string | undefined>) => string }) {
+function getQuoteStatusLabel(status: string, t: ReturnType<typeof useI18n>["t"]) {
+  if (status === "sent") return t("quotes.status.sent")
+  if (status === "accepted") return t("quotes.status.accepted")
+  if (status === "rejected") return t("quotes.status.rejected")
+  if (status === "expired") return t("quotes.status.expired")
+  return t("quotes.status.draft")
+}
+
+function StatusBadge({ status, label }: { status: string; label: string }) {
   const config = statusConfig[status] ?? statusConfig.draft
   return (
     <Badge variant="outline" className={config.className}>
-      {tm({
-        en: config.label,
-        da:
-          config.label === "Draft"
-            ? "Kladde"
-            : config.label === "Sent"
-              ? "Sendt"
-              : config.label === "Accepted"
-                ? "Accepteret"
-                : config.label === "Rejected"
-                  ? "Afvist"
-                  : "Udløbet",
-      })}
+      {label}
     </Badge>
   )
 }
 
 function QuotesListPage() {
-  const { tm, locale } = useI18n()
+  const { t, locale } = useI18n()
   const navigate = useNavigate()
   const [quotes, setQuotes] = useState<Quote[]>([])
   const [loading, setLoading] = useState(true)
@@ -119,9 +115,9 @@ function QuotesListPage() {
     return (
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">{tm({ en: "Quotes", da: "Tilbud" })}</h1>
+          <h1 className="text-2xl font-bold">{t("quotes.title")}</h1>
         </div>
-        <p className="text-muted-foreground">{tm({ en: "Loading...", da: "Indlæser..." })}</p>
+        <p className="text-muted-foreground">{t("quotes.loading")}</p>
       </div>
     )
   }
@@ -129,11 +125,11 @@ function QuotesListPage() {
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">{tm({ en: "Quotes", da: "Tilbud" })}</h1>
+        <h1 className="text-2xl font-bold">{t("quotes.title")}</h1>
         <Button asChild>
           <Link to="/quotes/new">
             <Plus />
-            {tm({ en: "New Quote", da: "Nyt tilbud" })}
+            {t("quotes.action.new")}
           </Link>
         </Button>
       </div>
@@ -141,17 +137,14 @@ function QuotesListPage() {
       {quotes.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <FileText className="size-12 text-muted-foreground mb-4" />
-          <h2 className="text-lg font-semibold mb-1">{tm({ en: "No quotes yet", da: "Ingen tilbud endnu" })}</h2>
+          <h2 className="text-lg font-semibold mb-1">{t("quotes.empty.title")}</h2>
           <p className="text-muted-foreground mb-4">
-            {tm({
-              en: "Create your first quote to start sending proposals to your clients.",
-              da: "Opret dit første tilbud for at sende forslag til dine kunder.",
-            })}
+            {t("quotes.empty.description")}
           </p>
           <Button asChild>
             <Link to="/quotes/new">
               <Plus />
-              {tm({ en: "Create Quote", da: "Opret tilbud" })}
+              {t("quotes.action.create")}
             </Link>
           </Button>
         </div>
@@ -160,12 +153,12 @@ function QuotesListPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{tm({ en: "Number", da: "Nummer" })}</TableHead>
-                <TableHead>{tm({ en: "Contact", da: "Kontakt" })}</TableHead>
-                <TableHead>{tm({ en: "Issue Date", da: "Udstedelsesdato" })}</TableHead>
-                <TableHead>{tm({ en: "Expiry Date", da: "Udløbsdato" })}</TableHead>
-                <TableHead className="text-right">{tm({ en: "Total", da: "Total" })}</TableHead>
-                <TableHead>{tm({ en: "Status", da: "Status" })}</TableHead>
+                <TableHead>{t("quotes.table.number")}</TableHead>
+                <TableHead>{t("quotes.table.contact")}</TableHead>
+                <TableHead>{t("quotes.table.issueDate")}</TableHead>
+                <TableHead>{t("quotes.table.expiryDate")}</TableHead>
+                <TableHead className="text-right">{t("quotes.table.total")}</TableHead>
+                <TableHead>{t("quotes.table.status")}</TableHead>
                 <TableHead className="w-[60px]" />
               </TableRow>
             </TableHeader>
@@ -190,7 +183,10 @@ function QuotesListPage() {
                     {formatCurrency(quote.total, quote.currency)}
                   </TableCell>
                   <TableCell>
-                    <StatusBadge status={quote.status} tm={tm} />
+                    <StatusBadge
+                      status={quote.status}
+                      label={getQuoteStatusLabel(quote.status, t)}
+                    />
                   </TableCell>
                   <TableCell>
                     {quote.status === "draft" && (
@@ -207,21 +203,20 @@ function QuotesListPage() {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>{tm({ en: "Delete quote", da: "Slet tilbud" })}</AlertDialogTitle>
+                            <AlertDialogTitle>{t("quotes.delete.title")}</AlertDialogTitle>
                             <AlertDialogDescription>
-                              {tm({
-                                en: `Are you sure you want to delete quote ${quote.number}? This action cannot be undone.`,
-                                da: `Er du sikker på, at du vil slette tilbud ${quote.number}? Denne handling kan ikke fortrydes.`,
+                              {t("quotes.delete.description", {
+                                number: quote.number,
                               })}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>{tm({ en: "Cancel", da: "Annuller" })}</AlertDialogCancel>
+                            <AlertDialogCancel>{t("quotes.action.cancel")}</AlertDialogCancel>
                             <AlertDialogAction
                               variant="destructive"
                               onClick={() => handleDelete(quote.id)}
                             >
-                              {tm({ en: "Delete", da: "Slet" })}
+                              {t("quotes.action.delete")}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
