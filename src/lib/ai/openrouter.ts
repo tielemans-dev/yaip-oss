@@ -3,7 +3,7 @@ import { z } from "zod"
 const invoiceDraftItemSchema = z.object({
   description: z.string().trim().min(1).max(500),
   quantity: z.number().positive().max(1_000_000),
-  unitPrice: z.number().min(0).max(1_000_000_000),
+  unitPrice: z.number().min(0).max(1_000_000_000).optional(),
   catalogItemId: z.string().trim().min(1).max(100).optional(),
 })
 
@@ -68,10 +68,15 @@ export async function generateInvoiceDraftWithOpenRouter(input: {
   model: string
   prompt: string
   contacts: Array<{ id: string; name: string }>
-  catalogItems: Array<{ id: string; name: string; description?: string | null }>
+  catalogItems: Array<{
+    id: string
+    name: string
+    description?: string | null
+    defaultUnitPrice: number
+  }>
 }) {
   const systemPrompt =
-    "You generate structured invoice drafts. Respond only as JSON object with keys: contactId?, contactName?, dueDate?(YYYY-MM-DD), taxRate?, notes?, items[]. Each item must include description, quantity, unitPrice and may include catalogItemId. Prefer using provided contact/catalog IDs when possible."
+    "You generate structured invoice drafts. Respond only as JSON object with keys: contactId?, contactName?, dueDate?(YYYY-MM-DD), taxRate?, notes?, items[]. Each item must include description and quantity, may include unitPrice, and may include catalogItemId. If a catalog item applies but the user did not specify a concrete price, omit unitPrice so system defaults can be applied."
 
   const toolingContext = JSON.stringify(
     {

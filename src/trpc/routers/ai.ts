@@ -6,6 +6,7 @@ import {
   generateInvoiceDraftWithOpenRouter,
 } from "../../lib/ai/openrouter"
 import { resolveCatalogItemId, resolveContactId } from "../../lib/ai/matching"
+import { resolveDraftItemUnitPrice } from "../../lib/ai/pricing"
 import { prisma } from "../../lib/db"
 import { decryptSecret } from "../../lib/secrets"
 import { getRuntimeCapabilities } from "../../lib/runtime/extensions"
@@ -115,18 +116,28 @@ export const aiRouter = router({
         }),
         prisma.catalogItem.findMany({
           where: { organizationId: ctx.organizationId, isActive: true },
-          select: { id: true, name: true, description: true },
+          select: { id: true, name: true, description: true, defaultUnitPrice: true },
           take: 300,
           orderBy: { createdAt: "desc" },
         }),
       ])
+
+      const catalogItemsWithDefaults = catalogItems.map((item) => ({
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        defaultUnitPrice: item.defaultUnitPrice.toNumber(),
+      }))
+      const catalogDefaultsById = new Map(
+        catalogItemsWithDefaults.map((item) => [item.id, item.defaultUnitPrice])
+      )
 
       const draft = await generateInvoiceDraftWithOpenRouter({
         apiKey,
         model,
         prompt: input.prompt,
         contacts,
-        catalogItems,
+        catalogItems: catalogItemsWithDefaults,
       })
 
       const resolvedContactId = resolveContactId({
@@ -135,14 +146,23 @@ export const aiRouter = router({
         contacts,
       })
 
-      const resolvedItems = draft.items.map((item) => ({
-        ...item,
-        catalogItemId: resolveCatalogItemId({
+      const resolvedItems = draft.items.map((item) => {
+        const resolvedCatalogItemId = resolveCatalogItemId({
           requestedCatalogItemId: item.catalogItemId,
           description: item.description,
-          catalogItems,
-        }),
-      }))
+          catalogItems: catalogItemsWithDefaults,
+        })
+
+        return {
+          ...item,
+          unitPrice: resolveDraftItemUnitPrice({
+            requestedUnitPrice: item.unitPrice,
+            resolvedCatalogItemId,
+            catalogDefaultsById,
+          }),
+          catalogItemId: resolvedCatalogItemId,
+        }
+      })
 
       return {
         mode: "byok" as const,

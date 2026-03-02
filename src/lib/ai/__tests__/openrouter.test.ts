@@ -22,6 +22,16 @@ describe("openrouter invoice draft parsing", () => {
     ])
   })
 
+  it("allows invoice items without unitPrice", () => {
+    const draft = parseInvoiceDraftFromModelOutput(
+      '{"items":[{"description":"1 gangs fræsning","quantity":1,"catalogItemId":"cat-1"}]}'
+    )
+
+    expect(draft.items).toEqual([
+      { description: "1 gangs fræsning", quantity: 1, catalogItemId: "cat-1" },
+    ])
+  })
+
   it("throws when model output has no parseable invoice items", () => {
     expect(() => parseInvoiceDraftFromModelOutput("not-json")).toThrow()
   })
