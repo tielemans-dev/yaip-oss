@@ -10,11 +10,14 @@ describe("settingsUpdateSchema", () => {
       defaultCurrency: "DKK",
       taxRegime: "eu_vat",
       pricesIncludeTax: true,
+      aiOpenRouterModel: "openai/gpt-4o-mini",
+      aiOpenRouterApiKey: "sk-or-v1-example-key-1234567890",
     })
 
     expect(parsed.countryCode).toBe("DK")
     expect(parsed.defaultCurrency).toBe("DKK")
     expect(parsed.pricesIncludeTax).toBe(true)
+    expect(parsed.aiOpenRouterModel).toBe("openai/gpt-4o-mini")
   })
 
   it("rejects unsupported tax regime", () => {

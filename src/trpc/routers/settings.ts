@@ -2,6 +2,7 @@ import { z } from "zod"
 import { TRPCError } from "@trpc/server"
 import { router, orgProcedure } from "../init"
 import { prisma } from "../../lib/db"
+import { encryptSecret } from "../../lib/secrets"
 import { COUNTRY_OPTIONS, LOCALE_OPTIONS } from "../../lib/compliance/countries"
 import {
   getCountryCodeOrFallback,
@@ -46,6 +47,9 @@ export const settingsUpdateSchema = z.object({
   companyLogo: companyLogoSchema.nullable().optional(),
   invoicePrefix: z.string().trim().regex(/^[A-Z0-9-]{1,10}$/).optional(),
   quotePrefix: z.string().trim().regex(/^[A-Z0-9-]{1,10}$/).optional(),
+  aiOpenRouterModel: z.string().trim().min(1).max(120).optional(),
+  aiOpenRouterApiKey: z.string().trim().min(16).max(500).optional(),
+  clearAiOpenRouterApiKey: z.boolean().optional(),
   countryCode: z
     .string()
     .trim()
@@ -101,6 +105,8 @@ export const settingsRouter = router({
       invoiceNextNum: settings.invoiceNextNum,
       quotePrefix: settings.quotePrefix,
       quoteNextNum: settings.quoteNextNum,
+      aiByokConfigured: Boolean(settings.aiOpenRouterApiKeyEnc),
+      aiOpenRouterModel: settings.aiOpenRouterModel,
       primaryTaxId: primaryTaxId?.value ?? null,
       primaryTaxIdScheme: primaryTaxId?.scheme ?? null,
     }
@@ -109,7 +115,13 @@ export const settingsRouter = router({
   update: orgProcedure
     .input(settingsUpdateSchema)
     .mutation(async ({ ctx, input }) => {
-      const { primaryTaxId, primaryTaxIdScheme, ...settingsInput } = input
+      const {
+        primaryTaxId,
+        primaryTaxIdScheme,
+        aiOpenRouterApiKey,
+        clearAiOpenRouterApiKey,
+        ...settingsInput
+      } = input
 
       return prisma.$transaction(async (tx) => {
         const current = await tx.orgSettings.findUnique({
@@ -130,10 +142,18 @@ export const settingsRouter = router({
           })
         }
 
+        const settingsUpdateData = {
+          ...settingsInput,
+          ...(aiOpenRouterApiKey
+            ? { aiOpenRouterApiKeyEnc: encryptSecret(aiOpenRouterApiKey) }
+            : {}),
+          ...(clearAiOpenRouterApiKey ? { aiOpenRouterApiKeyEnc: null } : {}),
+        }
+
         const settings = await tx.orgSettings.upsert({
           where: { organizationId: ctx.organizationId },
-          update: settingsInput,
-          create: { organizationId: ctx.organizationId, ...settingsInput },
+          update: settingsUpdateData,
+          create: { organizationId: ctx.organizationId, ...settingsUpdateData },
         })
 
         if (primaryTaxId && primaryTaxId.trim()) {

@@ -22,7 +22,7 @@ import {
   CardHeader,
   CardTitle,
 } from "../../../components/ui/card"
-import { Plus, Trash2 } from "lucide-react"
+import { Plus, Sparkles, Trash2 } from "lucide-react"
 import { useI18n } from "../../../lib/i18n/react"
 
 export const Route = createFileRoute("/_app/invoices/new")({
@@ -36,6 +36,13 @@ type LineItem = {
   quantity: number
   unitPrice: number
   catalogItemId?: string
+}
+
+type RuntimeCapabilities = {
+  aiInvoiceDraft: {
+    enabled: boolean
+    byok: boolean
+  }
 }
 
 function NewInvoicePage() {
@@ -55,6 +62,12 @@ function NewInvoicePage() {
   const [loadingContacts, setLoadingContacts] = useState(true)
   const [loadingCatalog, setLoadingCatalog] = useState(true)
   const [catalogItems, setCatalogItems] = useState<CatalogItemOption[]>([])
+  const [aiCapabilities, setAiCapabilities] = useState<RuntimeCapabilities | null>(null)
+  const [loadingAiCapabilities, setLoadingAiCapabilities] = useState(true)
+  const [aiPrompt, setAiPrompt] = useState("")
+  const [aiGenerating, setAiGenerating] = useState(false)
+  const [aiError, setAiError] = useState<string | null>(null)
+  const [aiInfo, setAiInfo] = useState<string | null>(null)
 
   useEffect(() => {
     trpc.contacts.list
@@ -70,6 +83,14 @@ function NewInvoicePage() {
       .then((data) => setCatalogItems(data as CatalogItemOption[]))
       .catch(() => {})
       .finally(() => setLoadingCatalog(false))
+  }, [])
+
+  useEffect(() => {
+    trpc.runtime.capabilities
+      .query()
+      .then((data) => setAiCapabilities(data as RuntimeCapabilities))
+      .catch(() => {})
+      .finally(() => setLoadingAiCapabilities(false))
   }, [])
 
   function updateItem(index: number, field: keyof LineItem, value: string | number) {
@@ -102,6 +123,70 @@ function NewInvoicePage() {
   const subtotal = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
   const taxAmount = subtotal * taxRate / 100
   const total = subtotal + taxAmount
+
+  async function handleGenerateInvoiceDraftFromAi() {
+    setAiError(null)
+    setAiInfo(null)
+
+    const prompt = aiPrompt.trim()
+    if (!prompt) {
+      setAiError(tm({ en: "Please describe the invoice first.", da: "Beskriv først fakturaen." }))
+      return
+    }
+
+    setAiGenerating(true)
+    try {
+      const result = await trpc.ai.generateInvoiceDraft.mutate({
+        prompt,
+        mode: "byok",
+      })
+      const draft = result.draft
+
+      if (draft.dueDate) {
+        setDueDate(draft.dueDate)
+      }
+      if (draft.notes) {
+        setNotes(draft.notes)
+      }
+      if (typeof draft.taxRate === "number") {
+        setTaxRate(draft.taxRate)
+      }
+      if (draft.items.length > 0) {
+        setItems(
+          draft.items.map((item) => ({
+            description: item.description,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            catalogItemId: undefined,
+          }))
+        )
+      }
+
+      if (draft.contactName) {
+        const matchedContact = contacts.find(
+          (contact) => contact.name.trim().toLowerCase() === draft.contactName?.trim().toLowerCase()
+        )
+        if (matchedContact) {
+          setContactId(matchedContact.id)
+        } else {
+          setAiInfo(
+            tm({
+              en: `Draft generated. Contact \"${draft.contactName}\" was not matched automatically.`,
+              da: `Kladde genereret. Kontakt \"${draft.contactName}\" blev ikke matchet automatisk.`,
+            })
+          )
+        }
+      }
+    } catch (err) {
+      setAiError(
+        err instanceof Error
+          ? err.message
+          : tm({ en: "Failed to generate draft from AI.", da: "Kunne ikke generere kladde med AI." })
+      )
+    } finally {
+      setAiGenerating(false)
+    }
+  }
 
   async function handleSubmit(sendImmediately: boolean) {
     setError(null)
@@ -171,6 +256,54 @@ function NewInvoicePage() {
               {error}
             </p>
           )}
+
+          <div className="grid gap-2">
+            <Label htmlFor="aiPrompt">{tm({ en: "Draft with AI", da: "Kladde med AI" })}</Label>
+            <Textarea
+              id="aiPrompt"
+              value={aiPrompt}
+              onChange={(event) => setAiPrompt(event.target.value)}
+              rows={4}
+              placeholder={tm({
+                en: "Example: Create an invoice for Acme for 8 hours of design at 1200 DKK/hour, due in 14 days.",
+                da: "Eksempel: Opret en faktura til Acme for 8 timers design á 1200 DKK/time, forfalder om 14 dage.",
+              })}
+            />
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleGenerateInvoiceDraftFromAi}
+                disabled={
+                  aiGenerating ||
+                  loadingAiCapabilities ||
+                  !aiCapabilities?.aiInvoiceDraft.enabled ||
+                  !aiCapabilities?.aiInvoiceDraft.byok
+                }
+              >
+                <Sparkles className="size-4" />
+                {aiGenerating
+                  ? tm({ en: "Generating...", da: "Genererer..." })
+                  : tm({ en: "Generate Draft", da: "Generer kladde" })}
+              </Button>
+              {loadingAiCapabilities && (
+                <p className="text-xs text-muted-foreground">
+                  {tm({ en: "Checking AI availability...", da: "Tjekker AI-tilgængelighed..." })}
+                </p>
+              )}
+              {!loadingAiCapabilities &&
+                (!aiCapabilities?.aiInvoiceDraft.enabled || !aiCapabilities?.aiInvoiceDraft.byok) && (
+                  <p className="text-xs text-muted-foreground">
+                    {tm({
+                      en: "AI BYOK is currently disabled for this distribution.",
+                      da: "AI BYOK er i øjeblikket deaktiveret for denne distribution.",
+                    })}
+                  </p>
+                )}
+            </div>
+            {aiError && <p className="text-sm text-destructive">{aiError}</p>}
+            {aiInfo && <p className="text-sm text-muted-foreground">{aiInfo}</p>}
+          </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">

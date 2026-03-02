@@ -1,4 +1,5 @@
 import { router } from "./init"
+import { aiRouter } from "./routers/ai"
 import { billingRouter } from "./routers/billing"
 import { catalogRouter } from "./routers/catalog"
 import { contactsRouter } from "./routers/contacts"
@@ -10,6 +11,7 @@ import { setupRouter } from "./routers/setup"
 import { settingsRouter } from "./routers/settings"
 
 export const appRouter = router({
+  ai: aiRouter,
   billing: billingRouter,
   catalog: catalogRouter,
   contacts: contactsRouter,

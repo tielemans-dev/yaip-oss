@@ -163,6 +163,8 @@ model OrgSettings {
   invoiceNextNum Int          @default(1)
   quotePrefix    String       @default("QTE")
   quoteNextNum   Int          @default(1)
+  aiOpenRouterApiKeyEnc String?
+  aiOpenRouterModel String @default("openai/gpt-4o-mini")
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 

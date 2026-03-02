@@ -105,6 +105,8 @@ type SettingsData = {
   invoiceNextNum: number
   quotePrefix: string
   quoteNextNum: number
+  aiByokConfigured: boolean
+  aiOpenRouterModel: string
   primaryTaxId: string | null
   primaryTaxIdScheme: string | null
 }
@@ -116,6 +118,13 @@ const CURRENCIES = [
   { value: "GBP", label: "GBP - British Pound" },
   { value: "CAD", label: "CAD - Canadian Dollar" },
   { value: "AUD", label: "AUD - Australian Dollar" },
+]
+
+const OPENROUTER_FALLBACK_MODELS = [
+  "openai/gpt-4o-mini",
+  "openai/gpt-4.1-mini",
+  "anthropic/claude-3.5-sonnet",
+  "google/gemini-2.0-flash-001",
 ]
 
 const LOGO_MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024
@@ -149,6 +158,11 @@ function SettingsPage() {
   const [companyLogo, setCompanyLogo] = useState("")
   const [companyLogoUrlInput, setCompanyLogoUrlInput] = useState("")
   const [logoError, setLogoError] = useState<string | null>(null)
+  const [aiOpenRouterModel, setAiOpenRouterModel] = useState("openai/gpt-4o-mini")
+  const [clearAiOpenRouterApiKey, setClearAiOpenRouterApiKey] = useState(false)
+  const [openRouterModels, setOpenRouterModels] = useState<string[]>(OPENROUTER_FALLBACK_MODELS)
+  const [loadingOpenRouterModels, setLoadingOpenRouterModels] = useState(false)
+  const [openRouterModelsError, setOpenRouterModelsError] = useState<string | null>(null)
 
   // Team members state
   const [members, setMembers] = useState<OrgMember[]>([])
@@ -187,11 +201,36 @@ function SettingsPage() {
         const existingLogo = data.companyLogo ?? ""
         setCompanyLogo(existingLogo)
         setCompanyLogoUrlInput(isDataImageLogo(existingLogo) ? "" : existingLogo)
+        setAiOpenRouterModel(data.aiOpenRouterModel || "openai/gpt-4o-mini")
       })
       .catch(() =>
         setError(tm({ en: "Failed to load settings", da: "Kunne ikke indlæse indstillinger" }))
       )
       .finally(() => setLoading(false))
+  }, [])
+
+  async function loadOpenRouterModels() {
+    setLoadingOpenRouterModels(true)
+    setOpenRouterModelsError(null)
+    try {
+      const result = await trpc.ai.listModels.query()
+      if (result.models.length > 0) {
+        setOpenRouterModels(result.models)
+      }
+    } catch {
+      setOpenRouterModelsError(
+        tm({
+          en: "Could not load model list from OpenRouter. Using fallback list.",
+          da: "Kunne ikke hente modellisten fra OpenRouter. Bruger fallback-liste.",
+        })
+      )
+    } finally {
+      setLoadingOpenRouterModels(false)
+    }
+  }
+
+  useEffect(() => {
+    loadOpenRouterModels()
   }, [])
 
   useEffect(() => {
@@ -255,6 +294,8 @@ function SettingsPage() {
     const companyPhoneInput = ((form.get("companyPhone") as string) || "").trim()
     const invoicePrefixInput = ((form.get("invoicePrefix") as string) || "").trim()
     const quotePrefixInput = ((form.get("quotePrefix") as string) || "").trim()
+    const aiOpenRouterModelInput = aiOpenRouterModel.trim()
+    const aiOpenRouterApiKeyInput = ((form.get("aiOpenRouterApiKey") as string) || "").trim()
     const normalizedCompanyLogo = companyLogo.trim()
 
     if (
@@ -318,8 +359,12 @@ function SettingsPage() {
         companyLogo: normalizedCompanyLogo || null,
         invoicePrefix: invoicePrefixInput || undefined,
         quotePrefix: quotePrefixInput || undefined,
+        aiOpenRouterModel: aiOpenRouterModelInput || undefined,
+        aiOpenRouterApiKey: aiOpenRouterApiKeyInput || undefined,
+        clearAiOpenRouterApiKey,
       })
       setTimezone(timezoneInput)
+      setClearAiOpenRouterApiKey(false)
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
     } catch (err) {
@@ -769,6 +814,92 @@ function SettingsPage() {
                 </div>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* AI BYOK */}
+        <Card>
+          <CardHeader>
+            <CardTitle>{tm({ en: "AI Invoice Drafting (BYOK)", da: "AI fakturakladde (BYOK)" })}</CardTitle>
+            <CardDescription>
+              {tm({
+                en: "Use OpenRouter with your own API key and chosen model.",
+                da: "Brug OpenRouter med din egen API-nøgle og valgte model.",
+              })}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="aiOpenRouterModel">{tm({ en: "OpenRouter Model", da: "OpenRouter-model" })}</Label>
+              <Select value={aiOpenRouterModel} onValueChange={setAiOpenRouterModel}>
+                <SelectTrigger id="aiOpenRouterModel">
+                  <SelectValue placeholder="openai/gpt-4o-mini" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from(new Set([aiOpenRouterModel, ...openRouterModels])).map((model) => (
+                    <SelectItem key={model} value={model}>
+                      {model}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={loadOpenRouterModels}
+                  disabled={loadingOpenRouterModels}
+                >
+                  {loadingOpenRouterModels
+                    ? tm({ en: "Refreshing...", da: "Opdaterer..." })
+                    : tm({ en: "Refresh models", da: "Opdater modeller" })}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {tm({
+                  en: "Example: openai/gpt-4o-mini or anthropic/claude-3.5-sonnet.",
+                  da: "Eksempel: openai/gpt-4o-mini eller anthropic/claude-3.5-sonnet.",
+                })}
+              </p>
+              {openRouterModelsError && (
+                <p className="text-xs text-destructive">{openRouterModelsError}</p>
+              )}
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="aiOpenRouterApiKey">{tm({ en: "OpenRouter API Key", da: "OpenRouter API-nøgle" })}</Label>
+              <Input
+                id="aiOpenRouterApiKey"
+                name="aiOpenRouterApiKey"
+                type="password"
+                autoComplete="off"
+                placeholder="sk-or-v1-..."
+                onChange={() => setClearAiOpenRouterApiKey(false)}
+              />
+              <p className="text-xs text-muted-foreground">
+                {settings.aiByokConfigured
+                  ? tm({
+                      en: "A key is currently configured. Enter a new key only if you want to rotate it.",
+                      da: "En nøgle er allerede konfigureret. Indtast kun en ny nøgle, hvis du vil udskifte den.",
+                    })
+                  : tm({
+                      en: "No key configured yet.",
+                      da: "Ingen nøgle er konfigureret endnu.",
+                    })}
+              </p>
+            </div>
+
+            {settings.aiByokConfigured && (
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={clearAiOpenRouterApiKey}
+                  onChange={(event) => setClearAiOpenRouterApiKey(event.target.checked)}
+                />
+                {tm({ en: "Clear saved OpenRouter API key", da: "Fjern gemt OpenRouter API-nøgle" })}
+              </label>
+            )}
           </CardContent>
         </Card>
 
