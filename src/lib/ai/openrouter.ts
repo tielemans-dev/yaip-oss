@@ -1,7 +1,7 @@
 import { z } from "zod"
 
 const invoiceDraftItemSchema = z.object({
-  description: z.string().trim().min(1).max(500),
+  description: z.string().trim().max(500).optional(),
   quantity: z.number().positive().max(1_000_000),
   unitPrice: z.number().min(0).max(1_000_000_000).optional(),
   catalogItemId: z.string().trim().min(1).max(100).optional(),
@@ -77,7 +77,7 @@ export async function generateInvoiceDraftWithOpenRouter(input: {
   }>
 }) {
   const systemPrompt =
-    `You generate structured invoice drafts. Today is ${input.todayIsoDate}. Resolve relative date phrases against today's date. Respond only as JSON object with keys: contactId?, contactName?, dueDate?(YYYY-MM-DD), taxRate?, notes?, items[]. Each item must include description and quantity, may include unitPrice, and may include catalogItemId. If a catalog item applies but the user did not specify a concrete price, omit unitPrice so system defaults can be applied.`
+    `You generate structured invoice drafts. Today is ${input.todayIsoDate}. Resolve relative date phrases against today's date. Respond only as JSON object with keys: contactId?, contactName?, dueDate?(YYYY-MM-DD), taxRate?, notes?, items[]. Each item must include quantity, may include catalogItemId, description, and unitPrice. For description: include it only when the user gave concrete extra detail. Do not repeat the catalog item name as description. If uncertain about description, omit it. If a catalog item applies but the user did not specify a concrete price, omit unitPrice so system defaults can be applied.`
 
   const toolingContext = JSON.stringify(
     {

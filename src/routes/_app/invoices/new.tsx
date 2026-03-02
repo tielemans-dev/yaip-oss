@@ -157,7 +157,7 @@ function NewInvoicePage() {
           draft.items.map((item) => ({
             ...applyCatalogItemToLineItem(
               {
-                description: item.description,
+                description: item.description ?? "",
                 quantity: item.quantity,
                 unitPrice: item.unitPrice,
                 catalogItemId: undefined,
@@ -165,6 +165,7 @@ function NewInvoicePage() {
               item.catalogItemId || "",
               catalogItems
             ),
+            description: item.description ?? "",
             quantity: item.quantity,
             unitPrice: item.unitPrice,
             catalogItemId: item.catalogItemId,

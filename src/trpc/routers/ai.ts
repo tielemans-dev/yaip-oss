@@ -5,6 +5,7 @@ import {
   fetchOpenRouterModelIds,
   generateInvoiceDraftWithOpenRouter,
 } from "../../lib/ai/openrouter"
+import { resolveDraftItemDescription } from "../../lib/ai/description"
 import { resolveCatalogItemId, resolveContactId } from "../../lib/ai/matching"
 import { resolveInvoiceDueDate } from "../../lib/ai/due-date"
 import { resolveDraftItemUnitPrice } from "../../lib/ai/pricing"
@@ -135,6 +136,12 @@ export const aiRouter = router({
       const catalogDefaultsById = new Map(
         catalogItemsWithDefaults.map((item) => [item.id, item.defaultUnitPrice])
       )
+      const catalogItemsById = new Map(
+        catalogItemsWithDefaults.map((item) => [
+          item.id,
+          { name: item.name, description: item.description },
+        ])
+      )
 
       const draft = await generateInvoiceDraftWithOpenRouter({
         apiKey,
@@ -160,6 +167,11 @@ export const aiRouter = router({
 
         return {
           ...item,
+          description: resolveDraftItemDescription({
+            requestedDescription: item.description,
+            resolvedCatalogItemId,
+            catalogItemsById,
+          }),
           unitPrice: resolveDraftItemUnitPrice({
             requestedUnitPrice: item.unitPrice,
             resolvedCatalogItemId,
