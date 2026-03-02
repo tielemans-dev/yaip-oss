@@ -22,4 +22,11 @@ export const daQuotesMessages = {
     "Er du sikker på, at du vil slette tilbud {number}? Denne handling kan ikke fortrydes.",
   "quotes.action.cancel": "Annuller",
   "quotes.action.delete": "Slet",
+  "quotes.new.title": "Nyt tilbud",
+  "quotes.new.field.expiryDate": "Udløbsdato",
+  "quotes.new.validation.expiryDateRequired":
+    "Angiv venligst en udløbsdato",
+  "quotes.new.error.createFailed": "Kunne ikke oprette tilbud",
+  "quotes.new.notes.placeholder":
+    "Vilkår og betingelser, yderligere noter osv.",
 } as const

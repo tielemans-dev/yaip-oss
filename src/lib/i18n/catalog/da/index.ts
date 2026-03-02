@@ -3,6 +3,7 @@ import { daBillingMessages } from "./billing"
 import { daCatalogMessages } from "./catalog"
 import { daContactsMessages } from "./contacts"
 import { daDashboardMessages } from "./dashboard"
+import { daDocFormMessages } from "./doc-form"
 import { daEmailMessages } from "./email"
 import { daInvoicesMessages } from "./invoices"
 import { daInvitationMessages } from "./invitation"
@@ -21,6 +22,7 @@ export const daCatalog = {
   ...daCatalogMessages,
   ...daContactsMessages,
   ...daDashboardMessages,
+  ...daDocFormMessages,
   ...daEmailMessages,
   ...daInvoicesMessages,
   ...daInvitationMessages,

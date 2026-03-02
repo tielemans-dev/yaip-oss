@@ -3,6 +3,7 @@ import { enBillingMessages } from "./billing"
 import { enCatalogMessages } from "./catalog"
 import { enContactsMessages } from "./contacts"
 import { enDashboardMessages } from "./dashboard"
+import { enDocFormMessages } from "./doc-form"
 import { enEmailMessages } from "./email"
 import { enInvoicesMessages } from "./invoices"
 import { enInvitationMessages } from "./invitation"
@@ -21,6 +22,7 @@ export const enCatalog = {
   ...enCatalogMessages,
   ...enContactsMessages,
   ...enDashboardMessages,
+  ...enDocFormMessages,
   ...enEmailMessages,
   ...enInvoicesMessages,
   ...enInvitationMessages,

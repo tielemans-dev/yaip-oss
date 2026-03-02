@@ -47,7 +47,7 @@ type RuntimeCapabilities = {
 }
 
 function NewInvoicePage() {
-  const { tm, locale } = useI18n()
+  const { t, locale } = useI18n()
   const currency = useOrgCurrency()
   const navigate = useNavigate()
   const [contacts, setContacts] = useState<Contact[]>([])
@@ -131,7 +131,7 @@ function NewInvoicePage() {
 
     const prompt = aiPrompt.trim()
     if (!prompt) {
-      setAiError(tm({ en: "Please describe the invoice first.", da: "Beskriv først fakturaen." }))
+      setAiError(t("invoices.new.ai.error.promptRequired"))
       return
     }
 
@@ -183,9 +183,8 @@ function NewInvoicePage() {
           setContactId(matchedContact.id)
         } else {
           setAiInfo(
-            tm({
-              en: `Draft generated. Contact \"${draft.contactName}\" was not matched automatically.`,
-              da: `Kladde genereret. Kontakt \"${draft.contactName}\" blev ikke matchet automatisk.`,
+            t("invoices.new.ai.info.contactNotMatched", {
+              name: draft.contactName,
             })
           )
         }
@@ -194,7 +193,7 @@ function NewInvoicePage() {
       setAiError(
         err instanceof Error
           ? err.message
-          : tm({ en: "Failed to generate draft from AI.", da: "Kunne ikke generere kladde med AI." })
+          : t("invoices.new.ai.error.generateFailed")
       )
     } finally {
       setAiGenerating(false)
@@ -205,20 +204,15 @@ function NewInvoicePage() {
     setError(null)
 
     if (!contactId) {
-      setError(tm({ en: "Please select a contact", da: "Vælg venligst en kontakt" }))
+      setError(t("docForm.validation.contactRequired"))
       return
     }
     if (!dueDate) {
-      setError(tm({ en: "Please set a due date", da: "Angiv venligst en forfaldsdato" }))
+      setError(t("invoices.new.validation.dueDateRequired"))
       return
     }
     if (items.some((item) => !item.description.trim())) {
-      setError(
-        tm({
-          en: "All line items must have a description",
-          da: "Alle linjer skal have en beskrivelse",
-        })
-      )
+      setError(t("docForm.validation.itemDescriptionRequired"))
       return
     }
 
@@ -251,7 +245,7 @@ function NewInvoicePage() {
       setError(
         err instanceof Error
           ? err.message
-          : tm({ en: "Failed to create invoice", da: "Kunne ikke oprette faktura" })
+          : t("invoices.new.error.createFailed")
       )
       setSaving(false)
     }
@@ -261,7 +255,7 @@ function NewInvoicePage() {
     <div className="p-6 max-w-3xl">
       <Card>
         <CardHeader>
-          <CardTitle>{tm({ en: "New Invoice", da: "Ny faktura" })}</CardTitle>
+          <CardTitle>{t("invoices.new.title")}</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-6">
           {error && (
@@ -271,16 +265,13 @@ function NewInvoicePage() {
           )}
 
           <div className="grid gap-2">
-            <Label htmlFor="aiPrompt">{tm({ en: "Draft with AI", da: "Kladde med AI" })}</Label>
+            <Label htmlFor="aiPrompt">{t("invoices.new.ai.label")}</Label>
             <Textarea
               id="aiPrompt"
               value={aiPrompt}
               onChange={(event) => setAiPrompt(event.target.value)}
               rows={4}
-              placeholder={tm({
-                en: "Example: Create an invoice for Acme for 8 hours of design at 1200 DKK/hour, due in 14 days.",
-                da: "Eksempel: Opret en faktura til Acme for 8 timers design á 1200 DKK/time, forfalder om 14 dage.",
-              })}
+              placeholder={t("invoices.new.ai.placeholder")}
             />
             <div className="flex items-center gap-2">
               <Button
@@ -296,21 +287,18 @@ function NewInvoicePage() {
               >
                 <Sparkles className="size-4" />
                 {aiGenerating
-                  ? tm({ en: "Generating...", da: "Genererer..." })
-                  : tm({ en: "Generate Draft", da: "Generer kladde" })}
+                  ? t("invoices.new.ai.action.generating")
+                  : t("invoices.new.ai.action.generate")}
               </Button>
               {loadingAiCapabilities && (
                 <p className="text-xs text-muted-foreground">
-                  {tm({ en: "Checking AI availability...", da: "Tjekker AI-tilgængelighed..." })}
+                  {t("invoices.new.ai.availability.checking")}
                 </p>
               )}
               {!loadingAiCapabilities &&
                 (!aiCapabilities?.aiInvoiceDraft.enabled || !aiCapabilities?.aiInvoiceDraft.byok) && (
                   <p className="text-xs text-muted-foreground">
-                    {tm({
-                      en: "AI BYOK is currently disabled for this distribution.",
-                      da: "AI BYOK er i øjeblikket deaktiveret for denne distribution.",
-                    })}
+                    {t("invoices.new.ai.availability.disabled")}
                   </p>
                 )}
             </div>
@@ -320,22 +308,19 @@ function NewInvoicePage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
-              <Label>{tm({ en: "Contact", da: "Kontakt" })} *</Label>
+              <Label>{t("docForm.contact")} *</Label>
               {loadingContacts ? (
                 <p className="text-sm text-muted-foreground py-2">
-                  {tm({ en: "Loading contacts...", da: "Indlæser kontakter..." })}
+                  {t("docForm.loadingContacts")}
                 </p>
               ) : contacts.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-2">
-                  {tm({
-                    en: "No contacts found. Create one first.",
-                    da: "Ingen kontakter fundet. Opret en kontakt først.",
-                  })}
+                  {t("docForm.noContacts")}
                 </p>
               ) : (
                 <Select value={contactId} onValueChange={setContactId}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder={tm({ en: "Select a contact", da: "Vælg en kontakt" })} />
+                    <SelectValue placeholder={t("docForm.selectContact")} />
                   </SelectTrigger>
                   <SelectContent>
                     {contacts.map((c) => (
@@ -348,14 +333,14 @@ function NewInvoicePage() {
               )}
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="dueDate">{tm({ en: "Due Date", da: "Forfaldsdato" })} *</Label>
+              <Label htmlFor="dueDate">{t("invoices.new.field.dueDate")} *</Label>
               <LocalizedDateField
                 id="dueDate"
                 value={dueDate}
                 onChange={setDueDate}
                 locale={locale}
-                placeholder={tm({ en: "Select a date", da: "Vælg en dato" })}
-                clearLabel={tm({ en: "Clear", da: "Ryd" })}
+                placeholder={t("docForm.selectDate")}
+                clearLabel={t("docForm.clear")}
                 required
               />
             </div>
@@ -363,14 +348,14 @@ function NewInvoicePage() {
 
           {/* Line Items */}
           <div className="grid gap-3">
-            <Label>{tm({ en: "Line Items", da: "Linjer" })}</Label>
+            <Label>{t("docForm.lineItems")}</Label>
             <div className="rounded-md border">
               <div className="grid grid-cols-[180px_1fr_80px_100px_100px_40px] gap-2 p-3 border-b bg-muted/50 text-sm font-medium">
-                <span>{tm({ en: "Item", da: "Vare" })}</span>
-                <span>{tm({ en: "Description", da: "Beskrivelse" })}</span>
-                <span>{tm({ en: "Qty", da: "Antal" })}</span>
-                <span>{tm({ en: "Unit Price", da: "Enhedspris" })}</span>
-                <span>{tm({ en: "Total", da: "Total" })}</span>
+                <span>{t("docForm.column.item")}</span>
+                <span>{t("docForm.column.description")}</span>
+                <span>{t("docForm.column.qty")}</span>
+                <span>{t("docForm.column.unitPrice")}</span>
+                <span>{t("docForm.column.total")}</span>
                 <span />
               </div>
               {items.map((item, index) => (
@@ -386,10 +371,10 @@ function NewInvoicePage() {
                       <SelectValue
                         placeholder={
                           loadingCatalog
-                            ? tm({ en: "Loading items...", da: "Indlæser varer..." })
+                            ? t("docForm.loadingItems")
                             : catalogItems.length > 0
-                              ? tm({ en: "Select item", da: "Vælg vare" })
-                              : tm({ en: "No saved items", da: "Ingen gemte varer" })
+                              ? t("docForm.selectItem")
+                              : t("docForm.noSavedItems")
                         }
                       />
                     </SelectTrigger>
@@ -402,7 +387,7 @@ function NewInvoicePage() {
                     </SelectContent>
                   </Select>
                   <Input
-                    placeholder={tm({ en: "Description", da: "Beskrivelse" })}
+                    placeholder={t("docForm.column.description")}
                     value={item.description}
                     onChange={(e) => updateItem(index, "description", e.target.value)}
                   />
@@ -441,7 +426,7 @@ function NewInvoicePage() {
             </div>
             <Button type="button" variant="outline" size="sm" onClick={addItem} className="w-fit">
               <Plus className="size-4" />
-              {tm({ en: "Add Item", da: "Tilføj vare" })}
+              {t("docForm.action.addItem")}
             </Button>
           </div>
 
@@ -449,11 +434,11 @@ function NewInvoicePage() {
           <div className="flex justify-end">
             <div className="w-64 grid gap-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">{tm({ en: "Subtotal", da: "Subtotal" })}</span>
+                <span className="text-muted-foreground">{t("docForm.summary.subtotal")}</span>
                 <span>{formatCurrencyIntl(subtotal, currency, locale)}</span>
               </div>
               <div className="flex justify-between items-center gap-2">
-                <span className="text-muted-foreground">{tm({ en: "Tax", da: "Moms" })}</span>
+                <span className="text-muted-foreground">{t("docForm.summary.tax")}</span>
                 <div className="flex items-center gap-1">
                   <Input
                     type="number"
@@ -469,7 +454,7 @@ function NewInvoicePage() {
                 </div>
               </div>
               <div className="flex justify-between font-semibold border-t pt-2">
-                <span>{tm({ en: "Total", da: "Total" })}</span>
+                <span>{t("docForm.summary.total")}</span>
                 <span>{formatCurrencyIntl(total, currency, locale)}</span>
               </div>
             </div>
@@ -477,15 +462,12 @@ function NewInvoicePage() {
 
           {/* Notes */}
           <div className="grid gap-2">
-            <Label htmlFor="notes">{tm({ en: "Notes", da: "Noter" })}</Label>
+            <Label htmlFor="notes">{t("docForm.notes")}</Label>
             <Textarea
               id="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder={tm({
-                en: "Payment terms, thank you note, etc.",
-                da: "Betalingsbetingelser, takkenote osv.",
-              })}
+              placeholder={t("invoices.new.notes.placeholder")}
               rows={3}
             />
           </div>
@@ -496,7 +478,7 @@ function NewInvoicePage() {
             variant="outline"
             onClick={() => navigate({ to: "/invoices" })}
           >
-            {tm({ en: "Cancel", da: "Annuller" })}
+            {t("docForm.action.cancel")}
           </Button>
           <Button
             type="button"
@@ -505,8 +487,8 @@ function NewInvoicePage() {
             onClick={() => handleSubmit(false)}
           >
             {saving
-              ? tm({ en: "Saving...", da: "Gemmer..." })
-              : tm({ en: "Save as Draft", da: "Gem som kladde" })}
+              ? t("docForm.action.saving")
+              : t("docForm.action.saveDraft")}
           </Button>
           <Button
             type="button"
@@ -514,8 +496,8 @@ function NewInvoicePage() {
             onClick={() => handleSubmit(true)}
           >
             {saving
-              ? tm({ en: "Saving...", da: "Gemmer..." })
-              : tm({ en: "Save & Send", da: "Gem og send" })}
+              ? t("docForm.action.saving")
+              : t("docForm.action.saveSend")}
           </Button>
         </CardFooter>
       </Card>

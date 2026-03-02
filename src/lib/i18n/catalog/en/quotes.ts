@@ -22,4 +22,10 @@ export const enQuotesMessages = {
     "Are you sure you want to delete quote {number}? This action cannot be undone.",
   "quotes.action.cancel": "Cancel",
   "quotes.action.delete": "Delete",
+  "quotes.new.title": "New Quote",
+  "quotes.new.field.expiryDate": "Expiry Date",
+  "quotes.new.validation.expiryDateRequired": "Please set an expiry date",
+  "quotes.new.error.createFailed": "Failed to create quote",
+  "quotes.new.notes.placeholder":
+    "Terms and conditions, additional notes, etc.",
 } as const

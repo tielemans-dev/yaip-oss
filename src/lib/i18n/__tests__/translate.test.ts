@@ -71,4 +71,27 @@ describe("i18n translate", () => {
     expect(translate("quotes.status.accepted", "en-US")).toBe("Accepted")
     expect(translate("quotes.status.accepted", "da-DK")).toBe("Accepteret")
   })
+
+  it("returns localized shared document form labels", () => {
+    expect(translate("docForm.contact", "en-US")).toBe("Contact")
+    expect(translate("docForm.contact", "da-DK")).toBe("Kontakt")
+  })
+
+  it("returns localized invoice ai action labels", () => {
+    expect(translate("invoices.new.ai.action.generate", "en-US")).toBe(
+      "Generate Draft"
+    )
+    expect(translate("invoices.new.ai.action.generate", "da-DK")).toBe(
+      "Generer kladde"
+    )
+  })
+
+  it("returns localized quote expiry validation", () => {
+    expect(
+      translate("quotes.new.validation.expiryDateRequired", "en-US")
+    ).toBe("Please set an expiry date")
+    expect(
+      translate("quotes.new.validation.expiryDateRequired", "da-DK")
+    ).toBe("Angiv venligst en udløbsdato")
+  })
 })
