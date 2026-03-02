@@ -11,6 +11,7 @@ import { daNavMessages } from "./nav"
 import { daPdfMessages } from "./pdf"
 import { daQuotesMessages } from "./quotes"
 import { daRootMessages } from "./root"
+import { daSettingsMessages } from "./settings"
 import { daSetupMessages } from "./setup"
 import { daStatusMessages } from "./status"
 import { daUiMessages } from "./ui"
@@ -30,6 +31,7 @@ export const daCatalog = {
   ...daPdfMessages,
   ...daQuotesMessages,
   ...daRootMessages,
+  ...daSettingsMessages,
   ...daSetupMessages,
   ...daStatusMessages,
   ...daUiMessages,

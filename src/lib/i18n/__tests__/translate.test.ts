@@ -112,4 +112,45 @@ describe("i18n translate", () => {
       "Faktura blev ikke fundet"
     )
   })
+
+  it("returns localized quote detail convert action", () => {
+    expect(translate("quotes.detail.action.convertToInvoice", "en-US")).toBe(
+      "Convert to Invoice"
+    )
+    expect(translate("quotes.detail.action.convertToInvoice", "da-DK")).toBe(
+      "Konverter til faktura"
+    )
+  })
+
+  it("returns localized quote detail not-found message", () => {
+    expect(translate("quotes.detail.error.notFound", "en-US")).toBe(
+      "Quote not found"
+    )
+    expect(translate("quotes.detail.error.notFound", "da-DK")).toBe(
+      "Tilbud blev ikke fundet"
+    )
+  })
+
+  it("returns localized quote detail title", () => {
+    expect(translate("quotes.detail.title", "en-US")).toBe("Quote")
+    expect(translate("quotes.detail.title", "da-DK")).toBe("Tilbud")
+  })
+
+  it("returns localized settings title", () => {
+    expect(translate("settings.title", "en-US")).toBe("Settings")
+    expect(translate("settings.title", "da-DK")).toBe("Indstillinger")
+  })
+
+  it("interpolates settings member removal description", () => {
+    expect(
+      translate("settings.team.remove.description", "en-US", {
+        name: "Emil",
+      })
+    ).toBe("Emil will lose access to this organization immediately.")
+    expect(
+      translate("settings.team.remove.description", "da-DK", {
+        name: "Emil",
+      })
+    ).toBe("Emil mister adgang til organisationen med det samme.")
+  })
 })

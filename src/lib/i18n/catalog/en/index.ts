@@ -11,6 +11,7 @@ import { enNavMessages } from "./nav"
 import { enPdfMessages } from "./pdf"
 import { enQuotesMessages } from "./quotes"
 import { enRootMessages } from "./root"
+import { enSettingsMessages } from "./settings"
 import { enSetupMessages } from "./setup"
 import { enStatusMessages } from "./status"
 import { enUiMessages } from "./ui"
@@ -30,6 +31,7 @@ export const enCatalog = {
   ...enPdfMessages,
   ...enQuotesMessages,
   ...enRootMessages,
+  ...enSettingsMessages,
   ...enSetupMessages,
   ...enStatusMessages,
   ...enUiMessages,

@@ -115,46 +115,35 @@ function formatDate(dateStr: string, locale?: string | null) {
   return formatDateIntl(dateStr, locale)
 }
 
-function StatusBadge({
-  status,
-  tm,
-}: {
-  status: string
-  tm: (messages: { en: string } & Record<string, string | undefined>) => string
-}) {
+function getQuoteStatusLabel(status: string, t: ReturnType<typeof useI18n>["t"]) {
+  if (status === "sent") return t("quotes.status.sent")
+  if (status === "accepted") return t("quotes.status.accepted")
+  if (status === "rejected") return t("quotes.status.rejected")
+  if (status === "expired") return t("quotes.status.expired")
+  return t("quotes.status.draft")
+}
+
+function StatusBadge({ status, label }: { status: string; label: string }) {
   const config = statusConfig[status] ?? statusConfig.draft
   return (
     <Badge variant="outline" className={config.className}>
-      {tm({
-        en: config.label,
-        da:
-          config.label === "Draft"
-            ? "Kladde"
-            : config.label === "Sent"
-              ? "Sendt"
-              : config.label === "Accepted"
-                ? "Accepteret"
-                : config.label === "Rejected"
-                  ? "Afvist"
-                  : "Udløbet",
-      })}
+      {label}
     </Badge>
   )
 }
 
 function QuoteDetailPage() {
-  const { tm, locale } = useI18n()
+  const { t, locale } = useI18n()
   const { quoteId } = Route.useParams()
   const { emailWarning } = Route.useSearch()
   const navigate = useNavigate()
   const [quote, setQuote] = useState<Quote | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(emailWarning
-    ? tm({
-        en: `Quote marked as sent — email not delivered: ${emailWarning}`,
-        da: `Tilbud markeret som sendt — e-mail ikke leveret: ${emailWarning}`,
-      })
-    : null)
+  const [error, setError] = useState<string | null>(
+    emailWarning
+      ? t("quotes.detail.warning.emailSkipped", { reason: emailWarning })
+      : null
+  )
   const [acting, setActing] = useState(false)
   const [editing, setEditing] = useState(false)
 
@@ -174,9 +163,9 @@ function QuoteDetailPage() {
         const q = data as unknown as Quote
         setQuote(q)
       })
-      .catch(() => setError(tm({ en: "Quote not found", da: "Tilbud blev ikke fundet" })))
+      .catch(() => setError(t("quotes.detail.error.notFound")))
       .finally(() => setLoading(false))
-  }, [quoteId])
+  }, [quoteId, t])
 
   function startEditing() {
     if (!quote) return
@@ -252,7 +241,7 @@ function QuoteDetailPage() {
       setError(
         err instanceof Error
           ? err.message
-          : tm({ en: "Failed to update quote", da: "Kunne ikke opdatere tilbud" })
+          : t("quotes.detail.error.updateFailed")
       )
     } finally {
       setActing(false)
@@ -269,9 +258,8 @@ function QuoteDetailPage() {
       setQuote(updated as unknown as Quote)
       if (result.emailSkipReason) {
         setError(
-          tm({
-            en: `Quote marked as sent — email not delivered: ${result.emailSkipReason}`,
-            da: `Tilbud markeret som sendt — e-mail ikke leveret: ${result.emailSkipReason}`,
+          t("quotes.detail.warning.emailSkipped", {
+            reason: result.emailSkipReason,
           })
         )
       }
@@ -279,7 +267,7 @@ function QuoteDetailPage() {
       setError(
         err instanceof Error
           ? err.message
-          : tm({ en: "Failed to send quote", da: "Kunne ikke sende tilbud" })
+          : t("quotes.detail.error.sendFailed")
       )
     } finally {
       setActing(false)
@@ -297,7 +285,7 @@ function QuoteDetailPage() {
       setError(
         err instanceof Error
           ? err.message
-          : tm({ en: "Failed to reject quote", da: "Kunne ikke afvise tilbud" })
+          : t("quotes.detail.error.rejectFailed")
       )
     } finally {
       setActing(false)
@@ -314,10 +302,7 @@ function QuoteDetailPage() {
       setError(
         err instanceof Error
           ? err.message
-          : tm({
-              en: "Failed to convert quote to invoice",
-              da: "Kunne ikke konvertere tilbud til faktura",
-            })
+          : t("quotes.detail.error.convertFailed")
       )
       setActing(false)
     }
@@ -333,7 +318,7 @@ function QuoteDetailPage() {
       setError(
         err instanceof Error
           ? err.message
-          : tm({ en: "Failed to delete quote", da: "Kunne ikke slette tilbud" })
+          : t("quotes.detail.error.deleteFailed")
       )
       setActing(false)
     }
@@ -342,7 +327,7 @@ function QuoteDetailPage() {
   if (loading) {
     return (
       <div className="p-6">
-        <p className="text-muted-foreground">{tm({ en: "Loading...", da: "Indlæser..." })}</p>
+        <p className="text-muted-foreground">{t("quotes.loading")}</p>
       </div>
     )
   }
@@ -351,14 +336,14 @@ function QuoteDetailPage() {
     return (
       <div className="p-6">
         <p className="text-destructive">
-          {error ?? tm({ en: "Quote not found", da: "Tilbud blev ikke fundet" })}
+          {error ?? t("quotes.detail.error.notFound")}
         </p>
         <Button
           variant="outline"
           className="mt-4"
           onClick={() => navigate({ to: "/quotes" })}
         >
-          {tm({ en: "Back to Quotes", da: "Tilbage til tilbud" })}
+          {t("quotes.detail.action.back")}
         </Button>
       </div>
     )
@@ -378,7 +363,7 @@ function QuoteDetailPage() {
         <Card>
           <CardHeader>
             <CardTitle>
-              {tm({ en: "Edit Quote", da: "Rediger tilbud" })} {quote.number}
+              {t("quotes.detail.editTitle")} {quote.number}
             </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-6">
@@ -390,10 +375,10 @@ function QuoteDetailPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label>{tm({ en: "Contact", da: "Kontakt" })} *</Label>
+                <Label>{t("docForm.contact")} *</Label>
                 <Select value={editContactId} onValueChange={setEditContactId}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder={tm({ en: "Select a contact", da: "Vælg en kontakt" })} />
+                    <SelectValue placeholder={t("docForm.selectContact")} />
                   </SelectTrigger>
                   <SelectContent>
                     {contacts.map((c) => (
@@ -405,28 +390,28 @@ function QuoteDetailPage() {
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="editExpiryDate">{tm({ en: "Expiry Date", da: "Udløbsdato" })} *</Label>
+                <Label htmlFor="editExpiryDate">{t("quotes.new.field.expiryDate")} *</Label>
                 <LocalizedDateField
                   id="editExpiryDate"
                   value={editExpiryDate}
                   onChange={setEditExpiryDate}
                   locale={locale}
-                  placeholder={tm({ en: "Select a date", da: "Vælg en dato" })}
-                  clearLabel={tm({ en: "Clear", da: "Ryd" })}
+                  placeholder={t("docForm.selectDate")}
+                  clearLabel={t("docForm.clear")}
                 />
               </div>
             </div>
 
             {/* Line Items */}
             <div className="grid gap-3">
-              <Label>{tm({ en: "Line Items", da: "Linjer" })}</Label>
+              <Label>{t("docForm.lineItems")}</Label>
               <div className="rounded-md border">
                 <div className="grid grid-cols-[180px_1fr_80px_100px_100px_40px] gap-2 p-3 border-b bg-muted/50 text-sm font-medium">
-                  <span>{tm({ en: "Item", da: "Vare" })}</span>
-                  <span>{tm({ en: "Description", da: "Beskrivelse" })}</span>
-                  <span>{tm({ en: "Qty", da: "Antal" })}</span>
-                  <span>{tm({ en: "Unit Price", da: "Enhedspris" })}</span>
-                  <span>{tm({ en: "Total", da: "Total" })}</span>
+                  <span>{t("docForm.column.item")}</span>
+                  <span>{t("docForm.column.description")}</span>
+                  <span>{t("docForm.column.qty")}</span>
+                  <span>{t("docForm.column.unitPrice")}</span>
+                  <span>{t("docForm.column.total")}</span>
                   <span />
                 </div>
                 {editItems.map((item, index) => (
@@ -442,8 +427,8 @@ function QuoteDetailPage() {
                         <SelectValue
                           placeholder={
                             catalogItems.length > 0
-                              ? tm({ en: "Select item", da: "Vælg vare" })
-                              : tm({ en: "No saved items", da: "Ingen gemte varer" })
+                              ? t("docForm.selectItem")
+                              : t("docForm.noSavedItems")
                           }
                         />
                       </SelectTrigger>
@@ -456,7 +441,7 @@ function QuoteDetailPage() {
                       </SelectContent>
                     </Select>
                     <Input
-                      placeholder={tm({ en: "Description", da: "Beskrivelse" })}
+                      placeholder={t("docForm.column.description")}
                       value={item.description}
                       onChange={(e) => updateEditItem(index, "description", e.target.value)}
                     />
@@ -501,7 +486,7 @@ function QuoteDetailPage() {
                 className="w-fit"
               >
                 <Plus className="size-4" />
-                {tm({ en: "Add Item", da: "Tilføj vare" })}
+                {t("docForm.action.addItem")}
               </Button>
             </div>
 
@@ -509,11 +494,11 @@ function QuoteDetailPage() {
             <div className="flex justify-end">
               <div className="w-64 grid gap-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{tm({ en: "Subtotal", da: "Subtotal" })}</span>
+                  <span className="text-muted-foreground">{t("docForm.summary.subtotal")}</span>
                   <span>{formatCurrency(editSubtotal, quote.currency, locale)}</span>
                 </div>
                 <div className="flex justify-between items-center gap-2">
-                  <span className="text-muted-foreground">{tm({ en: "Tax", da: "Moms" })}</span>
+                  <span className="text-muted-foreground">{t("docForm.summary.tax")}</span>
                   <div className="flex items-center gap-1">
                     <Input
                       type="number"
@@ -529,7 +514,7 @@ function QuoteDetailPage() {
                   </div>
                 </div>
                 <div className="flex justify-between font-semibold border-t pt-2">
-                  <span>{tm({ en: "Total", da: "Total" })}</span>
+                  <span>{t("docForm.summary.total")}</span>
                   <span>{formatCurrency(editTotal, quote.currency, locale)}</span>
                 </div>
               </div>
@@ -537,15 +522,12 @@ function QuoteDetailPage() {
 
             {/* Notes */}
             <div className="grid gap-2">
-              <Label htmlFor="editNotes">{tm({ en: "Notes", da: "Noter" })}</Label>
+              <Label htmlFor="editNotes">{t("docForm.notes")}</Label>
               <Textarea
                 id="editNotes"
                 value={editNotes}
                 onChange={(e) => setEditNotes(e.target.value)}
-                placeholder={tm({
-                  en: "Terms and conditions, additional notes, etc.",
-                  da: "Vilkår og betingelser, yderligere noter osv.",
-                })}
+                placeholder={t("quotes.new.notes.placeholder")}
                 rows={3}
               />
             </div>
@@ -559,12 +541,10 @@ function QuoteDetailPage() {
                 setError(null)
               }}
             >
-              {tm({ en: "Cancel", da: "Annuller" })}
+              {t("docForm.action.cancel")}
             </Button>
             <Button type="button" disabled={acting} onClick={handleSaveEdit}>
-              {acting
-                ? tm({ en: "Saving...", da: "Gemmer..." })
-                : tm({ en: "Save Changes", da: "Gem ændringer" })}
+              {acting ? t("docForm.action.saving") : t("docForm.action.saveChanges")}
             </Button>
           </CardFooter>
         </Card>
@@ -581,40 +561,37 @@ function QuoteDetailPage() {
       <div className="flex items-center justify-between mb-6">
         <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/quotes" })}>
           <ArrowLeft className="size-4" />
-          {tm({ en: "Back to Quotes", da: "Tilbage til tilbud" })}
+          {t("quotes.detail.action.back")}
         </Button>
         <div className="flex items-center gap-2">
           {quote.status === "draft" && (
             <>
               <Button variant="outline" size="sm" onClick={startEditing}>
                 <Pencil className="size-4" />
-                {tm({ en: "Edit", da: "Rediger" })}
+                {t("quotes.detail.action.edit")}
               </Button>
               <Button size="sm" disabled={acting} onClick={handleSend}>
                 <Send className="size-4" />
-                {acting ? tm({ en: "Sending...", da: "Sender..." }) : tm({ en: "Send", da: "Send" })}
+                {acting ? t("quotes.detail.action.sending") : t("quotes.detail.action.send")}
               </Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" size="sm" disabled={acting}>
                     <Trash2 className="size-4" />
-                    {tm({ en: "Delete", da: "Slet" })}
+                    {t("quotes.detail.action.delete")}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>{tm({ en: "Delete quote", da: "Slet tilbud" })}</AlertDialogTitle>
+                    <AlertDialogTitle>{t("quotes.delete.title")}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      {tm({
-                        en: `Are you sure you want to delete quote ${quote.number}? This action cannot be undone.`,
-                        da: `Er du sikker på, at du vil slette tilbud ${quote.number}? Denne handling kan ikke fortrydes.`,
-                      })}
+                      {t("quotes.delete.description", { number: quote.number })}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>{tm({ en: "Cancel", da: "Annuller" })}</AlertDialogCancel>
+                    <AlertDialogCancel>{t("quotes.action.cancel")}</AlertDialogCancel>
                     <AlertDialogAction variant="destructive" onClick={handleDelete}>
-                      {tm({ en: "Delete", da: "Slet" })}
+                      {t("quotes.action.delete")}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -626,14 +603,14 @@ function QuoteDetailPage() {
               <Button size="sm" disabled={acting} onClick={handleConvertToInvoice}>
                 <ArrowRight className="size-4" />
                 {acting
-                  ? tm({ en: "Converting...", da: "Konverterer..." })
-                  : tm({ en: "Convert to Invoice", da: "Konverter til faktura" })}
+                  ? t("quotes.detail.action.converting")
+                  : t("quotes.detail.action.convertToInvoice")}
               </Button>
               <Button variant="outline" size="sm" disabled={acting} onClick={handleReject}>
                 <XCircle className="size-4" />
                 {acting
-                  ? tm({ en: "Updating...", da: "Opdaterer..." })
-                  : tm({ en: "Mark as Rejected", da: "Marker som afvist" })}
+                  ? t("quotes.detail.action.updating")
+                  : t("quotes.detail.action.markRejected")}
               </Button>
             </>
           )}
@@ -653,22 +630,25 @@ function QuoteDetailPage() {
             <div className="flex items-start justify-between">
               <div>
               <h1 className="text-2xl font-bold">
-                {tm({ en: "Quote", da: "Tilbud" })} {quote.number}
+                {t("quotes.detail.title")} {quote.number}
               </h1>
               <div className="mt-1">
-                <StatusBadge status={quote.status} tm={tm} />
+                <StatusBadge
+                  status={quote.status}
+                  label={getQuoteStatusLabel(quote.status, t)}
+                />
               </div>
             </div>
             <div className="text-right text-sm text-muted-foreground">
               <p>
                 <span className="font-medium text-foreground">
-                  {tm({ en: "Issue Date:", da: "Udstedelsesdato:" })}
+                  {t("quotes.table.issueDate")}:
                 </span>{" "}
                 {formatDate(quote.issueDate, locale)}
               </p>
               <p>
                 <span className="font-medium text-foreground">
-                  {tm({ en: "Expiry Date:", da: "Udløbsdato:" })}
+                  {t("quotes.table.expiryDate")}:
                 </span>{" "}
                 {formatDate(quote.expiryDate, locale)}
               </p>
@@ -679,7 +659,7 @@ function QuoteDetailPage() {
           {quote.status === "accepted" && quote.invoices.length > 0 && (
             <div className="rounded-md border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950 p-3">
               <p className="text-sm font-medium">
-                {tm({ en: "Converted to invoice:", da: "Konverteret til faktura:" })}{" "}
+                {t("quotes.detail.convertedToInvoice")}{" "}
                 {quote.invoices.map((inv) => (
                   <Link
                     key={inv.id}
@@ -698,7 +678,7 @@ function QuoteDetailPage() {
           {/* Quote To */}
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-1">
-              {tm({ en: "Quote To", da: "Tilbud til" })}
+              {t("quotes.detail.quoteTo")}
             </h3>
             <p className="font-semibold">{contact.name}</p>
             {contact.company && <p className="text-sm">{contact.company}</p>}
@@ -719,10 +699,10 @@ function QuoteDetailPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{tm({ en: "Description", da: "Beskrivelse" })}</TableHead>
-                  <TableHead className="text-right w-[80px]">{tm({ en: "Qty", da: "Antal" })}</TableHead>
-                  <TableHead className="text-right w-[120px]">{tm({ en: "Unit Price", da: "Enhedspris" })}</TableHead>
-                  <TableHead className="text-right w-[120px]">{tm({ en: "Total", da: "Total" })}</TableHead>
+                  <TableHead>{t("docForm.column.description")}</TableHead>
+                  <TableHead className="text-right w-[80px]">{t("docForm.column.qty")}</TableHead>
+                  <TableHead className="text-right w-[120px]">{t("docForm.column.unitPrice")}</TableHead>
+                  <TableHead className="text-right w-[120px]">{t("docForm.column.total")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -746,17 +726,17 @@ function QuoteDetailPage() {
           <div className="flex justify-end">
             <div className="w-64 grid gap-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">{tm({ en: "Subtotal", da: "Subtotal" })}</span>
+                <span className="text-muted-foreground">{t("docForm.summary.subtotal")}</span>
                 <span>{formatCurrency(quote.subtotal, quote.currency, locale)}</span>
               </div>
               {quote.taxAmount > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{tm({ en: "Tax", da: "Moms" })}</span>
+                  <span className="text-muted-foreground">{t("docForm.summary.tax")}</span>
                   <span>{formatCurrency(quote.taxAmount, quote.currency, locale)}</span>
                 </div>
               )}
               <div className="flex justify-between font-semibold text-base border-t pt-2">
-                <span>{tm({ en: "Total", da: "Total" })}</span>
+                <span>{t("docForm.summary.total")}</span>
                 <span>{formatCurrency(quote.total, quote.currency, locale)}</span>
               </div>
             </div>
@@ -766,7 +746,7 @@ function QuoteDetailPage() {
           {quote.notes && (
             <div>
               <h3 className="text-sm font-medium text-muted-foreground mb-1">
-                {tm({ en: "Notes", da: "Noter" })}
+                {t("docForm.notes")}
               </h3>
               <p className="text-sm whitespace-pre-wrap">{quote.notes}</p>
             </div>

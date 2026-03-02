@@ -1,0 +1,111 @@
+export const daSettingsMessages = {
+  "settings.title": "Indstillinger",
+  "settings.loading": "Indlæser...",
+  "settings.success.saved": "Indstillinger gemt.",
+  "settings.error.loadFailed": "Kunne ikke indlæse indstillinger",
+  "settings.error.loadModelsFailed":
+    "Kunne ikke hente modellisten fra OpenRouter. Bruger fallback-liste.",
+  "settings.error.inviteFailed": "Kunne ikke sende invitation",
+  "settings.error.logoInvalid":
+    "Virksomhedslogo skal være en billed-URL eller uploadet billeddata.",
+  "settings.error.saveFailed": "Kunne ikke gemme indstillinger",
+  "settings.error.logoType": "Kun billedfiler understøttes.",
+  "settings.error.logoTooLarge": "Logofil skal være 2 MB eller mindre.",
+  "settings.error.logoReadFailed": "Kunne ikke læse logofil.",
+  "settings.validation.invalidTimezone":
+    "Angiv en gyldig IANA-tidszone (f.eks. Europe/Copenhagen).",
+  "settings.validation.invalidTaxRate":
+    "Momssatsen skal være et tal mellem 0 og 100.",
+  "settings.validation.invalidCompanyEmail":
+    "Angiv en gyldig virksomheds-e-mailadresse.",
+  "settings.validation.invalidCompanyPhone":
+    "Angiv et gyldigt virksomhedsnummer.",
+  "settings.validation.invalidInvoicePrefix":
+    "Fakturapræfikset skal være 1-10 store bogstaver, tal eller bindestreger.",
+  "settings.validation.invalidQuotePrefix":
+    "Tilbudspræfikset skal være 1-10 store bogstaver, tal eller bindestreger.",
+  "settings.role.admin": "Admin",
+  "settings.role.member": "Medlem",
+  "settings.role.accountant": "Bogholder",
+  "settings.section.company.title": "Virksomhedsoplysninger",
+  "settings.section.company.description":
+    "Dine virksomhedsoplysninger vises på fakturaer og tilbud.",
+  "settings.companyName.label": "Virksomhedsnavn",
+  "settings.companyName.placeholder": "Acme ApS",
+  "settings.companyAddress.label": "Virksomhedsadresse",
+  "settings.companyAddress.placeholder": "Hovedgade 123&#10;By, Region 1234",
+  "settings.companyEmail.label": "Virksomheds-e-mail",
+  "settings.companyEmail.placeholder": "faktura@acme.dk",
+  "settings.companyPhone.label": "Virksomhedstelefon",
+  "settings.companyPhone.title": "Indtast et gyldigt telefonnummer",
+  "settings.companyPhone.placeholder": "+45 12 34 56 78",
+  "settings.companyLogo.label": "Virksomhedslogo",
+  "settings.companyLogo.placeholder": "https://example.com/logo.png",
+  "settings.companyLogo.help":
+    "Indsæt en billed-URL til logo eller upload en fil.",
+  "settings.companyLogo.remove": "Fjern logo",
+  "settings.companyLogo.previewAlt": "Forhåndsvisning af virksomhedslogo",
+  "settings.section.localization.title": "Lokalisering og compliance",
+  "settings.section.localization.description":
+    "Standarder for land, sprog og skatteregime, som bruges på fakturaer og tilbud.",
+  "settings.country.label": "Land",
+  "settings.country.placeholder": "Vælg land",
+  "settings.locale.label": "Sprog",
+  "settings.locale.placeholder": "Vælg sprog",
+  "settings.timezone.label": "Tidszone",
+  "settings.taxRegime.label": "Skatteregime",
+  "settings.taxRegime.placeholder": "Vælg skatteregime",
+  "settings.taxRegime.usSalesTax": "Amerikansk salgsmoms",
+  "settings.taxRegime.euVat": "EU-moms",
+  "settings.taxRegime.custom": "Brugerdefineret",
+  "settings.pricesIncludeTax": "Priser inkluderer moms som standard",
+  "settings.primaryTaxId.label": "Primært sælger moms-/skattenummer",
+  "settings.primaryTaxId.placeholder": "f.eks. DK12345678",
+  "settings.primaryTaxIdScheme.label": "Type af skattenummer",
+  "settings.primaryTaxIdScheme.other": "Andet",
+  "settings.section.billingDefaults.title": "Standarder for fakturering",
+  "settings.section.billingDefaults.description":
+    "Standardvaluta og momssats for nye fakturaer og tilbud.",
+  "settings.currency.label": "Valuta",
+  "settings.currency.placeholder": "Vælg valuta",
+  "settings.taxRate.label": "Standard momssats (%)",
+  "settings.section.numbering.title": "Nummerering af faktura og tilbud",
+  "settings.section.numbering.description":
+    "Præfikser og løbenumre for genererede dokumenter.",
+  "settings.invoicePrefix.label": "Fakturapræfiks",
+  "settings.prefix.title":
+    "Brug 1-10 store bogstaver, tal eller bindestreger",
+  "settings.nextInvoiceNumber.label": "Næste fakturanummer",
+  "settings.quotePrefix.label": "Tilbudspræfiks",
+  "settings.nextQuoteNumber.label": "Næste tilbudsnummer",
+  "settings.section.ai.title": "AI fakturakladde (BYOK)",
+  "settings.section.ai.description":
+    "Brug OpenRouter med din egen API-nøgle og valgte model.",
+  "settings.aiModel.label": "OpenRouter-model",
+  "settings.aiModel.refreshing": "Opdaterer...",
+  "settings.aiModel.refresh": "Opdater modeller",
+  "settings.aiApiKey.label": "OpenRouter API-nøgle",
+  "settings.aiApiKey.configuredHelp":
+    "En nøgle er allerede konfigureret. Indtast kun en ny nøgle, hvis du vil udskifte den.",
+  "settings.aiApiKey.notConfiguredHelp": "Ingen nøgle er konfigureret endnu.",
+  "settings.aiApiKey.remove": "Fjern gemt nøgle",
+  "settings.aiApiKey.removePending":
+    "Gemt nøgle fjernes, når du gemmer indstillinger.",
+  "settings.aiApiKey.undo": "Fortryd",
+  "settings.action.saving": "Gemmer...",
+  "settings.action.save": "Gem indstillinger",
+  "settings.section.team.title": "Teammedlemmer",
+  "settings.section.team.description":
+    "Administrer hvem der har adgang til denne organisation.",
+  "settings.team.inviteEmail.placeholder": "kollega@example.com",
+  "settings.team.action.sending": "Sender...",
+  "settings.team.action.invite": "Inviter",
+  "settings.team.loading": "Indlæser medlemmer...",
+  "settings.team.you": "(dig)",
+  "settings.team.remove.title": "Fjern medlem?",
+  "settings.team.remove.description":
+    "{name} mister adgang til organisationen med det samme.",
+  "settings.team.action.cancel": "Annuller",
+  "settings.team.action.remove": "Fjern",
+  "settings.team.invitation.pending": "Invitation afventer",
+} as const

@@ -67,21 +67,17 @@ const ROLE_CONFIG: Record<string, { key: "admin" | "member" | "accountant"; icon
 
 function RoleBadge({
   role,
-  tm,
+  label,
 }: {
   role: string
-  tm: (messages: { en: string } & Record<string, string | undefined>) => string
+  label: string
 }) {
   const config = ROLE_CONFIG[role] ?? ROLE_CONFIG.member
   const Icon = config.icon
   return (
     <Badge variant="secondary" className="gap-1">
       <Icon className="size-3" />
-      {config.key === "admin"
-        ? tm({ en: "Admin", da: "Admin" })
-        : config.key === "accountant"
-          ? tm({ en: "Accountant", da: "Bogholder" })
-          : tm({ en: "Member", da: "Medlem" })}
+      {label}
     </Badge>
   )
 }
@@ -140,7 +136,7 @@ function isHttpLogoUrl(value: string) {
 }
 
 function SettingsPage() {
-  const { tm } = useI18n()
+  const { t } = useI18n()
   const { data: session } = useSession()
   const [settings, setSettings] = useState<SettingsData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -204,10 +200,10 @@ function SettingsPage() {
         setAiOpenRouterModel(data.aiOpenRouterModel || "openai/gpt-4o-mini")
       })
       .catch(() =>
-        setError(tm({ en: "Failed to load settings", da: "Kunne ikke indlæse indstillinger" }))
+        setError(t("settings.error.loadFailed"))
       )
       .finally(() => setLoading(false))
-  }, [])
+  }, [t])
 
   async function loadOpenRouterModels() {
     setLoadingOpenRouterModels(true)
@@ -219,10 +215,7 @@ function SettingsPage() {
       }
     } catch {
       setOpenRouterModelsError(
-        tm({
-          en: "Could not load model list from OpenRouter. Using fallback list.",
-          da: "Kunne ikke hente modellisten fra OpenRouter. Bruger fallback-liste.",
-        })
+        t("settings.error.loadModelsFailed")
       )
     } finally {
       setLoadingOpenRouterModels(false)
@@ -231,7 +224,7 @@ function SettingsPage() {
 
   useEffect(() => {
     loadOpenRouterModels()
-  }, [])
+  }, [t])
 
   useEffect(() => {
     async function loadTeam() {
@@ -260,7 +253,7 @@ function SettingsPage() {
     if (result.error) {
       setInviteError(
         result.error.message ??
-          tm({ en: "Failed to send invite", da: "Kunne ikke sende invitation" })
+          t("settings.error.inviteFailed")
       )
     } else if (result.data) {
       setInvitations((prev) => [...prev, result.data as OrgInvitation])
@@ -304,12 +297,7 @@ function SettingsPage() {
       !isHttpLogoUrl(normalizedCompanyLogo)
     ) {
       setSaving(false)
-      setError(
-        tm({
-          en: "Company logo must be an image URL or uploaded image data.",
-          da: "Virksomhedslogo skal være en billed-URL eller uploadet billeddata.",
-        })
-      )
+      setError(t("settings.error.logoInvalid"))
       return
     }
 
@@ -326,16 +314,16 @@ function SettingsPage() {
       setSaving(false)
       setError(
         formValidationError === "invalid_timezone"
-          ? tm({ en: "Please enter a valid IANA time zone (e.g. Europe/Copenhagen).", da: "Angiv en gyldig IANA-tidszone (f.eks. Europe/Copenhagen)." })
+          ? t("settings.validation.invalidTimezone")
           : formValidationError === "invalid_tax_rate"
-            ? tm({ en: "Tax rate must be a number between 0 and 100.", da: "Momssatsen skal være et tal mellem 0 og 100." })
+            ? t("settings.validation.invalidTaxRate")
             : formValidationError === "invalid_company_email"
-              ? tm({ en: "Please enter a valid company email address.", da: "Angiv en gyldig virksomheds-e-mailadresse." })
+              ? t("settings.validation.invalidCompanyEmail")
               : formValidationError === "invalid_company_phone"
-                ? tm({ en: "Please enter a valid company phone number.", da: "Angiv et gyldigt virksomhedsnummer." })
+                ? t("settings.validation.invalidCompanyPhone")
                 : formValidationError === "invalid_invoice_prefix"
-                  ? tm({ en: "Invoice prefix must be 1-10 uppercase letters, numbers, or hyphens.", da: "Fakturapræfikset skal være 1-10 store bogstaver, tal eller bindestreger." })
-                  : tm({ en: "Quote prefix must be 1-10 uppercase letters, numbers, or hyphens.", da: "Tilbudspræfikset skal være 1-10 store bogstaver, tal eller bindestreger." })
+                  ? t("settings.validation.invalidInvoicePrefix")
+                  : t("settings.validation.invalidQuotePrefix")
       )
       return
     }
@@ -371,7 +359,7 @@ function SettingsPage() {
       setError(
         err instanceof Error
           ? err.message
-          : tm({ en: "Failed to save settings", da: "Kunne ikke gemme indstillinger" })
+          : t("settings.error.saveFailed")
       )
     } finally {
       setSaving(false)
@@ -386,15 +374,13 @@ function SettingsPage() {
     setError(null)
 
     if (!file.type.startsWith("image/")) {
-      setLogoError(tm({ en: "Only image files are supported.", da: "Kun billedfiler understøttes." }))
+      setLogoError(t("settings.error.logoType"))
       event.target.value = ""
       return
     }
 
     if (file.size > LOGO_MAX_FILE_SIZE_BYTES) {
-      setLogoError(
-        tm({ en: "Logo file must be 2 MB or smaller.", da: "Logofil skal være 2 MB eller mindre." })
-      )
+      setLogoError(t("settings.error.logoTooLarge"))
       event.target.value = ""
       return
     }
@@ -409,7 +395,7 @@ function SettingsPage() {
       setCompanyLogo(dataUrl)
       setCompanyLogoUrlInput("")
     } catch {
-      setLogoError(tm({ en: "Failed to read logo file.", da: "Kunne ikke læse logofil." }))
+      setLogoError(t("settings.error.logoReadFailed"))
     } finally {
       event.target.value = ""
     }
@@ -440,9 +426,9 @@ function SettingsPage() {
       <div className="p-6">
         <div className="flex items-center gap-2 mb-6">
           <Settings className="size-6" />
-          <h1 className="text-2xl font-bold">{tm({ en: "Settings", da: "Indstillinger" })}</h1>
+          <h1 className="text-2xl font-bold">{t("settings.title")}</h1>
         </div>
-        <p className="text-muted-foreground">{tm({ en: "Loading...", da: "Indlæser..." })}</p>
+        <p className="text-muted-foreground">{t("settings.loading")}</p>
       </div>
     )
   }
@@ -452,10 +438,10 @@ function SettingsPage() {
       <div className="p-6">
         <div className="flex items-center gap-2 mb-6">
           <Settings className="size-6" />
-          <h1 className="text-2xl font-bold">{tm({ en: "Settings", da: "Indstillinger" })}</h1>
+          <h1 className="text-2xl font-bold">{t("settings.title")}</h1>
         </div>
         <p className="text-destructive">
-          {error ?? tm({ en: "Failed to load settings", da: "Kunne ikke indlæse indstillinger" })}
+          {error ?? t("settings.error.loadFailed")}
         </p>
       </div>
     )
@@ -465,7 +451,7 @@ function SettingsPage() {
     <div className="p-6 max-w-2xl">
       <div className="flex items-center gap-2 mb-6">
         <Settings className="size-6" />
-        <h1 className="text-2xl font-bold">{tm({ en: "Settings", da: "Indstillinger" })}</h1>
+        <h1 className="text-2xl font-bold">{t("settings.title")}</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="grid gap-6">
@@ -476,39 +462,36 @@ function SettingsPage() {
         )}
         {success && (
           <p className="text-sm text-green-600" role="status">
-            {tm({ en: "Settings saved successfully.", da: "Indstillinger gemt." })}
+            {t("settings.success.saved")}
           </p>
         )}
 
         {/* Company Information */}
         <Card>
           <CardHeader>
-            <CardTitle>{tm({ en: "Company Information", da: "Virksomhedsoplysninger" })}</CardTitle>
+            <CardTitle>{t("settings.section.company.title")}</CardTitle>
             <CardDescription>
-              {tm({
-                en: "Your company details appear on invoices and quotes.",
-                da: "Dine virksomhedsoplysninger vises på fakturaer og tilbud.",
-              })}
+              {t("settings.section.company.description")}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="companyName">{tm({ en: "Company Name", da: "Virksomhedsnavn" })}</Label>
+              <Label htmlFor="companyName">{t("settings.companyName.label")}</Label>
               <Input
                 id="companyName"
                 name="companyName"
                 maxLength={120}
-                placeholder={tm({ en: "Acme Inc.", da: "Acme ApS" })}
+                placeholder={t("settings.companyName.placeholder")}
                 defaultValue={settings.companyName ?? ""}
               />
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="companyAddress">{tm({ en: "Company Address", da: "Virksomhedsadresse" })}</Label>
+              <Label htmlFor="companyAddress">{t("settings.companyAddress.label")}</Label>
               <Textarea
                 id="companyAddress"
                 name="companyAddress"
-                placeholder={tm({ en: "123 Main St&#10;City, State 12345", da: "Hovedgade 123&#10;By, Region 1234" })}
+                placeholder={t("settings.companyAddress.placeholder")}
                 rows={3}
                 maxLength={240}
                 defaultValue={settings.companyAddress ?? ""}
@@ -517,45 +500,42 @@ function SettingsPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="companyEmail">{tm({ en: "Company Email", da: "Virksomheds-e-mail" })}</Label>
+                <Label htmlFor="companyEmail">{t("settings.companyEmail.label")}</Label>
                 <Input
                   id="companyEmail"
                   name="companyEmail"
                   type="email"
                   maxLength={254}
-                  placeholder={tm({ en: "billing@acme.com", da: "faktura@acme.dk" })}
+                  placeholder={t("settings.companyEmail.placeholder")}
                   defaultValue={settings.companyEmail ?? ""}
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="companyPhone">{tm({ en: "Company Phone", da: "Virksomhedstelefon" })}</Label>
+                <Label htmlFor="companyPhone">{t("settings.companyPhone.label")}</Label>
                 <Input
                   id="companyPhone"
                   name="companyPhone"
                   maxLength={40}
                   pattern="^\+?[0-9()\-\s.]{6,20}$"
-                  title={tm({ en: "Enter a valid phone number", da: "Indtast et gyldigt telefonnummer" })}
-                  placeholder={tm({ en: "+1 555 123 4567", da: "+45 12 34 56 78" })}
+                  title={t("settings.companyPhone.title")}
+                  placeholder={t("settings.companyPhone.placeholder")}
                   defaultValue={settings.companyPhone ?? ""}
                 />
               </div>
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="companyLogoUrl">{tm({ en: "Company Logo", da: "Virksomhedslogo" })}</Label>
+              <Label htmlFor="companyLogoUrl">{t("settings.companyLogo.label")}</Label>
               <Input
                 id="companyLogoUrl"
                 type="url"
                 maxLength={2000}
-                placeholder={tm({ en: "https://example.com/logo.png", da: "https://example.com/logo.png" })}
+                placeholder={t("settings.companyLogo.placeholder")}
                 value={companyLogoUrlInput}
                 onChange={handleCompanyLogoUrlChange}
               />
               <p className="text-xs text-muted-foreground">
-                {tm({
-                  en: "Paste a logo image URL or upload a file.",
-                  da: "Indsæt en billed-URL til logo eller upload en fil.",
-                })}
+                {t("settings.companyLogo.help")}
               </p>
               <div className="flex flex-wrap items-center gap-2">
                 <input
@@ -566,7 +546,7 @@ function SettingsPage() {
                 />
                 {companyLogo && (
                   <Button type="button" variant="outline" size="sm" onClick={clearCompanyLogo}>
-                    {tm({ en: "Remove logo", da: "Fjern logo" })}
+                    {t("settings.companyLogo.remove")}
                   </Button>
                 )}
               </div>
@@ -575,7 +555,7 @@ function SettingsPage() {
                 <div className="rounded-md border bg-muted/20 p-3">
                   <img
                     src={companyLogo}
-                    alt={tm({ en: "Company logo preview", da: "Forhåndsvisning af virksomhedslogo" })}
+                    alt={t("settings.companyLogo.previewAlt")}
                     className="h-14 w-auto max-w-52 object-contain"
                   />
                 </div>
@@ -587,18 +567,15 @@ function SettingsPage() {
         {/* Billing Defaults */}
         <Card>
           <CardHeader>
-            <CardTitle>{tm({ en: "Localization & Compliance", da: "Lokalisering og compliance" })}</CardTitle>
+            <CardTitle>{t("settings.section.localization.title")}</CardTitle>
             <CardDescription>
-              {tm({
-                en: "Country, locale, and tax regime defaults used across invoices and quotes.",
-                da: "Standarder for land, sprog og skatteregime, som bruges på fakturaer og tilbud.",
-              })}
+              {t("settings.section.localization.description")}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="countryCode">{tm({ en: "Country", da: "Land" })}</Label>
+                <Label htmlFor="countryCode">{t("settings.country.label")}</Label>
                 <Select
                   value={countryCode}
                   onValueChange={(nextCountry) => {
@@ -611,7 +588,7 @@ function SettingsPage() {
                   }}
                 >
                   <SelectTrigger id="countryCode">
-                    <SelectValue placeholder={tm({ en: "Select country", da: "Vælg land" })} />
+                    <SelectValue placeholder={t("settings.country.placeholder")} />
                   </SelectTrigger>
                   <SelectContent>
                     {COUNTRY_OPTIONS.map((country) => (
@@ -623,10 +600,10 @@ function SettingsPage() {
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="locale">{tm({ en: "Locale", da: "Sprog" })}</Label>
+                <Label htmlFor="locale">{t("settings.locale.label")}</Label>
                 <Select value={locale} onValueChange={setLocale}>
                   <SelectTrigger id="locale">
-                    <SelectValue placeholder={tm({ en: "Select locale", da: "Vælg sprog" })} />
+                    <SelectValue placeholder={t("settings.locale.placeholder")} />
                   </SelectTrigger>
                   <SelectContent>
                     {LOCALE_OPTIONS.map((item) => (
@@ -641,7 +618,7 @@ function SettingsPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="timezone">{tm({ en: "Time Zone", da: "Tidszone" })}</Label>
+                <Label htmlFor="timezone">{t("settings.timezone.label")}</Label>
                 <Input
                   id="timezone"
                   name="timezone"
@@ -651,19 +628,19 @@ function SettingsPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="taxRegime">{tm({ en: "Tax Regime", da: "Skatteregime" })}</Label>
+                <Label htmlFor="taxRegime">{t("settings.taxRegime.label")}</Label>
                 <Select value={taxRegime} onValueChange={(value) => setTaxRegime(value as "us_sales_tax" | "eu_vat" | "custom")}>
                   <SelectTrigger id="taxRegime">
-                    <SelectValue placeholder={tm({ en: "Select tax regime", da: "Vælg skatteregime" })} />
+                    <SelectValue placeholder={t("settings.taxRegime.placeholder")} />
                   </SelectTrigger>
                   <SelectContent>
                     {TAX_REGIMES.map((regime) => (
                       <SelectItem key={regime.value} value={regime.value}>
                         {regime.value === "us_sales_tax"
-                          ? tm({ en: "US Sales Tax", da: "Amerikansk salgsmoms" })
+                          ? t("settings.taxRegime.usSalesTax")
                           : regime.value === "eu_vat"
-                            ? tm({ en: "EU VAT", da: "EU-moms" })
-                            : tm({ en: "Custom", da: "Brugerdefineret" })}
+                            ? t("settings.taxRegime.euVat")
+                            : t("settings.taxRegime.custom")}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -677,23 +654,23 @@ function SettingsPage() {
                 checked={pricesIncludeTax}
                 onChange={(event) => setPricesIncludeTax(event.target.checked)}
               />
-              {tm({ en: "Prices include tax by default", da: "Priser inkluderer moms som standard" })}
+              {t("settings.pricesIncludeTax")}
             </label>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="primaryTaxId">{tm({ en: "Primary Seller Tax ID", da: "Primært sælger moms-/skattenummer" })}</Label>
+                <Label htmlFor="primaryTaxId">{t("settings.primaryTaxId.label")}</Label>
                 <Input
                   id="primaryTaxId"
                   name="primaryTaxId"
                   maxLength={40}
-                  placeholder={tm({ en: "e.g. DK12345678 / US EIN", da: "f.eks. DK12345678" })}
+                  placeholder={t("settings.primaryTaxId.placeholder")}
                   value={primaryTaxId}
                   onChange={(event) => setPrimaryTaxId(event.target.value)}
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="primaryTaxIdScheme">{tm({ en: "Tax ID Scheme", da: "Type af skattenummer" })}</Label>
+                <Label htmlFor="primaryTaxIdScheme">{t("settings.primaryTaxIdScheme.label")}</Label>
                 <Select value={primaryTaxIdScheme} onValueChange={setPrimaryTaxIdScheme}>
                   <SelectTrigger id="primaryTaxIdScheme">
                     <SelectValue />
@@ -702,7 +679,7 @@ function SettingsPage() {
                     <SelectItem value="vat">VAT</SelectItem>
                     <SelectItem value="cvr">CVR</SelectItem>
                     <SelectItem value="ein">EIN</SelectItem>
-                    <SelectItem value="other">{tm({ en: "Other", da: "Andet" })}</SelectItem>
+                    <SelectItem value="other">{t("settings.primaryTaxIdScheme.other")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -713,21 +690,18 @@ function SettingsPage() {
         {/* Billing Defaults */}
         <Card>
           <CardHeader>
-            <CardTitle>{tm({ en: "Billing Defaults", da: "Standarder for fakturering" })}</CardTitle>
+            <CardTitle>{t("settings.section.billingDefaults.title")}</CardTitle>
             <CardDescription>
-              {tm({
-                en: "Default currency and tax rate for new invoices and quotes.",
-                da: "Standardvaluta og momssats for nye fakturaer og tilbud.",
-              })}
+              {t("settings.section.billingDefaults.description")}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="defaultCurrency">{tm({ en: "Currency", da: "Valuta" })}</Label>
+                <Label htmlFor="defaultCurrency">{t("settings.currency.label")}</Label>
                 <Select value={defaultCurrency} onValueChange={setDefaultCurrency}>
                   <SelectTrigger id="defaultCurrency">
-                    <SelectValue placeholder={tm({ en: "Select currency", da: "Vælg valuta" })} />
+                    <SelectValue placeholder={t("settings.currency.placeholder")} />
                   </SelectTrigger>
                   <SelectContent>
                     {CURRENCIES.map((c) => (
@@ -739,7 +713,7 @@ function SettingsPage() {
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="taxRate">{tm({ en: "Default Tax Rate (%)", da: "Standard momssats (%)" })}</Label>
+                <Label htmlFor="taxRate">{t("settings.taxRate.label")}</Label>
                 <Input
                   id="taxRate"
                   name="taxRate"
@@ -758,33 +732,27 @@ function SettingsPage() {
         {/* Invoice & Quote Numbering */}
         <Card>
           <CardHeader>
-            <CardTitle>{tm({ en: "Invoice & Quote Numbering", da: "Nummerering af faktura og tilbud" })}</CardTitle>
+            <CardTitle>{t("settings.section.numbering.title")}</CardTitle>
             <CardDescription>
-              {tm({
-                en: "Prefixes and sequence numbers for generated documents.",
-                da: "Præfikser og løbenumre for genererede dokumenter.",
-              })}
+              {t("settings.section.numbering.description")}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="invoicePrefix">{tm({ en: "Invoice Prefix", da: "Fakturapræfiks" })}</Label>
+                <Label htmlFor="invoicePrefix">{t("settings.invoicePrefix.label")}</Label>
                 <Input
                   id="invoicePrefix"
                   name="invoicePrefix"
                   maxLength={10}
                   pattern="^[A-Z0-9-]{1,10}$"
-                  title={tm({
-                    en: "Use 1-10 uppercase letters, numbers, or hyphens",
-                    da: "Brug 1-10 store bogstaver, tal eller bindestreger",
-                  })}
+                  title={t("settings.prefix.title")}
                   placeholder="INV"
                   defaultValue={settings.invoicePrefix}
                 />
               </div>
               <div className="grid gap-2">
-                <Label>{tm({ en: "Next Invoice Number", da: "Næste fakturanummer" })}</Label>
+                <Label>{t("settings.nextInvoiceNumber.label")}</Label>
                 <div className="flex h-9 items-center rounded-md border bg-muted px-3 text-sm text-muted-foreground">
                   {settings.invoicePrefix}-{String(settings.invoiceNextNum).padStart(4, "0")}
                 </div>
@@ -793,22 +761,19 @@ function SettingsPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="quotePrefix">{tm({ en: "Quote Prefix", da: "Tilbudspræfiks" })}</Label>
+                <Label htmlFor="quotePrefix">{t("settings.quotePrefix.label")}</Label>
                 <Input
                   id="quotePrefix"
                   name="quotePrefix"
                   maxLength={10}
                   pattern="^[A-Z0-9-]{1,10}$"
-                  title={tm({
-                    en: "Use 1-10 uppercase letters, numbers, or hyphens",
-                    da: "Brug 1-10 store bogstaver, tal eller bindestreger",
-                  })}
+                  title={t("settings.prefix.title")}
                   placeholder="QTE"
                   defaultValue={settings.quotePrefix}
                 />
               </div>
               <div className="grid gap-2">
-                <Label>{tm({ en: "Next Quote Number", da: "Næste tilbudsnummer" })}</Label>
+                <Label>{t("settings.nextQuoteNumber.label")}</Label>
                 <div className="flex h-9 items-center rounded-md border bg-muted px-3 text-sm text-muted-foreground">
                   {settings.quotePrefix}-{String(settings.quoteNextNum).padStart(4, "0")}
                 </div>
@@ -820,17 +785,14 @@ function SettingsPage() {
         {/* AI BYOK */}
         <Card>
           <CardHeader>
-            <CardTitle>{tm({ en: "AI Invoice Drafting (BYOK)", da: "AI fakturakladde (BYOK)" })}</CardTitle>
+            <CardTitle>{t("settings.section.ai.title")}</CardTitle>
             <CardDescription>
-              {tm({
-                en: "Use OpenRouter with your own API key and chosen model.",
-                da: "Brug OpenRouter med din egen API-nøgle og valgte model.",
-              })}
+              {t("settings.section.ai.description")}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="aiOpenRouterModel">{tm({ en: "OpenRouter Model", da: "OpenRouter-model" })}</Label>
+              <Label htmlFor="aiOpenRouterModel">{t("settings.aiModel.label")}</Label>
               <Select value={aiOpenRouterModel} onValueChange={setAiOpenRouterModel}>
                 <SelectTrigger id="aiOpenRouterModel">
                   <SelectValue placeholder="openai/gpt-4o-mini" />
@@ -852,8 +814,8 @@ function SettingsPage() {
                   disabled={loadingOpenRouterModels}
                 >
                   {loadingOpenRouterModels
-                    ? tm({ en: "Refreshing...", da: "Opdaterer..." })
-                    : tm({ en: "Refresh models", da: "Opdater modeller" })}
+                    ? t("settings.aiModel.refreshing")
+                    : t("settings.aiModel.refresh")}
                 </Button>
               </div>
               {openRouterModelsError && (
@@ -862,7 +824,7 @@ function SettingsPage() {
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="aiOpenRouterApiKey">{tm({ en: "OpenRouter API Key", da: "OpenRouter API-nøgle" })}</Label>
+              <Label htmlFor="aiOpenRouterApiKey">{t("settings.aiApiKey.label")}</Label>
               <Input
                 id="aiOpenRouterApiKey"
                 name="aiOpenRouterApiKey"
@@ -873,14 +835,8 @@ function SettingsPage() {
               />
               <p className="text-xs text-muted-foreground">
                 {settings.aiByokConfigured
-                  ? tm({
-                      en: "A key is currently configured. Enter a new key only if you want to rotate it.",
-                      da: "En nøgle er allerede konfigureret. Indtast kun en ny nøgle, hvis du vil udskifte den.",
-                    })
-                  : tm({
-                      en: "No key configured yet.",
-                      da: "Ingen nøgle er konfigureret endnu.",
-                    })}
+                  ? t("settings.aiApiKey.configuredHelp")
+                  : t("settings.aiApiKey.notConfiguredHelp")}
               </p>
             </div>
 
@@ -893,15 +849,12 @@ function SettingsPage() {
                     size="sm"
                     onClick={() => setClearAiOpenRouterApiKey(true)}
                   >
-                    {tm({ en: "Remove saved key", da: "Fjern gemt nøgle" })}
+                    {t("settings.aiApiKey.remove")}
                   </Button>
                 ) : (
                   <>
                     <p className="text-sm text-muted-foreground">
-                      {tm({
-                        en: "Saved key will be removed when you save settings.",
-                        da: "Gemt nøgle fjernes, når du gemmer indstillinger.",
-                      })}
+                      {t("settings.aiApiKey.removePending")}
                     </p>
                     <Button
                       type="button"
@@ -909,7 +862,7 @@ function SettingsPage() {
                       size="sm"
                       onClick={() => setClearAiOpenRouterApiKey(false)}
                     >
-                      {tm({ en: "Undo", da: "Fortryd" })}
+                      {t("settings.aiApiKey.undo")}
                     </Button>
                   </>
                 )}
@@ -921,9 +874,7 @@ function SettingsPage() {
         {/* Save */}
         <div className="flex justify-end">
           <Button type="submit" disabled={saving}>
-            {saving
-              ? tm({ en: "Saving...", da: "Gemmer..." })
-              : tm({ en: "Save Settings", da: "Gem indstillinger" })}
+            {saving ? t("settings.action.saving") : t("settings.action.save")}
           </Button>
         </div>
       </form>
@@ -931,12 +882,9 @@ function SettingsPage() {
       {/* Team Members — outside the settings form */}
       <Card className="mt-6">
         <CardHeader>
-          <CardTitle>{tm({ en: "Team Members", da: "Teammedlemmer" })}</CardTitle>
+          <CardTitle>{t("settings.section.team.title")}</CardTitle>
           <CardDescription>
-            {tm({
-              en: "Manage who has access to this organization.",
-              da: "Administrer hvem der har adgang til denne organisation.",
-            })}
+            {t("settings.section.team.description")}
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-6">
@@ -944,7 +892,7 @@ function SettingsPage() {
           <form onSubmit={handleInvite} className="flex flex-col sm:flex-row gap-2">
             <Input
               type="email"
-              placeholder={tm({ en: "colleague@example.com", da: "kollega@example.com" })}
+              placeholder={t("settings.team.inviteEmail.placeholder")}
               value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}
               required
@@ -955,14 +903,14 @@ function SettingsPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="admin">{tm({ en: "Admin", da: "Admin" })}</SelectItem>
-                <SelectItem value="member">{tm({ en: "Member", da: "Medlem" })}</SelectItem>
-                <SelectItem value="accountant">{tm({ en: "Accountant", da: "Bogholder" })}</SelectItem>
+                <SelectItem value="admin">{t("settings.role.admin")}</SelectItem>
+                <SelectItem value="member">{t("settings.role.member")}</SelectItem>
+                <SelectItem value="accountant">{t("settings.role.accountant")}</SelectItem>
               </SelectContent>
             </Select>
             <Button type="submit" disabled={inviting} className="gap-1">
               <UserPlus className="size-4" />
-              {inviting ? tm({ en: "Sending…", da: "Sender…" }) : tm({ en: "Invite", da: "Inviter" })}
+              {inviting ? t("settings.team.action.sending") : t("settings.team.action.invite")}
             </Button>
           </form>
           {inviteError && (
@@ -971,7 +919,7 @@ function SettingsPage() {
 
           {/* Members list */}
           {teamLoading ? (
-            <p className="text-sm text-muted-foreground">{tm({ en: "Loading members…", da: "Indlæser medlemmer…" })}</p>
+            <p className="text-sm text-muted-foreground">{t("settings.team.loading")}</p>
           ) : (
             <div className="divide-y rounded-md border">
               {members.map((m) => {
@@ -985,7 +933,7 @@ function SettingsPage() {
                       <p className="truncate text-sm font-medium">
                         {m.user.name}
                         {isSelf && (
-                          <span className="ml-1 text-muted-foreground">{tm({ en: "(you)", da: "(dig)" })}</span>
+                          <span className="ml-1 text-muted-foreground">{t("settings.team.you")}</span>
                         )}
                       </p>
                       <p className="truncate text-xs text-muted-foreground">
@@ -993,7 +941,16 @@ function SettingsPage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <RoleBadge role={m.role} tm={tm} />
+                      <RoleBadge
+                        role={m.role}
+                        label={
+                          m.role === "admin"
+                            ? t("settings.role.admin")
+                            : m.role === "accountant"
+                              ? t("settings.role.accountant")
+                              : t("settings.role.member")
+                        }
+                      />
                       {!isSelf && (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
@@ -1004,22 +961,21 @@ function SettingsPage() {
                           <AlertDialogContent>
                             <AlertDialogHeader>
                               <AlertDialogTitle>
-                                {tm({ en: "Remove member?", da: "Fjern medlem?" })}
+                                {t("settings.team.remove.title")}
                               </AlertDialogTitle>
                               <AlertDialogDescription>
-                                {tm({
-                                  en: `${m.user.name} will lose access to this organization immediately.`,
-                                  da: `${m.user.name} mister adgang til organisationen med det samme.`,
+                                {t("settings.team.remove.description", {
+                                  name: m.user.name,
                                 })}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>{tm({ en: "Cancel", da: "Annuller" })}</AlertDialogCancel>
+                              <AlertDialogCancel>{t("settings.team.action.cancel")}</AlertDialogCancel>
                               <AlertDialogAction
                                 onClick={() => handleRemoveMember(m.id)}
                                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                               >
-                                {tm({ en: "Remove", da: "Fjern" })}
+                                {t("settings.team.action.remove")}
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
@@ -1041,11 +997,20 @@ function SettingsPage() {
                       {inv.email}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {tm({ en: "Invitation pending", da: "Invitation afventer" })}
+                      {t("settings.team.invitation.pending")}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <RoleBadge role={inv.role} tm={tm} />
+                    <RoleBadge
+                      role={inv.role}
+                      label={
+                        inv.role === "admin"
+                          ? t("settings.role.admin")
+                          : inv.role === "accountant"
+                            ? t("settings.role.accountant")
+                            : t("settings.role.member")
+                      }
+                    />
                     <Button
                       variant="ghost"
                       size="icon"
