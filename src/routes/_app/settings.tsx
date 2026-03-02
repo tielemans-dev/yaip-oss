@@ -856,12 +856,6 @@ function SettingsPage() {
                     : tm({ en: "Refresh models", da: "Opdater modeller" })}
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {tm({
-                  en: "Example: openai/gpt-4o-mini or anthropic/claude-3.5-sonnet.",
-                  da: "Eksempel: openai/gpt-4o-mini eller anthropic/claude-3.5-sonnet.",
-                })}
-              </p>
               {openRouterModelsError && (
                 <p className="text-xs text-destructive">{openRouterModelsError}</p>
               )}
@@ -891,14 +885,35 @@ function SettingsPage() {
             </div>
 
             {settings.aiByokConfigured && (
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={clearAiOpenRouterApiKey}
-                  onChange={(event) => setClearAiOpenRouterApiKey(event.target.checked)}
-                />
-                {tm({ en: "Clear saved OpenRouter API key", da: "Fjern gemt OpenRouter API-nøgle" })}
-              </label>
+              <div className="flex flex-wrap items-center gap-2">
+                {!clearAiOpenRouterApiKey ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setClearAiOpenRouterApiKey(true)}
+                  >
+                    {tm({ en: "Remove saved key", da: "Fjern gemt nøgle" })}
+                  </Button>
+                ) : (
+                  <>
+                    <p className="text-sm text-muted-foreground">
+                      {tm({
+                        en: "Saved key will be removed when you save settings.",
+                        da: "Gemt nøgle fjernes, når du gemmer indstillinger.",
+                      })}
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setClearAiOpenRouterApiKey(false)}
+                    >
+                      {tm({ en: "Undo", da: "Fortryd" })}
+                    </Button>
+                  </>
+                )}
+              </div>
             )}
           </CardContent>
         </Card>
