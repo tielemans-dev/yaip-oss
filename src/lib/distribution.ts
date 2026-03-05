@@ -3,7 +3,15 @@ const runtimeEnv =
     ? process.env
     : ({} as Record<string, string | undefined>)
 
-const distribution = (runtimeEnv.YAIP_DISTRIBUTION ?? "selfhost")
+const viteDistribution =
+  typeof import.meta !== "undefined" &&
+  typeof import.meta.env === "object" &&
+  import.meta.env !== null &&
+  typeof import.meta.env.VITE_YAIP_DISTRIBUTION === "string"
+    ? import.meta.env.VITE_YAIP_DISTRIBUTION
+    : undefined
+
+const distribution = (runtimeEnv.YAIP_DISTRIBUTION ?? viteDistribution ?? "selfhost")
   .trim()
   .toLowerCase()
 

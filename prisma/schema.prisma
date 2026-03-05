@@ -163,6 +163,11 @@ model OrgSettings {
   invoiceNextNum Int          @default(1)
   quotePrefix    String       @default("QTE")
   quoteNextNum   Int          @default(1)
+  onboardingStatus String     @default("not_started")
+  onboardingMethod String?
+  onboardingProfile String?
+  onboardingVersion Int?
+  onboardingCompletedAt DateTime?
   aiOpenRouterApiKeyEnc String?
   aiOpenRouterModel String @default("openai/gpt-4o-mini")
   createdAt      DateTime     @default(now())

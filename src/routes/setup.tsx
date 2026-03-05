@@ -1,12 +1,18 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
 import { useEffect, useState } from "react"
 import { SetupWizard } from "../components/setup/setup-wizard"
 import { Card, CardContent } from "../components/ui/card"
+import { isCloudDistribution } from "../lib/distribution"
 import { useI18n } from "../lib/i18n/react"
 import { trpc } from "../trpc/client"
 import type { SetupStatus } from "../components/setup/types"
 
 export const Route = createFileRoute("/setup")({
+  beforeLoad: () => {
+    if (isCloudDistribution) {
+      throw redirect({ to: "/login" })
+    }
+  },
   component: SetupPage,
 })
 

@@ -8,11 +8,48 @@ import { sendInvitationEmail } from "./email"
 import { getConfiguredSocialProviders } from "./auth/providers"
 
 const socialProviders = getConfiguredSocialProviders()
+const distribution = (process.env.YAIP_DISTRIBUTION ?? "selfhost").trim().toLowerCase()
+const cloudDistribution = distribution === "cloud"
+
+function parseOrigin(value: string | undefined): string | null {
+  if (!value) return null
+  try {
+    return new URL(value).origin
+  } catch {
+    return null
+  }
+}
+
+const trustedOrigins = Array.from(
+  new Set(
+    [
+      parseOrigin(process.env.BETTER_AUTH_URL),
+      parseOrigin(process.env.YAIP_SHELL_ORIGIN),
+      parseOrigin(process.env.YAIP_APP_ORIGIN),
+    ].filter((origin): origin is string => Boolean(origin))
+  )
+)
+
+const crossSubDomainEnabled =
+  process.env.YAIP_AUTH_CROSS_SUBDOMAIN?.trim().toLowerCase() === "true" ||
+  cloudDistribution
+const crossSubDomainDomain = process.env.YAIP_AUTH_COOKIE_DOMAIN?.trim()
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
+  ...(trustedOrigins.length > 0 ? { trustedOrigins } : {}),
+  ...(crossSubDomainEnabled
+    ? {
+        advanced: {
+          crossSubDomainCookies: {
+            enabled: true,
+            ...(crossSubDomainDomain ? { domain: crossSubDomainDomain } : {}),
+          },
+        },
+      }
+    : {}),
   emailAndPassword: {
     enabled: true,
   },

@@ -1,5 +1,12 @@
-import { NoopBillingProvider } from "./noop-provider"
 import type { BillingProvider } from "./types"
+import { getBillingProvider } from "../runtime/services"
 
-export const billingProvider: BillingProvider = new NoopBillingProvider()
-
+export const billingProvider: BillingProvider = {
+  getSubscription: (organizationId) => getBillingProvider().getSubscription(organizationId),
+  assertInvoiceCreationAllowed: (organizationId) =>
+    getBillingProvider().assertInvoiceCreationAllowed(organizationId),
+  createCheckoutSession: (organizationId) =>
+    getBillingProvider().createCheckoutSession?.(organizationId) ?? Promise.resolve({ url: null }),
+  createPortalSession: (organizationId) =>
+    getBillingProvider().createPortalSession?.(organizationId) ?? Promise.resolve({ url: null }),
+}

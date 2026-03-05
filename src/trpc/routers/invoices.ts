@@ -8,6 +8,7 @@ import {
 import { prisma } from "../../lib/db"
 import { sendInvoiceEmail } from "../../lib/email"
 import { billingProvider } from "../../lib/billing"
+import { assertCloudOnboardingComplete } from "../../lib/onboarding/guard"
 import { router, orgProcedure } from "../init"
 
 const isoDateSchema = z.string().refine(
@@ -99,6 +100,8 @@ export const invoicesRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      await assertCloudOnboardingComplete(ctx.organizationId)
+
       const contact = await prisma.contact.findFirst({
         where: { id: input.contactId, organizationId: ctx.organizationId },
         select: {

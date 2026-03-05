@@ -21,7 +21,13 @@ function NotFound() {
 export const Route = createRootRoute({
   beforeLoad: async ({ location }) => {
     const installation = await getInstallationStatus()
-    if (shouldRedirectToSetup(location.pathname, installation.isSetupComplete)) {
+    if (
+      shouldRedirectToSetup(
+        location.pathname,
+        installation.isSetupComplete,
+        installation.distribution
+      )
+    ) {
       throw redirect({ to: '/setup' })
     }
     return { installation }

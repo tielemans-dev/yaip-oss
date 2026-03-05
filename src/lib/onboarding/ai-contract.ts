@@ -1,0 +1,142 @@
+import { z } from "zod"
+import type { OnboardingMissingField } from "./readiness"
+
+export const onboardingTaxRegimeSchema = z.enum([
+  "us_sales_tax",
+  "eu_vat",
+  "custom",
+])
+
+export type OnboardingTaxRegime = z.infer<typeof onboardingTaxRegimeSchema>
+
+export const onboardingPatchSchema = z
+  .object({
+    companyName: z.string().trim().min(1).max(120).optional(),
+    companyAddress: z.string().trim().min(1).max(240).optional(),
+    companyEmail: z.string().trim().email().optional(),
+    countryCode: z
+      .string()
+      .trim()
+      .length(2)
+      .transform((value) => value.toUpperCase())
+      .optional(),
+    locale: z.string().trim().min(2).max(16).optional(),
+    timezone: z.string().trim().min(1).max(120).optional(),
+    defaultCurrency: z
+      .string()
+      .trim()
+      .regex(/^[A-Z]{3}$/)
+      .optional(),
+    taxRegime: onboardingTaxRegimeSchema.optional(),
+    pricesIncludeTax: z.boolean().optional(),
+    primaryTaxId: z
+      .string()
+      .trim()
+      .min(1)
+      .max(40)
+      .optional(),
+    primaryTaxIdScheme: z.string().trim().min(1).max(40).optional(),
+    invoicePrefix: z
+      .string()
+      .trim()
+      .regex(/^[A-Z0-9-]{1,10}$/)
+      .optional(),
+    quotePrefix: z
+      .string()
+      .trim()
+      .regex(/^[A-Z0-9-]{1,10}$/)
+      .optional(),
+  })
+  .strict()
+
+export type OnboardingPatch = z.infer<typeof onboardingPatchSchema>
+
+export type OnboardingRequirementRules = {
+  requiredFields: OnboardingMissingField[]
+  optionalFields: OnboardingMissingField[]
+  fieldRules: Partial<Record<OnboardingMissingField, string>>
+}
+
+export type OnboardingFollowupQuestion = {
+  id: string
+  question: string
+  fieldHint: OnboardingMissingField
+}
+
+const REQUIRED_BASE_FIELDS: OnboardingMissingField[] = [
+  "companyName",
+  "companyAddress",
+  "companyEmail",
+  "countryCode",
+  "locale",
+  "timezone",
+  "defaultCurrency",
+  "taxRegime",
+  "invoicePrefix",
+  "invoiceNextNum",
+  "quotePrefix",
+  "quoteNextNum",
+]
+
+const FIELD_QUESTIONS: Record<OnboardingMissingField, string> = {
+  companyName: "What is the legal company name that should appear on invoices?",
+  companyAddress: "What company address should be printed on invoices?",
+  companyEmail: "Which billing email should receive invoice communication?",
+  countryCode: "Which country does this organization primarily operate in?",
+  locale: "Which locale should be used for dates and number formatting?",
+  timezone: "Which timezone should invoice issue dates use?",
+  defaultCurrency: "What default currency should invoices use?",
+  taxRegime: "Which tax regime should be applied by default?",
+  invoicePrefix: "What prefix should be used for invoice numbering?",
+  invoiceNextNum: "What should the next invoice number start from?",
+  quotePrefix: "What prefix should be used for quote numbering?",
+  quoteNextNum: "What should the next quote number start from?",
+  primaryTaxId: "What is the primary tax ID or VAT number for the organization?",
+}
+
+export function getRequirementRules(input: {
+  countryCode?: string | null
+  taxRegime?: OnboardingTaxRegime | string | null
+}): OnboardingRequirementRules {
+  const taxRegime = input.taxRegime ?? null
+  const requiredFields =
+    taxRegime === "eu_vat"
+      ? [...REQUIRED_BASE_FIELDS, "primaryTaxId"]
+      : [...REQUIRED_BASE_FIELDS]
+
+  return {
+    requiredFields,
+    optionalFields: [],
+    fieldRules: {
+      companyEmail: "Must be a valid email address.",
+      countryCode: "Use ISO-3166 alpha-2 country code (for example DK, US).",
+      defaultCurrency: "Use ISO-4217 currency code (for example USD, EUR).",
+      taxRegime: "Allowed values: us_sales_tax, eu_vat, custom.",
+      invoicePrefix: "Uppercase letters/numbers/hyphen, max 10 chars.",
+      quotePrefix: "Uppercase letters/numbers/hyphen, max 10 chars.",
+      primaryTaxId:
+        taxRegime === "eu_vat"
+          ? "Required when tax regime is eu_vat."
+          : "Optional unless local policy requires it.",
+    },
+  }
+}
+
+export function listFollowupQuestions(
+  missing: readonly OnboardingMissingField[]
+): OnboardingFollowupQuestion[] {
+  return missing.map((field) => ({
+    id: `missing-${field}`,
+    fieldHint: field,
+    question: FIELD_QUESTIONS[field],
+  }))
+}
+
+export const onboardingAiSuggestionSchema = z.object({
+  patch: onboardingPatchSchema,
+  rationale: z.string().trim().min(1).max(1000),
+  confidence: z.number().min(0).max(1),
+  followupQuestions: z.array(z.string().trim().min(1).max(240)).max(10),
+})
+
+export type OnboardingAiSuggestion = z.infer<typeof onboardingAiSuggestionSchema>

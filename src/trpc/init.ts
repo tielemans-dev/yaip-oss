@@ -1,6 +1,7 @@
 import { initTRPC, TRPCError } from "@trpc/server"
 import superjson from "superjson"
 import { auth } from "../lib/auth"
+import { isCloudDistribution } from "../lib/distribution"
 
 export type Context = {
   session: Awaited<ReturnType<typeof auth.api.getSession>> | null
@@ -12,7 +13,16 @@ const t = initTRPC.context<Context>().create({
 
 export const router = t.router
 export const publicProcedure = t.procedure
-export const setupProcedure = publicProcedure
+export const setupProcedure = publicProcedure.use(async ({ next }) => {
+  if (isCloudDistribution) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Installation setup is disabled in cloud distribution",
+    })
+  }
+
+  return next()
+})
 
 export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
   if (!ctx.session?.user) {

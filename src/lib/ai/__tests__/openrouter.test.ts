@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest"
-import { extractJsonObjectFromText, fetchOpenRouterModelIds, parseInvoiceDraftFromModelOutput } from "../openrouter"
+import {
+  extractJsonObjectFromText,
+  fetchOpenRouterModelIds,
+  generateInvoiceDraftWithOpenRouter,
+  parseInvoiceDraftFromModelOutput,
+} from "../openrouter"
 
 describe("openrouter invoice draft parsing", () => {
   it("extracts json object from markdown fenced output", () => {
@@ -58,6 +63,92 @@ describe("openrouter invoice draft parsing", () => {
       "anthropic/claude-3.5-sonnet",
       "openai/gpt-4o-mini",
     ])
+
+    global.fetch = originalFetch
+  })
+
+  it("throws tagged error when draft generation returns non-ok response", async () => {
+    const originalFetch = global.fetch
+    global.fetch = (async () =>
+      ({
+        ok: false,
+        status: 401,
+        text: async () => "unauthorized",
+      }) as Response) as typeof fetch
+
+    await expect(
+      generateInvoiceDraftWithOpenRouter({
+        apiKey: "test-key",
+        model: "openai/gpt-4o-mini",
+        prompt: "Create a draft invoice for consulting work",
+        todayIsoDate: "2026-03-03",
+        contacts: [],
+        catalogItems: [],
+      })
+    ).rejects.toMatchObject({
+      _tag: "OpenRouterHttpError",
+      status: 401,
+    })
+
+    global.fetch = originalFetch
+  })
+
+  it("throws tagged error when draft generation response is empty", async () => {
+    const originalFetch = global.fetch
+    global.fetch = (async () =>
+      ({
+        ok: true,
+        json: async () => ({
+          choices: [{ message: { content: "   " } }],
+        }),
+      }) as Response) as typeof fetch
+
+    await expect(
+      generateInvoiceDraftWithOpenRouter({
+        apiKey: "test-key",
+        model: "openai/gpt-4o-mini",
+        prompt: "Create a draft invoice for consulting work",
+        todayIsoDate: "2026-03-03",
+        contacts: [],
+        catalogItems: [],
+      })
+    ).rejects.toMatchObject({
+      _tag: "OpenRouterEmptyResponseError",
+    })
+
+    global.fetch = originalFetch
+  })
+
+  it("throws tagged error when models endpoint returns non-ok response", async () => {
+    const originalFetch = global.fetch
+    global.fetch = (async () =>
+      ({
+        ok: false,
+        status: 500,
+        text: async () => "server error",
+      }) as Response) as typeof fetch
+
+    await expect(fetchOpenRouterModelIds("test-key")).rejects.toMatchObject({
+      _tag: "OpenRouterHttpError",
+      status: 500,
+    })
+
+    global.fetch = originalFetch
+  })
+
+  it("throws tagged error when models payload shape is invalid", async () => {
+    const originalFetch = global.fetch
+    global.fetch = (async () =>
+      ({
+        ok: true,
+        json: async () => ({
+          data: "not-an-array",
+        }),
+      }) as Response) as typeof fetch
+
+    await expect(fetchOpenRouterModelIds("test-key")).rejects.toMatchObject({
+      _tag: "OpenRouterPayloadError",
+    })
 
     global.fetch = originalFetch
   })

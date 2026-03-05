@@ -8,9 +8,15 @@ import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { nitro } from 'nitro/vite'
 
+const devtoolsEventBusPort = Number(process.env.YAIP_DEVTOOLS_EVENT_BUS_PORT ?? 42069)
+
 const config = defineConfig({
   plugins: [
-    devtools(),
+    devtools({
+      eventBusConfig: {
+        port: devtoolsEventBusPort,
+      },
+    }),
     nitro({ rollupConfig: { external: [/^@sentry\//] } }),
     tsconfigPaths({ projects: ['./tsconfig.json'] }),
     tailwindcss(),

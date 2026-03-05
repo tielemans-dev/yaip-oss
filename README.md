@@ -23,7 +23,7 @@ Source-available invoicing for freelancers and small businesses.
 
 ### Prerequisites
 
-- Node.js 22+
+- Node.js 24.x (recommended)
 - pnpm
 - PostgreSQL (or Docker)
 
@@ -73,6 +73,19 @@ Source-available invoicing for freelancers and small businesses.
    ```
 
    `pnpm dev` now runs a preflight that applies Prisma migrations automatically.
+   In `yaip-oss`, this command is pinned to `selfhost` distribution mode.
+
+6. If you want the full hosted simulation (cloud shell + cloud-configured OSS), run this from the workspace root:
+
+   ```bash
+   cd /path/to/yaip
+   pnpm dev
+   ```
+
+   Then use:
+   - `http://yaip.localhost:3000` for `yaip-cloud`
+   - `http://app.yaip.localhost:3000` for cloud-configured `yaip-oss`
+   - `http://localhost:3000` and `http://app.localhost:3000` will redirect to the canonical hosts above
 
 7. Open [http://localhost:3000](http://localhost:3000)
 
@@ -113,6 +126,13 @@ Run the DB-backed invoice/quote smoke flow (create/edit/send/convert) against yo
 pnpm test:integration
 ```
 
+## Onboarding Behavior
+
+- `selfhost` distribution keeps onboarding manual and local.
+- `cloud` distribution hard-blocks invoice/quote creation until organization onboarding is complete.
+- Completion requires invoice-readiness fields (company identity, locale/timezone/currency, tax regime, numbering defaults).
+- Cloud-only onboarding AI endpoints are available under `onboardingAi.*` and only suggest/apply patches through the same canonical readiness checks.
+
 ## Environment Variables
 
 | Variable | Description | Required |
@@ -127,6 +147,9 @@ pnpm test:integration
 | `RESEND_API_KEY` | Resend API key for sending invoice/quote/invite emails | No |
 | `FROM_EMAIL` | Sender email address used for outgoing emails | No |
 | `CRON_SECRET` | Bearer token required by `/api/cron/mark-overdue` | Yes (prod) |
+| `YAIP_DISTRIBUTION` | Runtime distribution (`selfhost` or `cloud`) | No (defaults to `selfhost`) |
+| `YAIP_ONBOARDING_AI_ENABLED` | Enables cloud onboarding AI endpoints | No (defaults by distribution) |
+| `YAIP_ONBOARDING_AI_MANAGED_ENABLED` | Marks onboarding AI as managed capability | No (defaults by distribution) |
 
 ## Contributing
 

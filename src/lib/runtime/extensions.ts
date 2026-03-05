@@ -6,12 +6,19 @@ export type AIInvoiceDraftCapabilities = {
   maxPromptChars: number
 }
 
+export type OnboardingAICapabilities = {
+  enabled: boolean
+  managed: boolean
+}
+
 export type RuntimeCapabilities = {
   aiInvoiceDraft: AIInvoiceDraftCapabilities
+  onboardingAi: OnboardingAICapabilities
 }
 
 export type RuntimeCapabilityPatch = {
   aiInvoiceDraft?: Partial<AIInvoiceDraftCapabilities>
+  onboardingAi?: Partial<OnboardingAICapabilities>
 }
 
 export type RuntimeExtension = {
@@ -51,14 +58,28 @@ function mergeCapabilities(
       ...base.aiInvoiceDraft,
       ...patch.aiInvoiceDraft,
     },
+    onboardingAi: {
+      ...base.onboardingAi,
+      ...patch.onboardingAi,
+    },
   }
 }
 
 function readDefaultCapabilities(
   env: Record<string, string | undefined>
 ): RuntimeCapabilities {
+  const distribution = env.YAIP_DISTRIBUTION?.trim().toLowerCase()
+  const isCloud = distribution === "cloud"
   const byok = readBooleanFlag(env.YAIP_AI_BYOK_ENABLED, true)
   const managed = readBooleanFlag(env.YAIP_AI_MANAGED_ENABLED, false)
+  const onboardingAiManaged = readBooleanFlag(
+    env.YAIP_ONBOARDING_AI_MANAGED_ENABLED,
+    isCloud
+  )
+  const onboardingAiEnabled = readBooleanFlag(
+    env.YAIP_ONBOARDING_AI_ENABLED,
+    onboardingAiManaged
+  )
 
   return {
     aiInvoiceDraft: {
@@ -67,6 +88,10 @@ function readDefaultCapabilities(
       managed,
       managedRequiresSubscription: managed,
       maxPromptChars: DEFAULT_MAX_PROMPT_CHARS,
+    },
+    onboardingAi: {
+      enabled: onboardingAiEnabled,
+      managed: onboardingAiManaged,
     },
   }
 }

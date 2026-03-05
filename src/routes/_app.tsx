@@ -1,6 +1,10 @@
-import { createFileRoute, redirect, Outlet } from '@tanstack/react-router'
+import { createFileRoute, redirect, Outlet, useNavigate, useRouterState } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { getSession } from '../lib/auth-session'
+import { useSession } from '../lib/auth-client'
+import { getActiveOrgCloudOnboardingStatus } from '../lib/cloud-onboarding-session'
+import { shouldRedirectToCloudOnboarding } from '../lib/cloud-onboarding'
+import { isCloudDistribution } from '../lib/distribution'
 import { SidebarProvider, SidebarTrigger } from '../components/ui/sidebar'
 import { AppSidebar } from '../components/app-sidebar'
 import { useI18n } from '../lib/i18n/react'
@@ -13,10 +17,23 @@ export const Route = createFileRoute('/_app')({
       throw redirect({ to: '/login' })
     }
     const hasActiveOrg = !!session.session.activeOrganizationId
-    const isOnboarding = location.pathname === '/onboarding'
+    const isOnboarding = location.pathname === '/onboarding' || location.pathname.startsWith('/onboarding/')
     if (!hasActiveOrg && !isOnboarding) {
       throw redirect({ to: '/onboarding' })
     }
+
+    if (isCloudDistribution && hasActiveOrg) {
+      const onboarding = await getActiveOrgCloudOnboardingStatus()
+      const redirectTo = shouldRedirectToCloudOnboarding(
+        location.pathname,
+        hasActiveOrg,
+        onboarding.isComplete
+      )
+      if (redirectTo) {
+        throw redirect({ to: redirectTo })
+      }
+    }
+
     return { session }
   },
   component: AppLayout,
@@ -24,6 +41,10 @@ export const Route = createFileRoute('/_app')({
 
 function AppLayout() {
   const { setLocale } = useI18n()
+  const navigate = useNavigate()
+  const { data: session } = useSession()
+  const { location } = useRouterState()
+  const activeOrgId = session?.session.activeOrganizationId ?? null
 
   useEffect(() => {
     let cancelled = false
@@ -40,7 +61,41 @@ function AppLayout() {
     return () => {
       cancelled = true
     }
-  }, [setLocale])
+  }, [setLocale, activeOrgId])
+
+  useEffect(() => {
+    if (!isCloudDistribution || !activeOrgId) {
+      return
+    }
+
+    let cancelled = false
+    const currentPath = location.pathname
+
+    trpc.onboarding.getStatus
+      .query()
+      .then((status) => {
+        if (cancelled) {
+          return
+        }
+
+        const redirectTo = shouldRedirectToCloudOnboarding(
+          currentPath,
+          true,
+          status.isComplete
+        )
+
+        if (redirectTo && redirectTo !== currentPath) {
+          navigate({ to: redirectTo, replace: true })
+        }
+      })
+      .catch(() => {
+        // Ignore transient onboarding status failures in the client guard.
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [activeOrgId, location.pathname, navigate])
 
   return (
     <SidebarProvider>

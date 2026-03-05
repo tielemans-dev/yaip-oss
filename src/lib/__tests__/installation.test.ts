@@ -104,5 +104,6 @@ describe("setup guard paths", () => {
     expect(shouldRedirectToSetup("/setup", false)).toBe(false)
     expect(shouldRedirectToSetup("/login", false)).toBe(false)
     expect(shouldRedirectToSetup("/_app/invoices", true)).toBe(false)
+    expect(shouldRedirectToSetup("/_app/invoices", false, "cloud")).toBe(false)
   })
 })

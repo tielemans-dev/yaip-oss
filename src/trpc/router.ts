@@ -5,6 +5,8 @@ import { catalogRouter } from "./routers/catalog"
 import { contactsRouter } from "./routers/contacts"
 import { dashboardRouter } from "./routers/dashboard"
 import { invoicesRouter } from "./routers/invoices"
+import { onboardingRouter } from "./routers/onboarding"
+import { onboardingAiRouter } from "./routers/onboarding-ai"
 import { quotesRouter } from "./routers/quotes"
 import { runtimeRouter } from "./routers/runtime"
 import { setupRouter } from "./routers/setup"
@@ -17,6 +19,8 @@ export const appRouter = router({
   contacts: contactsRouter,
   dashboard: dashboardRouter,
   invoices: invoicesRouter,
+  onboarding: onboardingRouter,
+  onboardingAi: onboardingAiRouter,
   quotes: quotesRouter,
   runtime: runtimeRouter,
   setup: setupRouter,

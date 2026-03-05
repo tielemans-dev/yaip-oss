@@ -12,7 +12,15 @@ export function isSetupGuardBypassPath(pathname: string) {
   )
 }
 
-export function shouldRedirectToSetup(pathname: string, isSetupComplete: boolean) {
+export function shouldRedirectToSetup(
+  pathname: string,
+  isSetupComplete: boolean,
+  distribution: string = "selfhost"
+) {
+  if (distribution === "cloud") {
+    return false
+  }
+
   if (isSetupComplete) {
     return false
   }

@@ -28,5 +28,22 @@ export const enAuthMessages = {
   "auth.onboarding.submit": "Create organization",
   "auth.onboarding.submitting": "Creating…",
   "auth.onboarding.error": "Failed to create organization",
+  "auth.onboarding.configured.title": "Organization is ready",
+  "auth.onboarding.configured.description": "Your workspace is already configured.",
+  "auth.onboarding.configured.continue": "Continue to app",
+  "auth.onboarding.profile.title": "Choose your organization profile",
+  "auth.onboarding.profile.description":
+    "This selection is saved per organization and can drive cloud defaults over time.",
+  "auth.onboarding.profile.loading": "Loading onboarding status…",
+  "auth.onboarding.profile.submit": "Finish onboarding",
+  "auth.onboarding.profile.submitting": "Saving…",
+  "auth.onboarding.profile.error": "Failed to finish onboarding",
+  "auth.onboarding.profile.freelancer.title": "Freelancer",
+  "auth.onboarding.profile.freelancer.description": "Lean defaults for solo consultants.",
+  "auth.onboarding.profile.smb.title": "SMB",
+  "auth.onboarding.profile.smb.description": "Balanced defaults for growing teams.",
+  "auth.onboarding.profile.enterprise.title": "Enterprise",
+  "auth.onboarding.profile.enterprise.description":
+    "Conservative defaults for complex organizations.",
   "auth.welcome": "Welcome, {name}",
 } as const

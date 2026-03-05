@@ -1,9 +1,8 @@
-import { useNavigate } from '@tanstack/react-router'
+import { useNavigate, useRouter } from '@tanstack/react-router'
 import { Check, ChevronsUpDown, LogOut, Plus } from 'lucide-react'
-import { useRouteContext } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 
-import { authClient } from '../lib/auth-client'
+import { authClient, useSession } from '../lib/auth-client'
 import { Avatar, AvatarFallback } from './ui/avatar'
 import {
   DropdownMenu,
@@ -42,8 +41,9 @@ type Organization = {
 export function UserMenu() {
   const { t } = useI18n()
   const navigate = useNavigate()
+  const router = useRouter()
   const { isMobile } = useSidebar()
-  const { session } = useRouteContext({ from: '/_app' })
+  const { data: session } = useSession()
 
   const user = session?.user
   const activeOrgId = session?.session?.activeOrganizationId
@@ -64,8 +64,12 @@ export function UserMenu() {
   }
 
   async function handleSwitchOrg(organizationId: string) {
+    if (organizationId === activeOrgId) {
+      return
+    }
+
     await authClient.organization.setActive({ organizationId })
-    window.location.reload()
+    await router.invalidate()
   }
 
   if (!user) return null

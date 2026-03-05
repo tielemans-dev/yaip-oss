@@ -28,5 +28,22 @@ export const daAuthMessages = {
   "auth.onboarding.submit": "Opret organisation",
   "auth.onboarding.submitting": "Opretter…",
   "auth.onboarding.error": "Kunne ikke oprette organisation",
+  "auth.onboarding.configured.title": "Organisationen er klar",
+  "auth.onboarding.configured.description": "Dit workspace er allerede konfigureret.",
+  "auth.onboarding.configured.continue": "Fortsæt til appen",
+  "auth.onboarding.profile.title": "Vælg organisationsprofil",
+  "auth.onboarding.profile.description":
+    "Valget gemmes per organisation og kan bruges til cloud-standarder over tid.",
+  "auth.onboarding.profile.loading": "Indlæser onboarding-status…",
+  "auth.onboarding.profile.submit": "Fuldfør onboarding",
+  "auth.onboarding.profile.submitting": "Gemmer…",
+  "auth.onboarding.profile.error": "Kunne ikke fuldføre onboarding",
+  "auth.onboarding.profile.freelancer.title": "Freelancer",
+  "auth.onboarding.profile.freelancer.description": "Lette standarder for solo-konsulenter.",
+  "auth.onboarding.profile.smb.title": "SMV",
+  "auth.onboarding.profile.smb.description": "Balancerede standarder til voksende teams.",
+  "auth.onboarding.profile.enterprise.title": "Enterprise",
+  "auth.onboarding.profile.enterprise.description":
+    "Konservative standarder til komplekse organisationer.",
   "auth.welcome": "Velkommen, {name}",
 } as const
