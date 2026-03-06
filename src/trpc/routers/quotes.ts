@@ -6,9 +6,14 @@ import {
   validateDocument,
 } from "../../lib/compliance"
 import { prisma } from "../../lib/db"
+import {
+  createEmailDeliveryAttempt,
+  getEmailDeliveryRuntimeStatus,
+} from "../../lib/email-delivery"
 import { sendQuoteEmail } from "../../lib/email"
 import { assertCloudOnboardingComplete } from "../../lib/onboarding/guard"
 import { getPublicQuoteUrl } from "../../lib/quotes/public-url"
+import { getRuntimeCapabilities } from "../../lib/runtime/extensions"
 import { router, orgProcedure } from "../init"
 
 const isoDateSchema = z.string().refine(
@@ -23,6 +28,8 @@ const quoteLineItemInputSchema = z.object({
   quantity: z.number().positive().max(1_000_000),
   unitPrice: z.number().min(0).max(1_000_000_000),
 })
+
+const emailAddressSchema = z.string().trim().email()
 
 function mapQuoteItemForUi(item: {
   quantity: { toNumber: () => number }
@@ -418,7 +425,12 @@ export const quotesRouter = router({
     }),
 
   send: orgProcedure
-    .input(z.object({ id: z.string() }))
+    .input(
+      z.object({
+        id: z.string(),
+        allowSendWithoutEmail: z.boolean().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const quote = await prisma.quote.findFirstOrThrow({
         where: { id: input.id, organizationId: ctx.organizationId },
@@ -468,46 +480,90 @@ export const quotesRouter = router({
         publicAccessIssuedAt,
         publicAccessKeyVersion: quote.publicAccessKeyVersion,
       })
+      const emailDelivery = getEmailDeliveryRuntimeStatus({
+        managed: getRuntimeCapabilities().emailDelivery.managed,
+        resendApiKey: process.env.RESEND_API_KEY,
+        fromEmail: process.env.FROM_EMAIL,
+      })
+      const contactEmail = quote.contact.email?.trim() ?? ""
       let emailSent = false
       let emailSkipReason: string | undefined
 
-      if (!quote.contact.email) {
-        emailSkipReason = "Contact has no email address"
-      } else if (!process.env.RESEND_API_KEY) {
-        emailSkipReason = "Email not configured (RESEND_API_KEY missing)"
-      } else {
-        try {
-          await sendQuoteEmail({
-            to: quote.contact.email,
-            quote: {
-              ...quote,
-              issueDate: sentAt,
-              subtotal: quote.subtotalNet.toNumber(),
-              taxAmount: quote.totalTax.toNumber(),
-              total: quote.totalGross.toNumber(),
-              items: quote.items.map((i) => ({
-                description: i.description,
-                quantity: i.quantity.toNumber(),
-                unitPrice: i.unitPriceGross.toNumber(),
-                total: i.lineGross.toNumber(),
-              })),
-            },
-            org: {
-              companyName: orgSettings?.companyName,
-              companyEmail: orgSettings?.companyEmail,
-              locale: orgSettings?.locale,
-              timezone: orgSettings?.timezone,
-            },
-            contactName: quote.contact.name,
-            publicQuoteUrl,
-          })
-          emailSent = true
-        } catch {
+      if (!emailAddressSchema.safeParse(contactEmail).success) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Contact has no email address",
+        })
+      }
+
+      if (!emailDelivery.available) {
+        if (!input.allowSendWithoutEmail) {
           throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Failed to send quote email. Quote was not marked as sent.",
+            code: "BAD_REQUEST",
+            message: "Email delivery is not configured",
           })
         }
+
+        emailSkipReason = "Email delivery is not configured"
+        const updated = await prisma.quote.update({
+          where: { id: input.id },
+          data: {
+            status: "sent",
+            issueDate: sentAt,
+            publicAccessIssuedAt,
+            ...createEmailDeliveryAttempt({
+              at: sentAt,
+              outcome: "skipped",
+              code: "provider_missing",
+              message: emailSkipReason,
+            }),
+          },
+        })
+
+        return { ...updated, emailSent, emailSkipReason }
+      }
+
+      try {
+        await sendQuoteEmail({
+          to: contactEmail,
+          quote: {
+            ...quote,
+            issueDate: sentAt,
+            subtotal: quote.subtotalNet.toNumber(),
+            taxAmount: quote.totalTax.toNumber(),
+            total: quote.totalGross.toNumber(),
+            items: quote.items.map((i) => ({
+              description: i.description,
+              quantity: i.quantity.toNumber(),
+              unitPrice: i.unitPriceGross.toNumber(),
+              total: i.lineGross.toNumber(),
+            })),
+          },
+          org: {
+            companyName: orgSettings?.companyName,
+            companyEmail: orgSettings?.companyEmail,
+            locale: orgSettings?.locale,
+            timezone: orgSettings?.timezone,
+          },
+          contactName: quote.contact.name,
+          publicQuoteUrl,
+        })
+        emailSent = true
+      } catch {
+        await prisma.quote.update({
+          where: { id: input.id },
+          data: {
+            ...createEmailDeliveryAttempt({
+              outcome: "failed",
+              code: "send_failed",
+              message: "Failed to send quote email.",
+            }),
+          },
+        })
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to send quote email. Quote was not marked as sent.",
+        })
       }
 
       const updated = await prisma.quote.update({
@@ -516,10 +572,121 @@ export const quotesRouter = router({
           status: "sent",
           issueDate: sentAt,
           publicAccessIssuedAt,
+          ...createEmailDeliveryAttempt({
+            at: sentAt,
+            outcome: "sent",
+            code: "sent",
+            message: "Quote email sent.",
+          }),
         },
       })
 
       return { ...updated, emailSent, emailSkipReason }
+    }),
+
+  resendEmail: orgProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const quote = await prisma.quote.findFirstOrThrow({
+        where: { id: input.id, organizationId: ctx.organizationId },
+        include: {
+          contact: true,
+          items: { orderBy: { sortOrder: "asc" } },
+        },
+      })
+
+      if (!["sent", "accepted", "rejected"].includes(quote.status)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Only shared quotes can be resent by email",
+        })
+      }
+
+      const publicQuoteUrl = getPublicQuoteUrl(quote)
+      if (!publicQuoteUrl) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Quote has no public link to resend",
+        })
+      }
+
+      const orgSettings = await prisma.orgSettings.findUnique({
+        where: { organizationId: ctx.organizationId },
+      })
+      const emailDelivery = getEmailDeliveryRuntimeStatus({
+        managed: getRuntimeCapabilities().emailDelivery.managed,
+        resendApiKey: process.env.RESEND_API_KEY,
+        fromEmail: process.env.FROM_EMAIL,
+      })
+      const contactEmail = quote.contact.email?.trim() ?? ""
+
+      if (!emailAddressSchema.safeParse(contactEmail).success) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Contact has no email address",
+        })
+      }
+
+      if (!emailDelivery.available) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Email delivery is not configured",
+        })
+      }
+
+      try {
+        await sendQuoteEmail({
+          to: contactEmail,
+          quote: {
+            ...quote,
+            subtotal: quote.subtotalNet.toNumber(),
+            taxAmount: quote.totalTax.toNumber(),
+            total: quote.totalGross.toNumber(),
+            items: quote.items.map((i) => ({
+              description: i.description,
+              quantity: i.quantity.toNumber(),
+              unitPrice: i.unitPriceGross.toNumber(),
+              total: i.lineGross.toNumber(),
+            })),
+          },
+          org: {
+            companyName: orgSettings?.companyName,
+            companyEmail: orgSettings?.companyEmail,
+            locale: orgSettings?.locale,
+            timezone: orgSettings?.timezone,
+          },
+          contactName: quote.contact.name,
+          publicQuoteUrl,
+        })
+      } catch {
+        await prisma.quote.update({
+          where: { id: input.id },
+          data: {
+            ...createEmailDeliveryAttempt({
+              outcome: "failed",
+              code: "send_failed",
+              message: "Failed to send quote email.",
+            }),
+          },
+        })
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to resend quote email.",
+        })
+      }
+
+      const updated = await prisma.quote.update({
+        where: { id: input.id },
+        data: {
+          ...createEmailDeliveryAttempt({
+            outcome: "sent",
+            code: "sent",
+            message: "Quote email sent.",
+          }),
+        },
+      })
+
+      return { ...updated, emailSent: true, emailSkipReason: undefined }
     }),
 
   reject: orgProcedure
