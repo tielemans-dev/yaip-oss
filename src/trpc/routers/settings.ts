@@ -2,8 +2,10 @@ import { z } from "zod"
 import { TRPCError } from "@trpc/server"
 import { router, orgProcedure } from "../init"
 import { prisma } from "../../lib/db"
+import { getEmailDeliveryRuntimeStatus } from "../../lib/email-delivery"
 import { encryptSecret } from "../../lib/secrets"
 import { getStripePaymentConfigurationState } from "../../lib/payments/stripe"
+import { getRuntimeCapabilities } from "../../lib/runtime/extensions"
 import { COUNTRY_OPTIONS, LOCALE_OPTIONS } from "../../lib/compliance/countries"
 import {
   getCountryCodeOrFallback,
@@ -97,6 +99,12 @@ export const settingsRouter = router({
       stripeSecretKeyEnc: settings.stripeSecretKeyEnc,
       stripeWebhookSecretEnc: settings.stripeWebhookSecretEnc,
     })
+    const runtimeCapabilities = getRuntimeCapabilities()
+    const emailDelivery = getEmailDeliveryRuntimeStatus({
+      managed: runtimeCapabilities.emailDelivery.managed,
+      resendApiKey: process.env.RESEND_API_KEY,
+      fromEmail: process.env.FROM_EMAIL,
+    })
     return {
       id: settings.id,
       countryCode: settings.countryCode,
@@ -122,6 +130,7 @@ export const settingsRouter = router({
       stripePublishableKey: settings.stripePublishableKey,
       primaryTaxId: primaryTaxId?.value ?? null,
       primaryTaxIdScheme: primaryTaxId?.scheme ?? null,
+      emailDelivery,
     }
   }),
 
