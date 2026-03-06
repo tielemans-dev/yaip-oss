@@ -2,7 +2,7 @@ import "dotenv/config"
 import { randomUUID } from "node:crypto"
 import { describe, expect, it } from "vitest"
 import { prisma } from "../db"
-import { resolvePublicInvoiceCheckout } from "../payments/public-session"
+import { resolvePublicInvoiceCheckout } from "../payments/public-checkout"
 import { appRouter } from "../../trpc/router"
 
 const hasDatabaseUrl = Boolean(process.env.DATABASE_URL)

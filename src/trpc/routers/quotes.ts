@@ -461,6 +461,13 @@ export const quotesRouter = router({
       }
 
       const sentAt = new Date()
+      const publicAccessIssuedAt = quote.publicAccessIssuedAt ?? sentAt
+      const publicQuoteUrl = getPublicQuoteUrl({
+        id: quote.id,
+        status: "sent",
+        publicAccessIssuedAt,
+        publicAccessKeyVersion: quote.publicAccessKeyVersion,
+      })
       let emailSent = false
       let emailSkipReason: string | undefined
 
@@ -492,6 +499,7 @@ export const quotesRouter = router({
               timezone: orgSettings?.timezone,
             },
             contactName: quote.contact.name,
+            publicQuoteUrl,
           })
           emailSent = true
         } catch {
@@ -507,7 +515,7 @@ export const quotesRouter = router({
         data: {
           status: "sent",
           issueDate: sentAt,
-          publicAccessIssuedAt: sentAt,
+          publicAccessIssuedAt,
         },
       })
 

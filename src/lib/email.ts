@@ -120,6 +120,25 @@ function layout(content: string, locale?: string | null) {
 </html>`
 }
 
+function actionBlock(input: {
+  href: string
+  label: string
+  fallbackLabel: string
+}) {
+  const safeHref = escapeAttribute(input.href)
+  return `
+    <div style="margin-top:24px;padding-top:24px;border-top:1px solid #e5e7eb;">
+      <a href="${safeHref}"
+         style="display:inline-block;background:#111827;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:500;">
+        ${escapeHtml(input.label)}
+      </a>
+      <p style="margin:16px 0 0;color:#6b7280;font-size:14px;">${escapeHtml(input.fallbackLabel)}</p>
+      <p style="margin:8px 0 0;font-size:14px;word-break:break-all;">
+        <a href="${safeHref}" style="color:#111827;">${escapeHtml(input.href)}</a>
+      </p>
+    </div>`
+}
+
 // ── Invoice email ──────────────────────────────────────────────────
 
 export type SendInvoiceEmailParams = {
@@ -142,12 +161,14 @@ export type SendInvoiceEmailParams = {
     timezone?: string | null
   }
   contactName: string
+  publicPaymentUrl?: string | null
 }
 
 export function buildInvoiceEmailContent({
   invoice,
   org,
   contactName,
+  publicPaymentUrl,
 }: Omit<SendInvoiceEmailParams, "to">) {
   const from = sanitizeHeader(org.companyName ?? "YAIP")
   const safeInvoiceNumber = escapeHtml(invoice.number)
@@ -175,6 +196,13 @@ export function buildInvoiceEmailContent({
     ${totalsBlock(invoice.subtotal, invoice.taxAmount, invoice.total, invoice.currency, locale)}
 
     ${invoice.notes ? `<p style="margin-top:24px;color:#6b7280;font-size:14px;border-top:1px solid #e5e7eb;padding-top:16px;">${formatMultilineHtml(invoice.notes)}</p>` : ""}
+    ${publicPaymentUrl
+      ? actionBlock({
+          href: publicPaymentUrl,
+          label: t("email.invoice.payCta", locale),
+          fallbackLabel: t("email.invoice.payFallback", locale),
+        })
+      : ""}
   `, locale)
 
   const subject = sanitizeHeader(
@@ -189,8 +217,14 @@ export function buildInvoiceEmailContent({
   return { subject, html, fromAddress: fromAddressValue }
 }
 
-export async function sendInvoiceEmail({ to, invoice, org, contactName }: SendInvoiceEmailParams) {
-  const content = buildInvoiceEmailContent({ invoice, org, contactName })
+export async function sendInvoiceEmail({
+  to,
+  invoice,
+  org,
+  contactName,
+  publicPaymentUrl,
+}: SendInvoiceEmailParams) {
+  const content = buildInvoiceEmailContent({ invoice, org, contactName, publicPaymentUrl })
 
   return getResend().emails.send({
     from: content.fromAddress,
@@ -222,12 +256,14 @@ export type SendQuoteEmailParams = {
     timezone?: string | null
   }
   contactName: string
+  publicQuoteUrl?: string | null
 }
 
 export function buildQuoteEmailContent({
   quote,
   org,
   contactName,
+  publicQuoteUrl,
 }: Omit<SendQuoteEmailParams, "to">) {
   const from = sanitizeHeader(org.companyName ?? "YAIP")
   const safeQuoteNumber = escapeHtml(quote.number)
@@ -255,6 +291,13 @@ export function buildQuoteEmailContent({
     ${totalsBlock(quote.subtotal, quote.taxAmount, quote.total, quote.currency, locale)}
 
     ${quote.notes ? `<p style="margin-top:24px;color:#6b7280;font-size:14px;border-top:1px solid #e5e7eb;padding-top:16px;">${formatMultilineHtml(quote.notes)}</p>` : ""}
+    ${publicQuoteUrl
+      ? actionBlock({
+          href: publicQuoteUrl,
+          label: t("email.quote.reviewCta", locale),
+          fallbackLabel: t("email.quote.reviewFallback", locale),
+        })
+      : ""}
   `, locale)
 
   const subject = sanitizeHeader(
@@ -269,8 +312,14 @@ export function buildQuoteEmailContent({
   return { subject, html, fromAddress: fromAddressValue }
 }
 
-export async function sendQuoteEmail({ to, quote, org, contactName }: SendQuoteEmailParams) {
-  const content = buildQuoteEmailContent({ quote, org, contactName })
+export async function sendQuoteEmail({
+  to,
+  quote,
+  org,
+  contactName,
+  publicQuoteUrl,
+}: SendQuoteEmailParams) {
+  const content = buildQuoteEmailContent({ quote, org, contactName, publicQuoteUrl })
 
   return getResend().emails.send({
     from: content.fromAddress,

@@ -468,6 +468,23 @@ export const invoicesRouter = router({
       }
 
       const sentAt = new Date()
+      const stripeConfigured = getStripePaymentConfigurationState({
+        stripePublishableKey: orgSettings?.stripePublishableKey ?? null,
+        stripeSecretKeyEnc: orgSettings?.stripeSecretKeyEnc ?? null,
+        stripeWebhookSecretEnc: orgSettings?.stripeWebhookSecretEnc ?? null,
+      }).configured
+      const publicPaymentIssuedAt = stripeConfigured
+        ? invoice.publicPaymentIssuedAt ?? sentAt
+        : null
+      const publicPaymentUrl = stripeConfigured
+        ? getPublicInvoicePaymentUrl({
+            id: invoice.id,
+            status: "sent",
+            paymentStatus: invoice.paymentStatus,
+            publicPaymentIssuedAt,
+            publicPaymentKeyVersion: invoice.publicPaymentKeyVersion,
+          })
+        : null
       let emailSent = false
       let emailSkipReason: string | undefined
 
@@ -499,6 +516,7 @@ export const invoicesRouter = router({
               timezone: orgSettings?.timezone,
             },
             contactName: invoice.contact.name,
+            publicPaymentUrl,
           })
           emailSent = true
         } catch {
@@ -512,7 +530,11 @@ export const invoicesRouter = router({
 
       const updated = await prisma.invoice.update({
         where: { id: input.id },
-        data: { status: "sent", issueDate: sentAt },
+        data: {
+          status: "sent",
+          issueDate: sentAt,
+          publicPaymentIssuedAt,
+        },
       })
 
       return { ...updated, emailSent, emailSkipReason }
