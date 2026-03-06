@@ -10,6 +10,10 @@ import {
   createEmailDeliveryAttempt,
   getEmailDeliveryRuntimeStatus,
 } from "../../lib/email-delivery"
+import {
+  readDocumentSendingDomainState,
+  resolveDocumentEmailEnvelope,
+} from "../../lib/document-email-sending"
 import { sendQuoteEmail } from "../../lib/email"
 import { assertCloudOnboardingComplete } from "../../lib/onboarding/guard"
 import { getPublicQuoteUrl } from "../../lib/quotes/public-url"
@@ -450,6 +454,12 @@ export const quotesRouter = router({
       const orgSettings = await prisma.orgSettings.findUnique({
         where: { organizationId: ctx.organizationId },
       })
+      const envelope = resolveDocumentEmailEnvelope({
+        orgName: orgSettings?.companyName,
+        orgBillingEmail: orgSettings?.companyEmail,
+        sharedFromEmail: process.env.FROM_EMAIL ?? "noreply@yaip.app",
+        branded: readDocumentSendingDomainState(orgSettings ?? {}),
+      })
       const profile = resolveCountryProfile(orgSettings?.countryCode ?? quote.countryCode)
       const sellerTaxIds = await prisma.organizationTaxId.findMany({
         where: { organizationId: ctx.organizationId },
@@ -526,6 +536,9 @@ export const quotesRouter = router({
       try {
         await sendQuoteEmail({
           to: contactEmail,
+          fromName: envelope.fromName,
+          fromEmail: envelope.fromEmail,
+          replyTo: envelope.replyTo,
           quote: {
             ...quote,
             issueDate: sentAt,
@@ -613,6 +626,12 @@ export const quotesRouter = router({
       const orgSettings = await prisma.orgSettings.findUnique({
         where: { organizationId: ctx.organizationId },
       })
+      const envelope = resolveDocumentEmailEnvelope({
+        orgName: orgSettings?.companyName,
+        orgBillingEmail: orgSettings?.companyEmail,
+        sharedFromEmail: process.env.FROM_EMAIL ?? "noreply@yaip.app",
+        branded: readDocumentSendingDomainState(orgSettings ?? {}),
+      })
       const emailDelivery = getEmailDeliveryRuntimeStatus({
         managed: getRuntimeCapabilities().emailDelivery.managed,
         resendApiKey: process.env.RESEND_API_KEY,
@@ -637,6 +656,9 @@ export const quotesRouter = router({
       try {
         await sendQuoteEmail({
           to: contactEmail,
+          fromName: envelope.fromName,
+          fromEmail: envelope.fromEmail,
+          replyTo: envelope.replyTo,
           quote: {
             ...quote,
             subtotal: quote.subtotalNet.toNumber(),

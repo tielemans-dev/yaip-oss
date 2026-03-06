@@ -13,6 +13,10 @@ import { Input } from "../../components/ui/input"
 import { Label } from "../../components/ui/label"
 import { Textarea } from "../../components/ui/textarea"
 import { Badge } from "../../components/ui/badge"
+import {
+  DocumentEmailSendingCard,
+  type DocumentSendingState,
+} from "../../components/settings/document-email-sending-card"
 import { EmailDeliveryCard } from "../../components/settings/email-delivery-card"
 import {
   Select,
@@ -114,6 +118,7 @@ type SettingsData = {
     missing: string[]
     status: "configured" | "missing_configuration" | "managed" | "managed_unavailable"
   }
+  documentSending: DocumentSendingState
   primaryTaxId: string | null
   primaryTaxIdScheme: string | null
 }
@@ -172,6 +177,10 @@ function SettingsPage() {
   const [openRouterModels, setOpenRouterModels] = useState<string[]>(OPENROUTER_FALLBACK_MODELS)
   const [loadingOpenRouterModels, setLoadingOpenRouterModels] = useState(false)
   const [openRouterModelsError, setOpenRouterModelsError] = useState<string | null>(null)
+  const [documentSendingDomainInput, setDocumentSendingDomainInput] = useState("")
+  const [documentSendingBusy, setDocumentSendingBusy] = useState(false)
+  const [documentSendingError, setDocumentSendingError] = useState<string | null>(null)
+  const [documentSendingSuccess, setDocumentSendingSuccess] = useState<string | null>(null)
 
   // Team members state
   const [members, setMembers] = useState<OrgMember[]>([])
@@ -211,6 +220,7 @@ function SettingsPage() {
         setCompanyLogo(existingLogo)
         setCompanyLogoUrlInput(isDataImageLogo(existingLogo) ? "" : existingLogo)
         setAiOpenRouterModel(data.aiOpenRouterModel || "openai/gpt-4o-mini")
+        setDocumentSendingDomainInput(data.documentSending.requestedDomain ?? "")
       })
       .catch(() =>
         setError(t("settings.error.loadFailed"))
@@ -421,6 +431,91 @@ function SettingsPage() {
       setLogoError(t("settings.error.logoReadFailed"))
     } finally {
       event.target.value = ""
+    }
+  }
+
+  async function handleConfigureDocumentSendingDomain() {
+    setDocumentSendingError(null)
+    setDocumentSendingSuccess(null)
+    setDocumentSendingBusy(true)
+
+    try {
+      const documentSending = await trpc.settings.configureDocumentSendingDomain.mutate({
+        domain: documentSendingDomainInput.trim(),
+      })
+      setSettings((current) =>
+        current
+          ? {
+              ...current,
+              documentSending,
+            }
+          : current
+      )
+      setDocumentSendingDomainInput(documentSending.requestedDomain ?? "")
+      setDocumentSendingSuccess(t("settings.documentSending.success.configured"))
+    } catch (err) {
+      setDocumentSendingError(
+        err instanceof Error
+          ? err.message
+          : t("settings.documentSending.error.configureFailed")
+      )
+    } finally {
+      setDocumentSendingBusy(false)
+    }
+  }
+
+  async function handleRefreshDocumentSendingDomain() {
+    setDocumentSendingError(null)
+    setDocumentSendingSuccess(null)
+    setDocumentSendingBusy(true)
+
+    try {
+      const documentSending = await trpc.settings.refreshDocumentSendingDomain.mutate()
+      setSettings((current) =>
+        current
+          ? {
+              ...current,
+              documentSending,
+            }
+          : current
+      )
+      setDocumentSendingSuccess(t("settings.documentSending.success.refreshed"))
+    } catch (err) {
+      setDocumentSendingError(
+        err instanceof Error
+          ? err.message
+          : t("settings.documentSending.error.refreshFailed")
+      )
+    } finally {
+      setDocumentSendingBusy(false)
+    }
+  }
+
+  async function handleDisableDocumentSendingDomain() {
+    setDocumentSendingError(null)
+    setDocumentSendingSuccess(null)
+    setDocumentSendingBusy(true)
+
+    try {
+      const documentSending = await trpc.settings.disableDocumentSendingDomain.mutate()
+      setSettings((current) =>
+        current
+          ? {
+              ...current,
+              documentSending,
+            }
+          : current
+      )
+      setDocumentSendingDomainInput("")
+      setDocumentSendingSuccess(t("settings.documentSending.success.disabled"))
+    } catch (err) {
+      setDocumentSendingError(
+        err instanceof Error
+          ? err.message
+          : t("settings.documentSending.error.disableFailed")
+      )
+    } finally {
+      setDocumentSendingBusy(false)
     }
   }
 
@@ -806,6 +901,20 @@ function SettingsPage() {
         </Card>
 
         <EmailDeliveryCard emailDelivery={settings.emailDelivery} />
+
+        {settings.documentSending.managed ? (
+          <DocumentEmailSendingCard
+            documentSending={settings.documentSending}
+            requestedDomain={documentSendingDomainInput}
+            busy={documentSendingBusy}
+            error={documentSendingError}
+            success={documentSendingSuccess}
+            onRequestedDomainChange={setDocumentSendingDomainInput}
+            onConfigure={handleConfigureDocumentSendingDomain}
+            onRefresh={handleRefreshDocumentSendingDomain}
+            onDisable={handleDisableDocumentSendingDomain}
+          />
+        ) : null}
 
         <Card>
           <CardHeader>

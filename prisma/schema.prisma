@@ -173,6 +173,12 @@ model OrgSettings {
   stripePublishableKey String?
   stripeSecretKeyEnc String?
   stripeWebhookSecretEnc String?
+  documentSendingDomain String?
+  documentSendingDomainProviderId String?
+  documentSendingDomainStatus String?
+  documentSendingDomainRecords Json?
+  documentSendingDomainFailureReason String?
+  documentSendingDomainVerifiedAt DateTime?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 

@@ -30,6 +30,8 @@ function restoreEnv(previous: Record<string, string | undefined>) {
 async function createInvoiceFixture(options?: {
   contactEmail?: string | null
   configureStripe?: boolean
+  documentSendingDomain?: string | null
+  documentSendingDomainStatus?: string | null
 }) {
   const orgId = randomUUID()
   const slug = `invoice-send-${Date.now()}-${Math.floor(Math.random() * 1_000_000)}`
@@ -66,8 +68,12 @@ async function createInvoiceFixture(options?: {
       currency: "DKK",
       taxRegime: "eu_vat",
       pricesIncludeTax: false,
+      companyName: "Acme",
+      companyEmail: "billing@acme.com",
       invoicePrefix: "INVEML",
       quotePrefix: "QTEEML",
+      documentSendingDomain: options?.documentSendingDomain ?? null,
+      documentSendingDomainStatus: options?.documentSendingDomainStatus ?? null,
     },
   })
 
@@ -155,6 +161,44 @@ describeIfDatabase("invoice send email delivery", () => {
         expect.objectContaining({
           to: "buyer@example.com",
           publicPaymentUrl: expect.stringContaining("https://app.example.test/pay/"),
+          fromName: "Acme via YAIP",
+          fromEmail: "billing@example.com",
+          replyTo: "billing@acme.com",
+        })
+      )
+    } finally {
+      restoreEnv(previous)
+      await prisma.organization.deleteMany({ where: { id: orgId } })
+    }
+  })
+
+  it("falls back to the shared sender when branded sending is not verified", async () => {
+    const previous = {
+      YAIP_APP_ORIGIN: process.env.YAIP_APP_ORIGIN,
+      YAIP_PUBLIC_PAYMENT_SECRET: process.env.YAIP_PUBLIC_PAYMENT_SECRET,
+      RESEND_API_KEY: process.env.RESEND_API_KEY,
+      FROM_EMAIL: process.env.FROM_EMAIL,
+    }
+
+    process.env.YAIP_APP_ORIGIN = "https://app.example.test"
+    process.env.YAIP_PUBLIC_PAYMENT_SECRET = "public-payment-secret-123456"
+    process.env.RESEND_API_KEY = "resend_test_key"
+    process.env.FROM_EMAIL = "billing@yaip.app"
+
+    const { orgId, caller, invoice } = await createInvoiceFixture({
+      configureStripe: true,
+      documentSendingDomain: "billing.acme.com",
+      documentSendingDomainStatus: "pending_dns",
+    })
+
+    try {
+      await caller.invoices.send({ id: invoice.id })
+
+      expect(sendInvoiceEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          fromName: "Acme via YAIP",
+          fromEmail: "billing@yaip.app",
+          replyTo: "billing@acme.com",
         })
       )
     } finally {

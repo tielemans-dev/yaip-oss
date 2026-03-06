@@ -93,6 +93,36 @@ export const enSettingsMessages = {
     "Email delivery is managed by cloud infrastructure.",
   "settings.emailDelivery.help.managed_unavailable":
     "Email delivery is managed by cloud infrastructure but currently unavailable.",
+  "settings.section.documentSending.title": "Branded Email Sending",
+  "settings.section.documentSending.description":
+    "Send quote and invoice emails from a verified customer subdomain.",
+  "settings.documentSending.status.not_configured": "Not configured",
+  "settings.documentSending.status.pending_dns": "DNS setup required",
+  "settings.documentSending.status.verifying": "Verifying",
+  "settings.documentSending.status.verified": "Verified",
+  "settings.documentSending.status.failed": "Attention needed",
+  "settings.documentSending.effectiveSender.label": "Effective sender",
+  "settings.documentSending.sharedSender.label": "Shared fallback sender",
+  "settings.documentSending.replyTo.label": "Reply-To",
+  "settings.documentSending.domain.label": "Sending subdomain",
+  "settings.documentSending.domain.help":
+    "Use a customer-owned subdomain such as billing.acme.com.",
+  "settings.documentSending.requestedDomain.label": "Configured domain",
+  "settings.documentSending.records.label": "Required DNS records",
+  "settings.documentSending.verifiedAt.label": "Verified at",
+  "settings.documentSending.failureReason.label": "Provider status",
+  "settings.documentSending.actions.configure": "Connect domain",
+  "settings.documentSending.actions.refresh": "Check verification",
+  "settings.documentSending.actions.disable": "Disable branded sending",
+  "settings.documentSending.success.configured": "Domain setup created.",
+  "settings.documentSending.success.refreshed": "Domain status refreshed.",
+  "settings.documentSending.success.disabled": "Branded sending disabled.",
+  "settings.documentSending.error.configureFailed":
+    "Failed to create branded sending setup.",
+  "settings.documentSending.error.refreshFailed":
+    "Failed to refresh branded sending status.",
+  "settings.documentSending.error.disableFailed":
+    "Failed to disable branded sending.",
   "settings.section.payments.title": "Payments (Stripe BYOK)",
   "settings.section.payments.description":
     "Configure your own Stripe account for hosted invoice payment links.",

@@ -10,6 +10,10 @@ import {
   createEmailDeliveryAttempt,
   getEmailDeliveryRuntimeStatus,
 } from "../../lib/email-delivery"
+import {
+  readDocumentSendingDomainState,
+  resolveDocumentEmailEnvelope,
+} from "../../lib/document-email-sending"
 import { sendInvoiceEmail } from "../../lib/email"
 import { billingProvider } from "../../lib/billing"
 import { assertCloudOnboardingComplete } from "../../lib/onboarding/guard"
@@ -457,6 +461,12 @@ export const invoicesRouter = router({
       const orgSettings = await prisma.orgSettings.findUnique({
         where: { organizationId: ctx.organizationId },
       })
+      const envelope = resolveDocumentEmailEnvelope({
+        orgName: orgSettings?.companyName,
+        orgBillingEmail: orgSettings?.companyEmail,
+        sharedFromEmail: process.env.FROM_EMAIL ?? "noreply@yaip.app",
+        branded: readDocumentSendingDomainState(orgSettings ?? {}),
+      })
       const profile = resolveCountryProfile(orgSettings?.countryCode ?? invoice.countryCode)
       const sellerTaxIds = await prisma.organizationTaxId.findMany({
         where: { organizationId: ctx.organizationId },
@@ -543,6 +553,9 @@ export const invoicesRouter = router({
       try {
         await sendInvoiceEmail({
           to: contactEmail,
+          fromName: envelope.fromName,
+          fromEmail: envelope.fromEmail,
+          replyTo: envelope.replyTo,
           invoice: {
             ...invoice,
             issueDate: sentAt,
@@ -623,6 +636,12 @@ export const invoicesRouter = router({
       const orgSettings = await prisma.orgSettings.findUnique({
         where: { organizationId: ctx.organizationId },
       })
+      const envelope = resolveDocumentEmailEnvelope({
+        orgName: orgSettings?.companyName,
+        orgBillingEmail: orgSettings?.companyEmail,
+        sharedFromEmail: process.env.FROM_EMAIL ?? "noreply@yaip.app",
+        branded: readDocumentSendingDomainState(orgSettings ?? {}),
+      })
       const stripeConfigured = getStripePaymentConfigurationState({
         stripePublishableKey: orgSettings?.stripePublishableKey ?? null,
         stripeSecretKeyEnc: orgSettings?.stripeSecretKeyEnc ?? null,
@@ -656,6 +675,9 @@ export const invoicesRouter = router({
       try {
         await sendInvoiceEmail({
           to: contactEmail,
+          fromName: envelope.fromName,
+          fromEmail: envelope.fromEmail,
+          replyTo: envelope.replyTo,
           invoice: {
             ...invoice,
             subtotal: invoice.subtotalNet.toNumber(),

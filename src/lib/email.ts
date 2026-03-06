@@ -143,6 +143,9 @@ function actionBlock(input: {
 
 export type SendInvoiceEmailParams = {
   to: string
+  fromName?: string | null
+  fromEmail?: string | null
+  replyTo?: string | null
   invoice: {
     number: string
     issueDate: Date | string
@@ -165,12 +168,16 @@ export type SendInvoiceEmailParams = {
 }
 
 export function buildInvoiceEmailContent({
+  fromName,
+  fromEmail,
+  replyTo,
   invoice,
   org,
   contactName,
   publicPaymentUrl,
 }: Omit<SendInvoiceEmailParams, "to">) {
-  const from = sanitizeHeader(org.companyName ?? "YAIP")
+  const safeFromName = sanitizeHeader(fromName ?? org.companyName ?? "YAIP")
+  const safeFromEmail = sanitizeHeader(fromEmail ?? fromAddress())
   const safeInvoiceNumber = escapeHtml(invoice.number)
   const safeContactName = escapeHtml(contactName)
   const safeCompanyEmail = org.companyEmail ? escapeHtml(org.companyEmail) : null
@@ -183,7 +190,7 @@ export function buildInvoiceEmailContent({
     <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
       <div>
         <div style="font-size:12px;color:#6b7280;text-transform:uppercase;margin-bottom:2px;">${t("pdf.from", locale)}</div>
-        <div style="font-weight:500;">${escapeHtml(from)}</div>
+        <div style="font-weight:500;">${escapeHtml(safeFromName)}</div>
         ${safeCompanyEmail ? `<div style="color:#6b7280;font-size:14px;">${safeCompanyEmail}</div>` : ""}
       </div>
       <div style="text-align:right;">
@@ -212,25 +219,42 @@ export function buildInvoiceEmailContent({
       dueDate: formatDate(invoice.dueDate, locale, timezone),
     })
   )
-  const fromAddressValue = `${from} <${fromAddress()}>`
+  const fromAddressValue = `${safeFromName} <${safeFromEmail}>`
 
-  return { subject, html, fromAddress: fromAddressValue }
+  return {
+    subject,
+    html,
+    fromAddress: fromAddressValue,
+    replyTo: replyTo?.trim() || null,
+  }
 }
 
 export async function sendInvoiceEmail({
   to,
+  fromName,
+  fromEmail,
+  replyTo,
   invoice,
   org,
   contactName,
   publicPaymentUrl,
 }: SendInvoiceEmailParams) {
-  const content = buildInvoiceEmailContent({ invoice, org, contactName, publicPaymentUrl })
+  const content = buildInvoiceEmailContent({
+    fromName,
+    fromEmail,
+    replyTo,
+    invoice,
+    org,
+    contactName,
+    publicPaymentUrl,
+  })
 
   return getResend().emails.send({
     from: content.fromAddress,
     to,
     subject: content.subject,
     html: content.html,
+    ...(content.replyTo ? { replyTo: content.replyTo } : {}),
   })
 }
 
@@ -238,6 +262,9 @@ export async function sendInvoiceEmail({
 
 export type SendQuoteEmailParams = {
   to: string
+  fromName?: string | null
+  fromEmail?: string | null
+  replyTo?: string | null
   quote: {
     number: string
     issueDate: Date | string
@@ -260,12 +287,16 @@ export type SendQuoteEmailParams = {
 }
 
 export function buildQuoteEmailContent({
+  fromName,
+  fromEmail,
+  replyTo,
   quote,
   org,
   contactName,
   publicQuoteUrl,
 }: Omit<SendQuoteEmailParams, "to">) {
-  const from = sanitizeHeader(org.companyName ?? "YAIP")
+  const safeFromName = sanitizeHeader(fromName ?? org.companyName ?? "YAIP")
+  const safeFromEmail = sanitizeHeader(fromEmail ?? fromAddress())
   const safeQuoteNumber = escapeHtml(quote.number)
   const safeContactName = escapeHtml(contactName)
   const safeCompanyEmail = org.companyEmail ? escapeHtml(org.companyEmail) : null
@@ -278,7 +309,7 @@ export function buildQuoteEmailContent({
     <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
       <div>
         <div style="font-size:12px;color:#6b7280;text-transform:uppercase;margin-bottom:2px;">${t("pdf.from", locale)}</div>
-        <div style="font-weight:500;">${escapeHtml(from)}</div>
+        <div style="font-weight:500;">${escapeHtml(safeFromName)}</div>
         ${safeCompanyEmail ? `<div style="color:#6b7280;font-size:14px;">${safeCompanyEmail}</div>` : ""}
       </div>
       <div style="text-align:right;">
@@ -307,25 +338,42 @@ export function buildQuoteEmailContent({
       expiryDate: formatDate(quote.expiryDate, locale, timezone),
     })
   )
-  const fromAddressValue = `${from} <${fromAddress()}>`
+  const fromAddressValue = `${safeFromName} <${safeFromEmail}>`
 
-  return { subject, html, fromAddress: fromAddressValue }
+  return {
+    subject,
+    html,
+    fromAddress: fromAddressValue,
+    replyTo: replyTo?.trim() || null,
+  }
 }
 
 export async function sendQuoteEmail({
   to,
+  fromName,
+  fromEmail,
+  replyTo,
   quote,
   org,
   contactName,
   publicQuoteUrl,
 }: SendQuoteEmailParams) {
-  const content = buildQuoteEmailContent({ quote, org, contactName, publicQuoteUrl })
+  const content = buildQuoteEmailContent({
+    fromName,
+    fromEmail,
+    replyTo,
+    quote,
+    org,
+    contactName,
+    publicQuoteUrl,
+  })
 
   return getResend().emails.send({
     from: content.fromAddress,
     to,
     subject: content.subject,
     html: content.html,
+    ...(content.replyTo ? { replyTo: content.replyTo } : {}),
   })
 }
 

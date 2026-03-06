@@ -29,6 +29,8 @@ function restoreEnv(previous: Record<string, string | undefined>) {
 
 async function createQuoteFixture(options?: {
   contactEmail?: string | null
+  documentSendingDomain?: string | null
+  documentSendingDomainStatus?: string | null
 }) {
   const orgId = randomUUID()
   const slug = `quote-send-${Date.now()}-${Math.floor(Math.random() * 1_000_000)}`
@@ -65,8 +67,12 @@ async function createQuoteFixture(options?: {
       currency: "DKK",
       taxRegime: "eu_vat",
       pricesIncludeTax: false,
+      companyName: "Acme",
+      companyEmail: "billing@acme.com",
       invoicePrefix: "INVEML",
       quotePrefix: "QTEEML",
+      documentSendingDomain: options?.documentSendingDomain ?? null,
+      documentSendingDomainStatus: options?.documentSendingDomainStatus ?? null,
     },
   })
 
@@ -146,6 +152,43 @@ describeIfDatabase("quote send email delivery", () => {
         expect.objectContaining({
           to: "buyer@example.com",
           publicQuoteUrl: expect.stringContaining("https://app.example.test/q/"),
+          fromName: "Acme via YAIP",
+          fromEmail: "billing@example.com",
+          replyTo: "billing@acme.com",
+        })
+      )
+    } finally {
+      restoreEnv(previous)
+      await prisma.organization.deleteMany({ where: { id: orgId } })
+    }
+  })
+
+  it("uses a verified branded sender for quote email delivery", async () => {
+    const previous = {
+      YAIP_APP_ORIGIN: process.env.YAIP_APP_ORIGIN,
+      YAIP_PUBLIC_QUOTE_SECRET: process.env.YAIP_PUBLIC_QUOTE_SECRET,
+      RESEND_API_KEY: process.env.RESEND_API_KEY,
+      FROM_EMAIL: process.env.FROM_EMAIL,
+    }
+
+    process.env.YAIP_APP_ORIGIN = "https://app.example.test"
+    process.env.YAIP_PUBLIC_QUOTE_SECRET = "public-quote-secret-123456"
+    process.env.RESEND_API_KEY = "resend_test_key"
+    process.env.FROM_EMAIL = "billing@yaip.app"
+
+    const { orgId, caller, quote } = await createQuoteFixture({
+      documentSendingDomain: "billing.acme.com",
+      documentSendingDomainStatus: "verified",
+    })
+
+    try {
+      await caller.quotes.send({ id: quote.id })
+
+      expect(sendQuoteEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          fromName: "Acme",
+          fromEmail: "billing@billing.acme.com",
+          replyTo: "billing@acme.com",
         })
       )
     } finally {

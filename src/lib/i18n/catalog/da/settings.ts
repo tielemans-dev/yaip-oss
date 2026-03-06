@@ -94,6 +94,36 @@ export const daSettingsMessages = {
     "E-maillevering administreres af cloud-infrastrukturen.",
   "settings.emailDelivery.help.managed_unavailable":
     "E-maillevering administreres af cloud-infrastrukturen, men er midlertidigt utilgængelig.",
+  "settings.section.documentSending.title": "Brandet e-mailafsendelse",
+  "settings.section.documentSending.description":
+    "Send tilbuds- og faktura-e-mails fra et verificeret kundesube-domæne.",
+  "settings.documentSending.status.not_configured": "Ikke konfigureret",
+  "settings.documentSending.status.pending_dns": "DNS-opsætning kræves",
+  "settings.documentSending.status.verifying": "Verificerer",
+  "settings.documentSending.status.verified": "Verificeret",
+  "settings.documentSending.status.failed": "Kræver handling",
+  "settings.documentSending.effectiveSender.label": "Aktiv afsender",
+  "settings.documentSending.sharedSender.label": "Fælles reserveafsender",
+  "settings.documentSending.replyTo.label": "Svar til",
+  "settings.documentSending.domain.label": "Afsendelsessubdomæne",
+  "settings.documentSending.domain.help":
+    "Brug et kundeejet subdomæne som billing.acme.com.",
+  "settings.documentSending.requestedDomain.label": "Konfigureret domæne",
+  "settings.documentSending.records.label": "Påkrævede DNS-poster",
+  "settings.documentSending.verifiedAt.label": "Verificeret den",
+  "settings.documentSending.failureReason.label": "Providerstatus",
+  "settings.documentSending.actions.configure": "Tilknyt domæne",
+  "settings.documentSending.actions.refresh": "Tjek verificering",
+  "settings.documentSending.actions.disable": "Deaktiver brandet afsendelse",
+  "settings.documentSending.success.configured": "Domæneopsætning oprettet.",
+  "settings.documentSending.success.refreshed": "Domænestatus opdateret.",
+  "settings.documentSending.success.disabled": "Brandet afsendelse er deaktiveret.",
+  "settings.documentSending.error.configureFailed":
+    "Kunne ikke oprette opsætning for brandet afsendelse.",
+  "settings.documentSending.error.refreshFailed":
+    "Kunne ikke opdatere status for brandet afsendelse.",
+  "settings.documentSending.error.disableFailed":
+    "Kunne ikke deaktivere brandet afsendelse.",
   "settings.section.payments.title": "Betalinger (Stripe BYOK)",
   "settings.section.payments.description":
     "Konfigurer din egen Stripe-konto til hostede betalingslinks for fakturaer.",

@@ -60,4 +60,49 @@ describe("runtime service registration", () => {
     })
     expect(overridden.patch.companyName).toBe("Custom Name")
   })
+
+  it("provides an unsupported managed document domain provider by default", async () => {
+    const mod = await loadModule()
+
+    expect(mod.getManagedDocumentDomainProvider().supported).toBe(false)
+    await expect(
+      mod.getManagedDocumentDomainProvider().createDomain({
+        domain: "billing.acme.com",
+      })
+    ).rejects.toThrow("Managed document domains are not available")
+  })
+
+  it("allows overriding the managed document domain provider at runtime", async () => {
+    const mod = await loadModule()
+
+    mod.setRuntimeServices({
+      managedDocumentDomainProvider: {
+        supported: true,
+        createDomain: async ({ domain }) => ({
+          providerId: "domain_123",
+          domain,
+          status: "pending_dns",
+          records: [],
+          failureReason: null,
+          verifiedAt: null,
+        }),
+        refreshDomain: async ({ domain }) => ({
+          providerId: "domain_123",
+          domain,
+          status: "verified",
+          records: [],
+          failureReason: null,
+          verifiedAt: new Date("2026-03-06T18:00:00.000Z"),
+        }),
+        deleteDomain: async () => {},
+      },
+    })
+
+    const created = await mod.getManagedDocumentDomainProvider().createDomain({
+      domain: "billing.acme.com",
+    })
+
+    expect(created.providerId).toBe("domain_123")
+    expect(created.status).toBe("pending_dns")
+  })
 })

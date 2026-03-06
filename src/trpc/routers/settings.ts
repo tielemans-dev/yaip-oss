@@ -2,10 +2,16 @@ import { z } from "zod"
 import { TRPCError } from "@trpc/server"
 import { router, orgProcedure } from "../init"
 import { prisma } from "../../lib/db"
+import {
+  readDocumentSendingDomainState,
+  resolveDocumentEmailEnvelope,
+  validateDocumentSendingDomain,
+} from "../../lib/document-email-sending"
 import { getEmailDeliveryRuntimeStatus } from "../../lib/email-delivery"
 import { encryptSecret } from "../../lib/secrets"
 import { getStripePaymentConfigurationState } from "../../lib/payments/stripe"
 import { getRuntimeCapabilities } from "../../lib/runtime/extensions"
+import { getManagedDocumentDomainProvider } from "../../lib/runtime/services"
 import { COUNTRY_OPTIONS, LOCALE_OPTIONS } from "../../lib/compliance/countries"
 import {
   getCountryCodeOrFallback,
@@ -26,6 +32,9 @@ const companyLogoSchema = z
 
 const supportedCountryCodes = new Set(COUNTRY_OPTIONS.map((country) => country.code))
 const supportedLocales = new Set(LOCALE_OPTIONS)
+const configureDocumentSendingDomainSchema = z.object({
+  domain: z.string().trim().min(1).max(255),
+})
 
 const timezoneSchema = z
   .string()
@@ -100,10 +109,16 @@ export const settingsRouter = router({
       stripeWebhookSecretEnc: settings.stripeWebhookSecretEnc,
     })
     const runtimeCapabilities = getRuntimeCapabilities()
+    const managedDocumentDomainProvider = getManagedDocumentDomainProvider()
     const emailDelivery = getEmailDeliveryRuntimeStatus({
       managed: runtimeCapabilities.emailDelivery.managed,
       resendApiKey: process.env.RESEND_API_KEY,
       fromEmail: process.env.FROM_EMAIL,
+    })
+    const documentSending = buildDocumentSendingState({
+      settings,
+      managed: runtimeCapabilities.emailDelivery.managed,
+      supportsCustomDomain: managedDocumentDomainProvider.supported,
     })
     return {
       id: settings.id,
@@ -131,6 +146,7 @@ export const settingsRouter = router({
       primaryTaxId: primaryTaxId?.value ?? null,
       primaryTaxIdScheme: primaryTaxId?.scheme ?? null,
       emailDelivery,
+      documentSending,
     }
   }),
 
@@ -225,4 +241,192 @@ export const settingsRouter = router({
         return settings
       })
     }),
+
+  configureDocumentSendingDomain: orgProcedure
+    .input(configureDocumentSendingDomainSchema)
+    .mutation(async ({ ctx, input }) => {
+      const provider = getManagedDocumentDomainProvider()
+      if (!provider.supported) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Custom sending domains are not available",
+        })
+      }
+
+      const validation = validateDocumentSendingDomain(input.domain)
+      if (!validation.valid) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: validation.reason,
+        })
+      }
+
+      const current = await prisma.orgSettings.upsert({
+        where: { organizationId: ctx.organizationId },
+        update: {},
+        create: { organizationId: ctx.organizationId },
+      })
+
+      const currentState = readDocumentSendingDomainState(current)
+      if (
+        currentState.providerId &&
+        currentState.domain &&
+        currentState.domain !== validation.normalizedDomain
+      ) {
+        await provider.deleteDomain({
+          providerId: currentState.providerId,
+          domain: currentState.domain,
+        })
+      }
+
+      const created = await provider.createDomain({
+        domain: validation.normalizedDomain,
+      })
+
+      const settings = await prisma.orgSettings.update({
+        where: { organizationId: ctx.organizationId },
+        data: {
+          documentSendingDomain: created.domain,
+          documentSendingDomainProviderId: created.providerId,
+          documentSendingDomainStatus: created.status,
+          documentSendingDomainRecords: created.records,
+          documentSendingDomainFailureReason: created.failureReason,
+          documentSendingDomainVerifiedAt: created.verifiedAt,
+        },
+      })
+
+      return buildDocumentSendingState({
+        settings,
+        managed: getRuntimeCapabilities().emailDelivery.managed,
+        supportsCustomDomain: provider.supported,
+      })
+    }),
+
+  refreshDocumentSendingDomain: orgProcedure
+    .input(z.void())
+    .mutation(async ({ ctx }) => {
+      const provider = getManagedDocumentDomainProvider()
+      if (!provider.supported) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Custom sending domains are not available",
+        })
+      }
+
+      const current = await prisma.orgSettings.upsert({
+        where: { organizationId: ctx.organizationId },
+        update: {},
+        create: { organizationId: ctx.organizationId },
+      })
+      const currentState = readDocumentSendingDomainState(current)
+
+      if (!currentState.providerId || !currentState.domain) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "No branded sending domain is configured",
+        })
+      }
+
+      const refreshed = await provider.refreshDomain({
+        providerId: currentState.providerId,
+        domain: currentState.domain,
+      })
+
+      const settings = await prisma.orgSettings.update({
+        where: { organizationId: ctx.organizationId },
+        data: {
+          documentSendingDomain: refreshed.domain,
+          documentSendingDomainProviderId: refreshed.providerId,
+          documentSendingDomainStatus: refreshed.status,
+          documentSendingDomainRecords: refreshed.records,
+          documentSendingDomainFailureReason: refreshed.failureReason,
+          documentSendingDomainVerifiedAt: refreshed.verifiedAt,
+        },
+      })
+
+      return buildDocumentSendingState({
+        settings,
+        managed: getRuntimeCapabilities().emailDelivery.managed,
+        supportsCustomDomain: provider.supported,
+      })
+    }),
+
+  disableDocumentSendingDomain: orgProcedure
+    .input(z.void())
+    .mutation(async ({ ctx }) => {
+      const provider = getManagedDocumentDomainProvider()
+      const current = await prisma.orgSettings.upsert({
+        where: { organizationId: ctx.organizationId },
+        update: {},
+        create: { organizationId: ctx.organizationId },
+      })
+      const currentState = readDocumentSendingDomainState(current)
+
+      if (provider.supported && currentState.providerId && currentState.domain) {
+        await provider.deleteDomain({
+          providerId: currentState.providerId,
+          domain: currentState.domain,
+        })
+      }
+
+      const settings = await prisma.orgSettings.update({
+        where: { organizationId: ctx.organizationId },
+        data: {
+          documentSendingDomain: null,
+          documentSendingDomainProviderId: null,
+          documentSendingDomainStatus: null,
+          documentSendingDomainRecords: null,
+          documentSendingDomainFailureReason: null,
+          documentSendingDomainVerifiedAt: null,
+        },
+      })
+
+      return buildDocumentSendingState({
+        settings,
+        managed: getRuntimeCapabilities().emailDelivery.managed,
+        supportsCustomDomain: provider.supported,
+      })
+    }),
 })
+
+function buildDocumentSendingState(input: {
+  settings: {
+    companyName?: string | null
+    companyEmail?: string | null
+    documentSendingDomain?: string | null
+    documentSendingDomainProviderId?: string | null
+    documentSendingDomainStatus?: string | null
+    documentSendingDomainRecords?: unknown
+    documentSendingDomainFailureReason?: string | null
+    documentSendingDomainVerifiedAt?: Date | null
+  }
+  managed: boolean
+  supportsCustomDomain: boolean
+}) {
+  const sharedSender = resolveDocumentEmailEnvelope({
+    orgName: input.settings.companyName,
+    orgBillingEmail: input.settings.companyEmail,
+    sharedFromEmail: process.env.FROM_EMAIL ?? "noreply@yaip.app",
+  })
+  const brandedState = input.supportsCustomDomain
+    ? readDocumentSendingDomainState(input.settings)
+    : readDocumentSendingDomainState({})
+  const effectiveSender = resolveDocumentEmailEnvelope({
+    orgName: input.settings.companyName,
+    orgBillingEmail: input.settings.companyEmail,
+    sharedFromEmail: process.env.FROM_EMAIL ?? "noreply@yaip.app",
+    branded: brandedState,
+  })
+
+  return {
+    managed: input.managed,
+    supportsCustomDomain: input.supportsCustomDomain,
+    status: brandedState.status,
+    requestedDomain: brandedState.domain,
+    records: brandedState.records,
+    failureReason: brandedState.failureReason,
+    verifiedAt: brandedState.verifiedAt,
+    sharedSender,
+    effectiveSender,
+  }
+}
