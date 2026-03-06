@@ -58,12 +58,42 @@ export const daInvoicesMessages = {
   "invoices.detail.action.print": "Udskriv",
   "invoices.detail.action.edit": "Rediger",
   "invoices.detail.action.send": "Send",
+  "invoices.detail.action.resendEmail": "Send e-mail igen",
   "invoices.detail.action.sending": "Sender...",
   "invoices.detail.action.createPaymentLink": "Opret betalingslink",
   "invoices.detail.action.generatingPaymentLink": "Opretter link...",
   "invoices.detail.action.delete": "Slet",
   "invoices.detail.action.updating": "Opdaterer...",
   "invoices.detail.action.markPaid": "Marker som betalt",
+  "invoices.detail.email.title": "E-maillevering",
+  "invoices.detail.email.description":
+    "Send eller gensend kunde-e-mailen for denne faktura.",
+  "invoices.detail.email.status.sent": "Sendt",
+  "invoices.detail.email.status.skipped": "Sprunget over",
+  "invoices.detail.email.status.failed": "Mislykket",
+  "invoices.detail.email.lastAttempt": "Sidste forsøg: {status} den {at}",
+  "invoices.detail.email.reason.sent": "Faktura-e-mail sendt.",
+  "invoices.detail.email.reason.provider_missing":
+    "E-maillevering er ikke konfigureret.",
+  "invoices.detail.email.reason.send_failed":
+    "E-maillevering mislykkedes.",
+  "invoices.detail.email.degraded.trigger": "Send uden e-mail",
+  "invoices.detail.email.degraded.title": "E-maillevering er utilgængelig",
+  "invoices.detail.email.degraded.description":
+    "Dette markerer fakturaen som sendt uden at levere en e-mail.",
+  "invoices.detail.email.degraded.confirm": "Fortsæt uden e-mail",
+  "invoices.detail.email.degraded.cancel": "Annuller",
+  "invoices.detail.email.fallback.invalidRecipient.title":
+    "Kundens e-mail mangler eller er ugyldig",
+  "invoices.detail.email.fallback.invalidRecipient.description":
+    "Tilføj en gyldig kunde-e-mailadresse før afsendelse, eller del betalingslinket manuelt.",
+  "invoices.detail.email.fallback.invalidRecipient.descriptionNoLink":
+    "Tilføj en gyldig kunde-e-mailadresse før du sender denne faktura.",
+  "invoices.detail.email.fallback.invalidRecipient.fix": "Ret kontakt",
+  "invoices.detail.email.fallback.providerMissing.title":
+    "E-maillevering er ikke konfigureret",
+  "invoices.detail.email.fallback.providerMissing.description":
+    "Du kan stadig dele betalingslinket manuelt.",
   "invoices.detail.paymentLink.title": "Betalingslink til kunde",
   "invoices.detail.paymentLink.description":
     "Del dette hostede link med kunden for at modtage betaling via Stripe.",

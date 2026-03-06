@@ -2,7 +2,12 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { useState, useEffect } from "react"
 import { trpc } from "../../../trpc/client"
 import { applyCatalogItemToLineItem, type CatalogItemOption } from "../../../lib/catalog"
+import {
+  readEmailDeliveryAttempt,
+  type EmailDeliveryRuntimeStatus,
+} from "../../../lib/email-delivery"
 import { LocalizedDateField } from "../../../components/localized-date-field"
+import { EmailDeliveryPanel } from "../../../components/documents/email-delivery-panel"
 import {
   formatCurrency as formatCurrencyIntl,
   formatDate as formatDateIntl,
@@ -45,7 +50,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "../../../components/ui/alert-dialog"
-import { Send, Pencil, Trash2, Plus, ArrowLeft, ArrowRight, XCircle } from "lucide-react"
+import { Pencil, Trash2, Plus, ArrowLeft, ArrowRight, XCircle } from "lucide-react"
 import { useI18n } from "../../../lib/i18n/react"
 
 export const Route = createFileRoute("/_app/quotes/$quoteId")({
@@ -90,6 +95,10 @@ type Quote = {
   publicViewUrl: string | null
   publicDecisionAt: string | null
   publicRejectionReason: string | null
+  lastEmailAttemptAt: string | Date | null
+  lastEmailAttemptOutcome: "sent" | "skipped" | "failed" | null
+  lastEmailAttemptCode: string | null
+  lastEmailAttemptMessage: string | null
   contact: Contact
   items: QuoteItem[]
   invoices: { id: string; number: string }[]
@@ -118,6 +127,15 @@ function formatDate(dateStr: string, locale?: string | null) {
   return formatDateIntl(dateStr, locale)
 }
 
+function isValidEmailAddress(email: string | null) {
+  if (!email) return false
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+}
+
+function toDateString(value: string | Date) {
+  return value instanceof Date ? value.toISOString() : value
+}
+
 function getQuoteStatusLabel(status: string, t: ReturnType<typeof useI18n>["t"]) {
   if (status === "sent") return t("quotes.status.sent")
   if (status === "accepted") return t("quotes.status.accepted")
@@ -142,6 +160,7 @@ function QuoteDetailPage() {
   const navigate = useNavigate()
   const [quote, setQuote] = useState<Quote | null>(null)
   const [loading, setLoading] = useState(true)
+  const [emailDelivery, setEmailDelivery] = useState<EmailDeliveryRuntimeStatus | null>(null)
   const [error, setError] = useState<string | null>(
     emailWarning
       ? t("quotes.detail.warning.emailSkipped", { reason: emailWarning })
@@ -149,6 +168,7 @@ function QuoteDetailPage() {
   )
   const [acting, setActing] = useState(false)
   const [editing, setEditing] = useState(false)
+  const [sendWithoutEmailOpen, setSendWithoutEmailOpen] = useState(false)
 
   // Edit state
   const [contacts, setContacts] = useState<{ id: string; name: string }[]>([])
@@ -160,15 +180,20 @@ function QuoteDetailPage() {
   const [editItems, setEditItems] = useState<EditItem[]>([])
 
   useEffect(() => {
-    trpc.quotes.get
-      .query({ id: quoteId })
-      .then((data) => {
-        const q = data as unknown as Quote
+    Promise.all([trpc.quotes.get.query({ id: quoteId }), trpc.settings.get.query()])
+      .then(([quoteData, settings]) => {
+        const q = quoteData as unknown as Quote
         setQuote(q)
+        setEmailDelivery(settings.emailDelivery)
       })
       .catch(() => setError(t("quotes.detail.error.notFound")))
       .finally(() => setLoading(false))
   }, [quoteId, t])
+
+  async function reloadQuote() {
+    const updated = await trpc.quotes.get.query({ id: quoteId })
+    setQuote(updated as unknown as Quote)
+  }
 
   function startEditing() {
     if (!quote) return
@@ -251,14 +276,17 @@ function QuoteDetailPage() {
     }
   }
 
-  async function handleSend() {
+  async function handleSend(allowSendWithoutEmail = false) {
     if (!quote) return
+    setError(null)
     setActing(true)
     try {
-      const result = await trpc.quotes.send.mutate({ id: quote.id })
-      // Reload full quote
-      const updated = await trpc.quotes.get.query({ id: quoteId })
-      setQuote(updated as unknown as Quote)
+      const result = await trpc.quotes.send.mutate({
+        id: quote.id,
+        allowSendWithoutEmail,
+      })
+      await reloadQuote()
+      setSendWithoutEmailOpen(false)
       if (result.emailSkipReason) {
         setError(
           t("quotes.detail.warning.emailSkipped", {
@@ -266,6 +294,24 @@ function QuoteDetailPage() {
           })
         )
       }
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : t("quotes.detail.error.sendFailed")
+      )
+    } finally {
+      setActing(false)
+    }
+  }
+
+  async function handleResendEmail() {
+    if (!quote) return
+    setError(null)
+    setActing(true)
+    try {
+      await trpc.quotes.resendEmail.mutate({ id: quote.id })
+      await reloadQuote()
     } catch (err) {
       setError(
         err instanceof Error
@@ -557,6 +603,74 @@ function QuoteDetailPage() {
 
   // View mode
   const contact = quote.contact
+  const emailAttempt = readEmailDeliveryAttempt({
+    lastEmailAttemptAt: quote.lastEmailAttemptAt
+      ? new Date(toDateString(quote.lastEmailAttemptAt))
+      : null,
+    lastEmailAttemptOutcome: quote.lastEmailAttemptOutcome,
+    lastEmailAttemptCode: quote.lastEmailAttemptCode,
+    lastEmailAttemptMessage: quote.lastEmailAttemptMessage,
+  })
+  const recipientEmailValid = isValidEmailAddress(contact.email)
+  const canResendEmail =
+    quote.status === "sent" || quote.status === "accepted" || quote.status === "rejected"
+  const canShowDegradedSend =
+    quote.status === "draft" && recipientEmailValid && emailDelivery && !emailDelivery.available
+  const deliveryStatus = emailAttempt
+    ? {
+        tone: emailAttempt.lastEmailAttemptOutcome,
+        label: t(`quotes.detail.email.status.${emailAttempt.lastEmailAttemptOutcome}`),
+        detail: t("quotes.detail.email.lastAttempt", {
+          status: t(`quotes.detail.email.status.${emailAttempt.lastEmailAttemptOutcome}`),
+          at: formatDate(toDateString(emailAttempt.lastEmailAttemptAt), locale),
+        }),
+        message:
+          emailAttempt.lastEmailAttemptCode === "provider_missing"
+            ? t("quotes.detail.email.reason.provider_missing")
+            : emailAttempt.lastEmailAttemptCode === "send_failed"
+              ? t("quotes.detail.email.reason.send_failed")
+              : emailAttempt.lastEmailAttemptCode === "sent"
+                ? t("quotes.detail.email.reason.sent")
+                : emailAttempt.lastEmailAttemptMessage,
+      }
+    : null
+  const publicLinkFooter =
+    quote.status === "sent" ? (
+      <p>{t("quotes.detail.publicLink.pending")}</p>
+    ) : quote.status === "rejected" && quote.publicRejectionReason ? (
+      <p>
+        {t("quotes.detail.publicLink.rejectionReason", {
+          reason: quote.publicRejectionReason,
+        })}
+      </p>
+    ) : null
+  const recipientFallback =
+    !recipientEmailValid ? {
+      title: t("quotes.detail.email.fallback.invalidRecipient.title"),
+      description: quote.publicViewUrl
+        ? t("quotes.detail.email.fallback.invalidRecipient.description")
+        : t("quotes.detail.email.fallback.invalidRecipient.descriptionNoLink"),
+      copyLabel: quote.publicViewUrl ? t("quotes.detail.publicLink.copy") : undefined,
+      onCopy: quote.publicViewUrl
+        ? () => {
+            navigator.clipboard.writeText(quote.publicViewUrl ?? "")
+          }
+        : undefined,
+      fixAction: (
+        <Button asChild variant="outline">
+          <Link to="/contacts/$contactId" params={{ contactId: contact.id }}>
+            {t("quotes.detail.email.fallback.invalidRecipient.fix")}
+          </Link>
+        </Button>
+      ),
+    } : !emailDelivery?.available && canResendEmail && quote.publicViewUrl ? {
+      title: t("quotes.detail.email.fallback.providerMissing.title"),
+      description: t("quotes.detail.email.fallback.providerMissing.description"),
+      copyLabel: t("quotes.detail.publicLink.copy"),
+      onCopy: () => {
+        navigator.clipboard.writeText(quote.publicViewUrl ?? "")
+      },
+    } : null
 
   return (
     <div className="p-6 max-w-3xl">
@@ -572,10 +686,6 @@ function QuoteDetailPage() {
               <Button variant="outline" size="sm" onClick={startEditing}>
                 <Pencil className="size-4" />
                 {t("quotes.detail.action.edit")}
-              </Button>
-              <Button size="sm" disabled={acting} onClick={handleSend}>
-                <Send className="size-4" />
-                {acting ? t("quotes.detail.action.sending") : t("quotes.detail.action.send")}
               </Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -680,38 +790,66 @@ function QuoteDetailPage() {
             </div>
           )}
 
-          {quote.publicViewUrl ? (
-            <div className="grid gap-2 rounded-md border p-4">
-              <div>
-                <h3 className="text-sm font-medium">Public quote link</h3>
-                <p className="text-sm text-muted-foreground">
-                  Share this link with the customer to review and accept the quote.
-                </p>
-              </div>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Input readOnly value={quote.publicViewUrl} />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    navigator.clipboard.writeText(quote.publicViewUrl ?? "")
-                  }}
-                >
-                  Copy link
-                </Button>
-              </div>
-              {quote.status === "sent" ? (
-                <p className="text-sm text-muted-foreground">
-                  Waiting for customer acceptance before invoice conversion.
-                </p>
-              ) : null}
-              {quote.status === "rejected" && quote.publicRejectionReason ? (
-                <p className="text-sm text-muted-foreground">
-                  Customer rejection reason: {quote.publicRejectionReason}
-                </p>
-              ) : null}
-            </div>
-          ) : null}
+          <EmailDeliveryPanel
+            title={t("quotes.detail.email.title")}
+            description={t("quotes.detail.email.description")}
+            status={deliveryStatus}
+            action={
+              quote.status === "draft" && recipientEmailValid && emailDelivery?.available
+                ? {
+                    label: t("quotes.detail.action.send"),
+                    pendingLabel: t("quotes.detail.action.sending"),
+                    pending: acting,
+                    disabled: acting,
+                    onClick: () => {
+                      void handleSend()
+                    },
+                  }
+                : canResendEmail && recipientEmailValid && emailDelivery?.available
+                  ? {
+                      label: t("quotes.detail.action.resendEmail"),
+                      pendingLabel: t("quotes.detail.action.sending"),
+                      pending: acting,
+                      disabled: acting,
+                      onClick: () => {
+                        void handleResendEmail()
+                      },
+                    }
+                  : null
+            }
+            degradedAction={
+              canShowDegradedSend
+                ? {
+                    open: sendWithoutEmailOpen,
+                    triggerLabel: t("quotes.detail.email.degraded.trigger"),
+                    title: t("quotes.detail.email.degraded.title"),
+                    description: t("quotes.detail.email.degraded.description"),
+                    confirmLabel: t("quotes.detail.email.degraded.confirm"),
+                    cancelLabel: t("quotes.detail.email.degraded.cancel"),
+                    pending: acting,
+                    onConfirm: () => {
+                      void handleSend(true)
+                    },
+                    onOpenChange: setSendWithoutEmailOpen,
+                  }
+                : null
+            }
+            fallback={recipientFallback}
+            publicLink={
+              quote.publicViewUrl
+                ? {
+                    title: t("quotes.detail.publicLink.title"),
+                    description: t("quotes.detail.publicLink.description"),
+                    url: quote.publicViewUrl,
+                    copyLabel: t("quotes.detail.publicLink.copy"),
+                    onCopy: () => {
+                      navigator.clipboard.writeText(quote.publicViewUrl ?? "")
+                    },
+                    footer: publicLinkFooter,
+                  }
+                : null
+            }
+          />
 
           {/* Quote To */}
           <div>

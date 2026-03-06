@@ -54,12 +54,41 @@ export const enInvoicesMessages = {
   "invoices.detail.action.print": "Print",
   "invoices.detail.action.edit": "Edit",
   "invoices.detail.action.send": "Send",
+  "invoices.detail.action.resendEmail": "Resend email",
   "invoices.detail.action.sending": "Sending...",
   "invoices.detail.action.createPaymentLink": "Create Payment Link",
   "invoices.detail.action.generatingPaymentLink": "Generating Link...",
   "invoices.detail.action.delete": "Delete",
   "invoices.detail.action.updating": "Updating...",
   "invoices.detail.action.markPaid": "Mark as Paid",
+  "invoices.detail.email.title": "Email delivery",
+  "invoices.detail.email.description":
+    "Send or resend the customer email for this invoice.",
+  "invoices.detail.email.status.sent": "Sent",
+  "invoices.detail.email.status.skipped": "Skipped",
+  "invoices.detail.email.status.failed": "Failed",
+  "invoices.detail.email.lastAttempt": "Last attempt: {status} on {at}",
+  "invoices.detail.email.reason.sent": "Invoice email sent.",
+  "invoices.detail.email.reason.provider_missing":
+    "Email delivery is not configured.",
+  "invoices.detail.email.reason.send_failed": "Email delivery failed.",
+  "invoices.detail.email.degraded.trigger": "Send without email",
+  "invoices.detail.email.degraded.title": "Email delivery is unavailable",
+  "invoices.detail.email.degraded.description":
+    "This will mark the invoice as sent without delivering an email.",
+  "invoices.detail.email.degraded.confirm": "Continue without email",
+  "invoices.detail.email.degraded.cancel": "Cancel",
+  "invoices.detail.email.fallback.invalidRecipient.title":
+    "Customer email is missing or invalid",
+  "invoices.detail.email.fallback.invalidRecipient.description":
+    "Add a valid customer email address before sending, or share the payment link manually.",
+  "invoices.detail.email.fallback.invalidRecipient.descriptionNoLink":
+    "Add a valid customer email address before sending this invoice.",
+  "invoices.detail.email.fallback.invalidRecipient.fix": "Fix contact",
+  "invoices.detail.email.fallback.providerMissing.title":
+    "Email delivery is not configured",
+  "invoices.detail.email.fallback.providerMissing.description":
+    "You can still share the payment link manually.",
   "invoices.detail.paymentLink.title": "Customer payment link",
   "invoices.detail.paymentLink.description":
     "Share this hosted link with the customer to collect payment through Stripe.",

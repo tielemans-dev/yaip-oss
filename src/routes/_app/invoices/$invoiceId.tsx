@@ -1,8 +1,13 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { useState, useEffect } from "react"
 import { trpc } from "../../../trpc/client"
 import { applyCatalogItemToLineItem, type CatalogItemOption } from "../../../lib/catalog"
+import {
+  readEmailDeliveryAttempt,
+  type EmailDeliveryRuntimeStatus,
+} from "../../../lib/email-delivery"
 import { LocalizedDateField } from "../../../components/localized-date-field"
+import { EmailDeliveryPanel } from "../../../components/documents/email-delivery-panel"
 import {
   formatCurrency as formatCurrencyIntl,
   formatDate as formatDateIntl,
@@ -45,7 +50,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "../../../components/ui/alert-dialog"
-import { Printer, Send, CheckCircle, Pencil, Trash2, Plus, ArrowLeft, Download } from "lucide-react"
+import { Printer, CheckCircle, Pencil, Trash2, Plus, ArrowLeft, Download } from "lucide-react"
 import { downloadInvoicePdf } from "../../../lib/invoice-pdf"
 import { useI18n } from "../../../lib/i18n/react"
 
@@ -91,6 +96,10 @@ type Invoice = {
   currency: string
   notes: string | null
   publicPaymentUrl: string | null
+  lastEmailAttemptAt: string | Date | null
+  lastEmailAttemptOutcome: "sent" | "skipped" | "failed" | null
+  lastEmailAttemptCode: string | null
+  lastEmailAttemptMessage: string | null
   contact: Contact
   items: InvoiceItem[]
 }
@@ -117,6 +126,15 @@ function formatDate(dateStr: string, locale?: string | null, timezone?: string |
   return formatDateIntl(dateStr, locale, timezone)
 }
 
+function isValidEmailAddress(email: string | null) {
+  if (!email) return false
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+}
+
+function toDateString(value: string | Date) {
+  return value instanceof Date ? value.toISOString() : value
+}
+
 function getInvoiceStatusLabel(status: string, t: ReturnType<typeof useI18n>["t"]) {
   if (status === "sent") return t("invoices.status.sent")
   if (status === "paid") return t("invoices.status.paid")
@@ -140,6 +158,7 @@ function InvoiceDetailPage() {
   const navigate = useNavigate()
   const [invoice, setInvoice] = useState<Invoice | null>(null)
   const [loading, setLoading] = useState(true)
+  const [emailDelivery, setEmailDelivery] = useState<EmailDeliveryRuntimeStatus | null>(null)
   const [error, setError] = useState<string | null>(
     emailWarning
       ? t("invoices.detail.warning.emailSkipped", { reason: emailWarning })
@@ -148,6 +167,7 @@ function InvoiceDetailPage() {
   const [acting, setActing] = useState(false)
   const [editing, setEditing] = useState(false)
   const [downloading, setDownloading] = useState(false)
+  const [sendWithoutEmailOpen, setSendWithoutEmailOpen] = useState(false)
   const [orgSettings, setOrgSettings] = useState<{
     companyName?: string | null
     companyEmail?: string | null
@@ -187,12 +207,19 @@ function InvoiceDetailPage() {
           timezone: settings.timezone,
           stripeByokConfigured: settings.stripeByokConfigured,
         })
+        setEmailDelivery(settings.emailDelivery)
       })
       .catch(() =>
         setError(t("invoices.detail.error.notFound"))
       )
       .finally(() => setLoading(false))
   }, [invoiceId, t])
+
+  async function reloadInvoice() {
+    const updated = await trpc.invoices.get.query({ id: invoiceId })
+    setInvoice(updated as unknown as Invoice)
+    setPaymentLinkUrl((updated as unknown as Invoice).publicPaymentUrl ?? null)
+  }
 
   function startEditing() {
     if (!invoice) return
@@ -275,15 +302,17 @@ function InvoiceDetailPage() {
     }
   }
 
-  async function handleSend() {
+  async function handleSend(allowSendWithoutEmail = false) {
     if (!invoice) return
+    setError(null)
     setActing(true)
     try {
-      const result = await trpc.invoices.send.mutate({ id: invoice.id })
-      // Reload full invoice
-      const updated = await trpc.invoices.get.query({ id: invoiceId })
-      setInvoice(updated as unknown as Invoice)
-      setPaymentLinkUrl((updated as unknown as Invoice).publicPaymentUrl ?? null)
+      const result = await trpc.invoices.send.mutate({
+        id: invoice.id,
+        allowSendWithoutEmail,
+      })
+      await reloadInvoice()
+      setSendWithoutEmailOpen(false)
       if (result.emailSkipReason) {
         setError(
           t("invoices.detail.warning.emailSkipped", {
@@ -302,14 +331,30 @@ function InvoiceDetailPage() {
     }
   }
 
+  async function handleResendEmail() {
+    if (!invoice) return
+    setError(null)
+    setActing(true)
+    try {
+      await trpc.invoices.resendEmail.mutate({ id: invoice.id })
+      await reloadInvoice()
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : t("invoices.detail.error.sendFailed")
+      )
+    } finally {
+      setActing(false)
+    }
+  }
+
   async function handleMarkPaid() {
     if (!invoice) return
     setActing(true)
     try {
       await trpc.invoices.markPaid.mutate({ id: invoice.id })
-      const updated = await trpc.invoices.get.query({ id: invoiceId })
-      setInvoice(updated as unknown as Invoice)
-      setPaymentLinkUrl((updated as unknown as Invoice).publicPaymentUrl ?? null)
+      await reloadInvoice()
     } catch (err) {
       setError(
         err instanceof Error
@@ -590,6 +635,72 @@ function InvoiceDetailPage() {
 
   // View mode
   const contact = invoice.contact
+  const emailAttempt = readEmailDeliveryAttempt({
+    lastEmailAttemptAt: invoice.lastEmailAttemptAt
+      ? new Date(toDateString(invoice.lastEmailAttemptAt))
+      : null,
+    lastEmailAttemptOutcome: invoice.lastEmailAttemptOutcome,
+    lastEmailAttemptCode: invoice.lastEmailAttemptCode,
+    lastEmailAttemptMessage: invoice.lastEmailAttemptMessage,
+  })
+  const recipientEmailValid = isValidEmailAddress(contact.email)
+  const canResendEmail = invoice.status === "sent" || invoice.status === "overdue"
+  const canShowDegradedSend =
+    invoice.status === "draft" && recipientEmailValid && emailDelivery && !emailDelivery.available
+  const deliveryStatus = emailAttempt
+    ? {
+        tone: emailAttempt.lastEmailAttemptOutcome,
+        label: t(`invoices.detail.email.status.${emailAttempt.lastEmailAttemptOutcome}`),
+        detail: t("invoices.detail.email.lastAttempt", {
+          status: t(`invoices.detail.email.status.${emailAttempt.lastEmailAttemptOutcome}`),
+          at: formatDate(
+            toDateString(emailAttempt.lastEmailAttemptAt),
+            locale,
+            orgSettings.timezone
+          ),
+        }),
+        message:
+          emailAttempt.lastEmailAttemptCode === "provider_missing"
+            ? t("invoices.detail.email.reason.provider_missing")
+            : emailAttempt.lastEmailAttemptCode === "send_failed"
+              ? t("invoices.detail.email.reason.send_failed")
+              : emailAttempt.lastEmailAttemptCode === "sent"
+                ? t("invoices.detail.email.reason.sent")
+                : emailAttempt.lastEmailAttemptMessage,
+      }
+    : null
+  const recipientFallback =
+    !recipientEmailValid ? {
+      title: t("invoices.detail.email.fallback.invalidRecipient.title"),
+      description:
+        paymentLinkUrl && invoice.paymentStatus !== "paid"
+          ? t("invoices.detail.email.fallback.invalidRecipient.description")
+          : t("invoices.detail.email.fallback.invalidRecipient.descriptionNoLink"),
+      copyLabel:
+        paymentLinkUrl && invoice.paymentStatus !== "paid"
+          ? t("invoices.detail.paymentLink.copy")
+          : undefined,
+      onCopy:
+        paymentLinkUrl && invoice.paymentStatus !== "paid"
+          ? () => {
+              navigator.clipboard.writeText(paymentLinkUrl)
+            }
+          : undefined,
+      fixAction: (
+        <Button asChild variant="outline">
+          <Link to="/contacts/$contactId" params={{ contactId: contact.id }}>
+            {t("invoices.detail.email.fallback.invalidRecipient.fix")}
+          </Link>
+        </Button>
+      ),
+    } : !emailDelivery?.available && canResendEmail && paymentLinkUrl && invoice.paymentStatus !== "paid" ? {
+      title: t("invoices.detail.email.fallback.providerMissing.title"),
+      description: t("invoices.detail.email.fallback.providerMissing.description"),
+      copyLabel: t("invoices.detail.paymentLink.copy"),
+      onCopy: () => {
+        navigator.clipboard.writeText(paymentLinkUrl)
+      },
+    } : null
 
   return (
     <div className="p-6 max-w-3xl">
@@ -638,12 +749,6 @@ function InvoiceDetailPage() {
               <Button variant="outline" size="sm" onClick={startEditing}>
                 <Pencil className="size-4" />
                 {t("invoices.detail.action.edit")}
-              </Button>
-              <Button size="sm" disabled={acting} onClick={handleSend}>
-                <Send className="size-4" />
-                {acting
-                  ? t("invoices.detail.action.sending")
-                  : t("invoices.detail.action.send")}
               </Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -701,26 +806,66 @@ function InvoiceDetailPage() {
       <div className="print-area">
         <Card>
           <CardContent className="p-6 grid gap-6">
-            {paymentLinkUrl && invoice.paymentStatus !== "paid" ? (
-              <div className="grid gap-2 rounded-md border p-4 no-print">
-                <div>
-                  <h3 className="text-sm font-medium">{t("invoices.detail.paymentLink.title")}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {t("invoices.detail.paymentLink.description")}
-                  </p>
-                </div>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <Input readOnly value={paymentLinkUrl} />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => navigator.clipboard.writeText(paymentLinkUrl)}
-                  >
-                    {t("invoices.detail.paymentLink.copy")}
-                  </Button>
-                </div>
-              </div>
-            ) : null}
+            <EmailDeliveryPanel
+              className="no-print"
+              title={t("invoices.detail.email.title")}
+              description={t("invoices.detail.email.description")}
+              status={deliveryStatus}
+              action={
+                invoice.status === "draft" && recipientEmailValid && emailDelivery?.available
+                  ? {
+                      label: t("invoices.detail.action.send"),
+                      pendingLabel: t("invoices.detail.action.sending"),
+                      pending: acting,
+                      disabled: acting,
+                      onClick: () => {
+                        void handleSend()
+                      },
+                    }
+                  : canResendEmail && recipientEmailValid && emailDelivery?.available
+                    ? {
+                        label: t("invoices.detail.action.resendEmail"),
+                        pendingLabel: t("invoices.detail.action.sending"),
+                        pending: acting,
+                        disabled: acting,
+                        onClick: () => {
+                          void handleResendEmail()
+                        },
+                      }
+                    : null
+              }
+              degradedAction={
+                canShowDegradedSend
+                  ? {
+                      open: sendWithoutEmailOpen,
+                      triggerLabel: t("invoices.detail.email.degraded.trigger"),
+                      title: t("invoices.detail.email.degraded.title"),
+                      description: t("invoices.detail.email.degraded.description"),
+                      confirmLabel: t("invoices.detail.email.degraded.confirm"),
+                      cancelLabel: t("invoices.detail.email.degraded.cancel"),
+                      pending: acting,
+                      onConfirm: () => {
+                        void handleSend(true)
+                      },
+                      onOpenChange: setSendWithoutEmailOpen,
+                    }
+                  : null
+              }
+              fallback={recipientFallback}
+              publicLink={
+                paymentLinkUrl && invoice.paymentStatus !== "paid"
+                  ? {
+                      title: t("invoices.detail.paymentLink.title"),
+                      description: t("invoices.detail.paymentLink.description"),
+                      url: paymentLinkUrl,
+                      copyLabel: t("invoices.detail.paymentLink.copy"),
+                      onCopy: () => {
+                        navigator.clipboard.writeText(paymentLinkUrl)
+                      },
+                    }
+                  : null
+              }
+            />
 
             {/* Header */}
             <div className="flex items-start justify-between">

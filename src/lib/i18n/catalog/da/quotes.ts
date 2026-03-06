@@ -41,12 +41,49 @@ export const daQuotesMessages = {
   "quotes.detail.action.back": "Tilbage til tilbud",
   "quotes.detail.action.edit": "Rediger",
   "quotes.detail.action.send": "Send",
+  "quotes.detail.action.resendEmail": "Send e-mail igen",
   "quotes.detail.action.sending": "Sender...",
   "quotes.detail.action.delete": "Slet",
   "quotes.detail.action.converting": "Konverterer...",
   "quotes.detail.action.convertToInvoice": "Konverter til faktura",
   "quotes.detail.action.updating": "Opdaterer...",
   "quotes.detail.action.markRejected": "Marker som afvist",
+  "quotes.detail.email.title": "E-maillevering",
+  "quotes.detail.email.description":
+    "Send eller gensend kunde-e-mailen for dette tilbud.",
+  "quotes.detail.email.status.sent": "Sendt",
+  "quotes.detail.email.status.skipped": "Sprunget over",
+  "quotes.detail.email.status.failed": "Mislykket",
+  "quotes.detail.email.lastAttempt": "Sidste forsøg: {status} den {at}",
+  "quotes.detail.email.reason.sent": "Tilbuds-e-mail sendt.",
+  "quotes.detail.email.reason.provider_missing":
+    "E-maillevering er ikke konfigureret.",
+  "quotes.detail.email.reason.send_failed": "E-maillevering mislykkedes.",
+  "quotes.detail.email.degraded.trigger": "Send uden e-mail",
+  "quotes.detail.email.degraded.title": "E-maillevering er utilgængelig",
+  "quotes.detail.email.degraded.description":
+    "Dette markerer tilbuddet som sendt uden at levere en e-mail.",
+  "quotes.detail.email.degraded.confirm": "Fortsæt uden e-mail",
+  "quotes.detail.email.degraded.cancel": "Annuller",
+  "quotes.detail.email.fallback.invalidRecipient.title":
+    "Kundens e-mail mangler eller er ugyldig",
+  "quotes.detail.email.fallback.invalidRecipient.description":
+    "Tilføj en gyldig kunde-e-mailadresse før afsendelse, eller del det offentlige tilbudslink manuelt.",
+  "quotes.detail.email.fallback.invalidRecipient.descriptionNoLink":
+    "Tilføj en gyldig kunde-e-mailadresse før du sender dette tilbud.",
+  "quotes.detail.email.fallback.invalidRecipient.fix": "Ret kontakt",
+  "quotes.detail.email.fallback.providerMissing.title":
+    "E-maillevering er ikke konfigureret",
+  "quotes.detail.email.fallback.providerMissing.description":
+    "Du kan stadig dele det offentlige tilbudslink manuelt.",
+  "quotes.detail.publicLink.title": "Offentligt tilbudslink",
+  "quotes.detail.publicLink.description":
+    "Del dette link med kunden for at gennemgå og acceptere tilbuddet.",
+  "quotes.detail.publicLink.copy": "Kopiér link",
+  "quotes.detail.publicLink.pending":
+    "Venter på kundens accept før konvertering til faktura.",
+  "quotes.detail.publicLink.rejectionReason":
+    "Kundens afvisningsgrund: {reason}",
   "quotes.detail.convertedToInvoice": "Konverteret til faktura:",
   "quotes.detail.quoteTo": "Tilbud til",
   "quotes.detail.title": "Tilbud",

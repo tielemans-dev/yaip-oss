@@ -40,12 +40,48 @@ export const enQuotesMessages = {
   "quotes.detail.action.back": "Back to Quotes",
   "quotes.detail.action.edit": "Edit",
   "quotes.detail.action.send": "Send",
+  "quotes.detail.action.resendEmail": "Resend email",
   "quotes.detail.action.sending": "Sending...",
   "quotes.detail.action.delete": "Delete",
   "quotes.detail.action.converting": "Converting...",
   "quotes.detail.action.convertToInvoice": "Convert to Invoice",
   "quotes.detail.action.updating": "Updating...",
   "quotes.detail.action.markRejected": "Mark as Rejected",
+  "quotes.detail.email.title": "Email delivery",
+  "quotes.detail.email.description":
+    "Send or resend the customer email for this quote.",
+  "quotes.detail.email.status.sent": "Sent",
+  "quotes.detail.email.status.skipped": "Skipped",
+  "quotes.detail.email.status.failed": "Failed",
+  "quotes.detail.email.lastAttempt": "Last attempt: {status} on {at}",
+  "quotes.detail.email.reason.sent": "Quote email sent.",
+  "quotes.detail.email.reason.provider_missing": "Email delivery is not configured.",
+  "quotes.detail.email.reason.send_failed": "Email delivery failed.",
+  "quotes.detail.email.degraded.trigger": "Send without email",
+  "quotes.detail.email.degraded.title": "Email delivery is unavailable",
+  "quotes.detail.email.degraded.description":
+    "This will mark the quote as sent without delivering an email.",
+  "quotes.detail.email.degraded.confirm": "Continue without email",
+  "quotes.detail.email.degraded.cancel": "Cancel",
+  "quotes.detail.email.fallback.invalidRecipient.title":
+    "Customer email is missing or invalid",
+  "quotes.detail.email.fallback.invalidRecipient.description":
+    "Add a valid customer email address before sending, or share the public quote link manually.",
+  "quotes.detail.email.fallback.invalidRecipient.descriptionNoLink":
+    "Add a valid customer email address before sending this quote.",
+  "quotes.detail.email.fallback.invalidRecipient.fix": "Fix contact",
+  "quotes.detail.email.fallback.providerMissing.title":
+    "Email delivery is not configured",
+  "quotes.detail.email.fallback.providerMissing.description":
+    "You can still share the public quote link manually.",
+  "quotes.detail.publicLink.title": "Public quote link",
+  "quotes.detail.publicLink.description":
+    "Share this link with the customer to review and accept the quote.",
+  "quotes.detail.publicLink.copy": "Copy link",
+  "quotes.detail.publicLink.pending":
+    "Waiting for customer acceptance before invoice conversion.",
+  "quotes.detail.publicLink.rejectionReason":
+    "Customer rejection reason: {reason}",
   "quotes.detail.convertedToInvoice": "Converted to invoice:",
   "quotes.detail.quoteTo": "Quote To",
   "quotes.detail.title": "Quote",
