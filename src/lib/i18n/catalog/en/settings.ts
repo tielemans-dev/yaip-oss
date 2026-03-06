@@ -77,6 +77,19 @@ export const enSettingsMessages = {
   "settings.nextInvoiceNumber.label": "Next Invoice Number",
   "settings.quotePrefix.label": "Quote Prefix",
   "settings.nextQuoteNumber.label": "Next Quote Number",
+  "settings.section.payments.title": "Payments (Stripe BYOK)",
+  "settings.section.payments.description":
+    "Configure your own Stripe account for hosted invoice payment links.",
+  "settings.payments.stripePublishableKey.label": "Stripe Publishable Key",
+  "settings.payments.stripeSecretKey.label": "Stripe Secret Key",
+  "settings.payments.stripeWebhookSecret.label": "Stripe Webhook Secret",
+  "settings.payments.configuredHelp":
+    "Stripe keys are configured. Enter new secrets only if you want to rotate them.",
+  "settings.payments.notConfiguredHelp":
+    "Stripe payment links are disabled until all Stripe keys are configured.",
+  "settings.payments.removeSecret": "Remove saved secret key",
+  "settings.payments.removeWebhook": "Remove saved webhook secret",
+  "settings.payments.undo": "Undo",
   "settings.section.ai.title": "AI Invoice Drafting (BYOK)",
   "settings.section.ai.description":
     "Use OpenRouter with your own API key and chosen model.",

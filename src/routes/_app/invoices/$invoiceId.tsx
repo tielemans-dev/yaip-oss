@@ -81,6 +81,8 @@ type Invoice = {
   id: string
   number: string
   status: string
+  paymentStatus: string
+  paidAt: string | null
   issueDate: string
   dueDate: string
   subtotal: number
@@ -88,6 +90,7 @@ type Invoice = {
   total: number
   currency: string
   notes: string | null
+  publicPaymentUrl: string | null
   contact: Contact
   items: InvoiceItem[]
 }
@@ -153,7 +156,9 @@ function InvoiceDetailPage() {
     companyLogo?: string | null
     locale?: string | null
     timezone?: string | null
+    stripeByokConfigured?: boolean
   }>({})
+  const [paymentLinkUrl, setPaymentLinkUrl] = useState<string | null>(null)
 
   // Edit state
   const [contacts, setContacts] = useState<{ id: string; name: string }[]>([])
@@ -171,6 +176,7 @@ function InvoiceDetailPage() {
     ])
       .then(([data, settings]) => {
         setInvoice(data as unknown as Invoice)
+        setPaymentLinkUrl((data as unknown as Invoice).publicPaymentUrl ?? null)
         setOrgSettings({
           companyName: settings.companyName,
           companyEmail: settings.companyEmail,
@@ -179,6 +185,7 @@ function InvoiceDetailPage() {
           companyLogo: settings.companyLogo,
           locale: settings.locale,
           timezone: settings.timezone,
+          stripeByokConfigured: settings.stripeByokConfigured,
         })
       })
       .catch(() =>
@@ -276,6 +283,7 @@ function InvoiceDetailPage() {
       // Reload full invoice
       const updated = await trpc.invoices.get.query({ id: invoiceId })
       setInvoice(updated as unknown as Invoice)
+      setPaymentLinkUrl((updated as unknown as Invoice).publicPaymentUrl ?? null)
       if (result.emailSkipReason) {
         setError(
           t("invoices.detail.warning.emailSkipped", {
@@ -301,11 +309,29 @@ function InvoiceDetailPage() {
       await trpc.invoices.markPaid.mutate({ id: invoice.id })
       const updated = await trpc.invoices.get.query({ id: invoiceId })
       setInvoice(updated as unknown as Invoice)
+      setPaymentLinkUrl((updated as unknown as Invoice).publicPaymentUrl ?? null)
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
           : t("invoices.detail.error.markPaidFailed")
+      )
+    } finally {
+      setActing(false)
+    }
+  }
+
+  async function handleCreatePaymentLink() {
+    if (!invoice) return
+    setActing(true)
+    try {
+      const result = await trpc.invoices.createPaymentLink.mutate({ id: invoice.id })
+      setPaymentLinkUrl(result.url)
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : t("invoices.detail.error.paymentLinkFailed")
       )
     } finally {
       setActing(false)
@@ -645,13 +671,22 @@ function InvoiceDetailPage() {
               </AlertDialog>
             </>
           )}
-          {invoice.status === "sent" && (
-            <Button size="sm" disabled={acting} onClick={handleMarkPaid}>
-              <CheckCircle className="size-4" />
-              {acting
-                ? t("invoices.detail.action.updating")
-                : t("invoices.detail.action.markPaid")}
-            </Button>
+          {(invoice.status === "sent" || invoice.status === "overdue") && (
+            <div className="flex items-center gap-2">
+              {orgSettings.stripeByokConfigured && invoice.paymentStatus !== "paid" && (
+                <Button variant="outline" size="sm" disabled={acting} onClick={handleCreatePaymentLink}>
+                  {acting
+                    ? t("invoices.detail.action.generatingPaymentLink")
+                    : t("invoices.detail.action.createPaymentLink")}
+                </Button>
+              )}
+              <Button size="sm" disabled={acting} onClick={handleMarkPaid}>
+                <CheckCircle className="size-4" />
+                {acting
+                  ? t("invoices.detail.action.updating")
+                  : t("invoices.detail.action.markPaid")}
+              </Button>
+            </div>
           )}
         </div>
       </div>
@@ -666,6 +701,27 @@ function InvoiceDetailPage() {
       <div className="print-area">
         <Card>
           <CardContent className="p-6 grid gap-6">
+            {paymentLinkUrl && invoice.paymentStatus !== "paid" ? (
+              <div className="grid gap-2 rounded-md border p-4 no-print">
+                <div>
+                  <h3 className="text-sm font-medium">{t("invoices.detail.paymentLink.title")}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {t("invoices.detail.paymentLink.description")}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Input readOnly value={paymentLinkUrl} />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => navigator.clipboard.writeText(paymentLinkUrl)}
+                  >
+                    {t("invoices.detail.paymentLink.copy")}
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+
             {/* Header */}
             <div className="flex items-start justify-between">
               <div>

@@ -47,6 +47,7 @@ export const enInvoicesMessages = {
   "invoices.detail.error.updateFailed": "Failed to update invoice",
   "invoices.detail.error.sendFailed": "Failed to send invoice",
   "invoices.detail.error.markPaidFailed": "Failed to mark as paid",
+  "invoices.detail.error.paymentLinkFailed": "Failed to create payment link",
   "invoices.detail.error.deleteFailed": "Failed to delete invoice",
   "invoices.detail.error.pdfFailed": "Failed to generate PDF",
   "invoices.detail.action.back": "Back to Invoices",
@@ -54,7 +55,13 @@ export const enInvoicesMessages = {
   "invoices.detail.action.edit": "Edit",
   "invoices.detail.action.send": "Send",
   "invoices.detail.action.sending": "Sending...",
+  "invoices.detail.action.createPaymentLink": "Create Payment Link",
+  "invoices.detail.action.generatingPaymentLink": "Generating Link...",
   "invoices.detail.action.delete": "Delete",
   "invoices.detail.action.updating": "Updating...",
   "invoices.detail.action.markPaid": "Mark as Paid",
+  "invoices.detail.paymentLink.title": "Customer payment link",
+  "invoices.detail.paymentLink.description":
+    "Share this hosted link with the customer to collect payment through Stripe.",
+  "invoices.detail.paymentLink.copy": "Copy link",
 } as const

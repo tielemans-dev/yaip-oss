@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server"
 import { router, orgProcedure } from "../init"
 import { prisma } from "../../lib/db"
 import { encryptSecret } from "../../lib/secrets"
+import { getStripePaymentConfigurationState } from "../../lib/payments/stripe"
 import { COUNTRY_OPTIONS, LOCALE_OPTIONS } from "../../lib/compliance/countries"
 import {
   getCountryCodeOrFallback,
@@ -50,6 +51,11 @@ export const settingsUpdateSchema = z.object({
   aiOpenRouterModel: z.string().trim().min(1).max(120).optional(),
   aiOpenRouterApiKey: z.string().trim().min(16).max(500).optional(),
   clearAiOpenRouterApiKey: z.boolean().optional(),
+  stripePublishableKey: z.string().trim().min(8).max(255).optional(),
+  stripeSecretKey: z.string().trim().min(16).max(500).optional(),
+  stripeWebhookSecret: z.string().trim().min(16).max(500).optional(),
+  clearStripeSecretKey: z.boolean().optional(),
+  clearStripeWebhookSecret: z.boolean().optional(),
   countryCode: z
     .string()
     .trim()
@@ -86,6 +92,11 @@ export const settingsRouter = router({
         data: { organizationId: ctx.organizationId },
       })
     }
+    const stripeState = getStripePaymentConfigurationState({
+      stripePublishableKey: settings.stripePublishableKey,
+      stripeSecretKeyEnc: settings.stripeSecretKeyEnc,
+      stripeWebhookSecretEnc: settings.stripeWebhookSecretEnc,
+    })
     return {
       id: settings.id,
       countryCode: settings.countryCode,
@@ -107,6 +118,8 @@ export const settingsRouter = router({
       quoteNextNum: settings.quoteNextNum,
       aiByokConfigured: Boolean(settings.aiOpenRouterApiKeyEnc),
       aiOpenRouterModel: settings.aiOpenRouterModel,
+      stripeByokConfigured: stripeState.configured,
+      stripePublishableKey: settings.stripePublishableKey,
       primaryTaxId: primaryTaxId?.value ?? null,
       primaryTaxIdScheme: primaryTaxId?.scheme ?? null,
     }
@@ -120,6 +133,11 @@ export const settingsRouter = router({
         primaryTaxIdScheme,
         aiOpenRouterApiKey,
         clearAiOpenRouterApiKey,
+        stripePublishableKey,
+        stripeSecretKey,
+        stripeWebhookSecret,
+        clearStripeSecretKey,
+        clearStripeWebhookSecret,
         ...settingsInput
       } = input
 
@@ -148,6 +166,17 @@ export const settingsRouter = router({
             ? { aiOpenRouterApiKeyEnc: encryptSecret(aiOpenRouterApiKey) }
             : {}),
           ...(clearAiOpenRouterApiKey ? { aiOpenRouterApiKeyEnc: null } : {}),
+          ...(stripePublishableKey !== undefined
+            ? { stripePublishableKey: stripePublishableKey || null }
+            : {}),
+          ...(stripeSecretKey
+            ? { stripeSecretKeyEnc: encryptSecret(stripeSecretKey) }
+            : {}),
+          ...(stripeWebhookSecret
+            ? { stripeWebhookSecretEnc: encryptSecret(stripeWebhookSecret) }
+            : {}),
+          ...(clearStripeSecretKey ? { stripeSecretKeyEnc: null } : {}),
+          ...(clearStripeWebhookSecret ? { stripeWebhookSecretEnc: null } : {}),
         }
 
         const settings = await tx.orgSettings.upsert({

@@ -11,14 +11,22 @@ export type OnboardingAICapabilities = {
   managed: boolean
 }
 
+export type PaymentsCapabilities = {
+  enabled: boolean
+  managed: boolean
+  provider: "stripe" | null
+}
+
 export type RuntimeCapabilities = {
   aiInvoiceDraft: AIInvoiceDraftCapabilities
   onboardingAi: OnboardingAICapabilities
+  payments: PaymentsCapabilities
 }
 
 export type RuntimeCapabilityPatch = {
   aiInvoiceDraft?: Partial<AIInvoiceDraftCapabilities>
   onboardingAi?: Partial<OnboardingAICapabilities>
+  payments?: Partial<PaymentsCapabilities>
 }
 
 export type RuntimeExtension = {
@@ -62,6 +70,10 @@ function mergeCapabilities(
       ...base.onboardingAi,
       ...patch.onboardingAi,
     },
+    payments: {
+      ...base.payments,
+      ...patch.payments,
+    },
   }
 }
 
@@ -92,6 +104,11 @@ function readDefaultCapabilities(
     onboardingAi: {
       enabled: onboardingAiEnabled,
       managed: onboardingAiManaged,
+    },
+    payments: {
+      enabled: false,
+      managed: false,
+      provider: null,
     },
   }
 }

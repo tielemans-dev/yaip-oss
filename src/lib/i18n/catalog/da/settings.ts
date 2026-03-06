@@ -78,6 +78,19 @@ export const daSettingsMessages = {
   "settings.nextInvoiceNumber.label": "Næste fakturanummer",
   "settings.quotePrefix.label": "Tilbudspræfiks",
   "settings.nextQuoteNumber.label": "Næste tilbudsnummer",
+  "settings.section.payments.title": "Betalinger (Stripe BYOK)",
+  "settings.section.payments.description":
+    "Konfigurer din egen Stripe-konto til hostede betalingslinks for fakturaer.",
+  "settings.payments.stripePublishableKey.label": "Stripe publishable key",
+  "settings.payments.stripeSecretKey.label": "Stripe secret key",
+  "settings.payments.stripeWebhookSecret.label": "Stripe webhook-secret",
+  "settings.payments.configuredHelp":
+    "Stripe-nøgler er konfigureret. Indtast kun nye hemmeligheder, hvis du vil rotere dem.",
+  "settings.payments.notConfiguredHelp":
+    "Stripe-betalingslinks er slået fra, indtil alle Stripe-nøgler er konfigureret.",
+  "settings.payments.removeSecret": "Fjern gemt secret key",
+  "settings.payments.removeWebhook": "Fjern gemt webhook-secret",
+  "settings.payments.undo": "Fortryd",
   "settings.section.ai.title": "AI fakturakladde (BYOK)",
   "settings.section.ai.description":
     "Brug OpenRouter med din egen API-nøgle og valgte model.",

@@ -8,6 +8,7 @@ import {
 import { prisma } from "../../lib/db"
 import { sendQuoteEmail } from "../../lib/email"
 import { assertCloudOnboardingComplete } from "../../lib/onboarding/guard"
+import { getPublicQuoteUrl } from "../../lib/quotes/public-url"
 import { router, orgProcedure } from "../init"
 
 const isoDateSchema = z.string().refine(
@@ -81,6 +82,7 @@ export const quotesRouter = router({
         subtotal: quote.subtotalNet.toNumber(),
         taxAmount: quote.totalTax.toNumber(),
         total: quote.totalGross.toNumber(),
+        publicViewUrl: getPublicQuoteUrl(quote),
         items: quote.items.map((item) => ({
           ...item,
           ...mapQuoteItemForUi(item),
@@ -502,7 +504,11 @@ export const quotesRouter = router({
 
       const updated = await prisma.quote.update({
         where: { id: input.id },
-        data: { status: "sent", issueDate: sentAt },
+        data: {
+          status: "sent",
+          issueDate: sentAt,
+          publicAccessIssuedAt: sentAt,
+        },
       })
 
       return { ...updated, emailSent, emailSkipReason }
@@ -539,10 +545,10 @@ export const quotesRouter = router({
           },
         })
 
-        if (quote.status !== "sent" && quote.status !== "accepted") {
+        if (quote.status !== "accepted") {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: "Only sent or accepted quotes can be converted to invoices",
+            message: "Only accepted quotes can be converted to invoices",
           })
         }
 

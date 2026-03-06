@@ -14,6 +14,8 @@ import { Route as SetupRouteImport } from './routes/setup'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as QTokenRouteImport } from './routes/q.$token'
+import { Route as PayTokenRouteImport } from './routes/pay.$token'
 import { Route as AcceptInvitationInvitationIdRouteImport } from './routes/accept-invitation.$invitationId'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppOnboardingRouteImport } from './routes/_app/onboarding'
@@ -23,6 +25,7 @@ import { Route as AppQuotesIndexRouteImport } from './routes/_app/quotes/index'
 import { Route as AppInvoicesIndexRouteImport } from './routes/_app/invoices/index'
 import { Route as AppContactsIndexRouteImport } from './routes/_app/contacts/index'
 import { Route as ApiTrpcSplatRouteImport } from './routes/api/trpc/$'
+import { Route as ApiPaymentsStripeWebhookRouteImport } from './routes/api/payments/stripe-webhook'
 import { Route as ApiCronMarkOverdueRouteImport } from './routes/api/cron/mark-overdue'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AppQuotesNewRouteImport } from './routes/_app/quotes/new'
@@ -55,6 +58,16 @@ const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppRoute,
+} as any)
+const QTokenRoute = QTokenRouteImport.update({
+  id: '/q/$token',
+  path: '/q/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PayTokenRoute = PayTokenRouteImport.update({
+  id: '/pay/$token',
+  path: '/pay/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AcceptInvitationInvitationIdRoute =
   AcceptInvitationInvitationIdRouteImport.update({
@@ -102,6 +115,12 @@ const ApiTrpcSplatRoute = ApiTrpcSplatRouteImport.update({
   path: '/api/trpc/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPaymentsStripeWebhookRoute =
+  ApiPaymentsStripeWebhookRouteImport.update({
+    id: '/api/payments/stripe-webhook',
+    path: '/api/payments/stripe-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiCronMarkOverdueRoute = ApiCronMarkOverdueRouteImport.update({
   id: '/api/cron/mark-overdue',
   path: '/api/cron/mark-overdue',
@@ -153,6 +172,8 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AppOnboardingRoute
   '/settings': typeof AppSettingsRoute
   '/accept-invitation/$invitationId': typeof AcceptInvitationInvitationIdRoute
+  '/pay/$token': typeof PayTokenRoute
+  '/q/$token': typeof QTokenRoute
   '/contacts/$contactId': typeof AppContactsContactIdRoute
   '/contacts/new': typeof AppContactsNewRoute
   '/invoices/$invoiceId': typeof AppInvoicesInvoiceIdRoute
@@ -161,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/quotes/new': typeof AppQuotesNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/mark-overdue': typeof ApiCronMarkOverdueRoute
+  '/api/payments/stripe-webhook': typeof ApiPaymentsStripeWebhookRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/contacts/': typeof AppContactsIndexRoute
   '/invoices/': typeof AppInvoicesIndexRoute
@@ -175,6 +197,8 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AppOnboardingRoute
   '/settings': typeof AppSettingsRoute
   '/accept-invitation/$invitationId': typeof AcceptInvitationInvitationIdRoute
+  '/pay/$token': typeof PayTokenRoute
+  '/q/$token': typeof QTokenRoute
   '/': typeof AppIndexRoute
   '/contacts/$contactId': typeof AppContactsContactIdRoute
   '/contacts/new': typeof AppContactsNewRoute
@@ -184,6 +208,7 @@ export interface FileRoutesByTo {
   '/quotes/new': typeof AppQuotesNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/mark-overdue': typeof ApiCronMarkOverdueRoute
+  '/api/payments/stripe-webhook': typeof ApiPaymentsStripeWebhookRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/contacts': typeof AppContactsIndexRoute
   '/invoices': typeof AppInvoicesIndexRoute
@@ -200,6 +225,8 @@ export interface FileRoutesById {
   '/_app/onboarding': typeof AppOnboardingRoute
   '/_app/settings': typeof AppSettingsRoute
   '/accept-invitation/$invitationId': typeof AcceptInvitationInvitationIdRoute
+  '/pay/$token': typeof PayTokenRoute
+  '/q/$token': typeof QTokenRoute
   '/_app/': typeof AppIndexRoute
   '/_app/contacts/$contactId': typeof AppContactsContactIdRoute
   '/_app/contacts/new': typeof AppContactsNewRoute
@@ -209,6 +236,7 @@ export interface FileRoutesById {
   '/_app/quotes/new': typeof AppQuotesNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/mark-overdue': typeof ApiCronMarkOverdueRoute
+  '/api/payments/stripe-webhook': typeof ApiPaymentsStripeWebhookRoute
   '/api/trpc/$': typeof ApiTrpcSplatRoute
   '/_app/contacts/': typeof AppContactsIndexRoute
   '/_app/invoices/': typeof AppInvoicesIndexRoute
@@ -226,6 +254,8 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/settings'
     | '/accept-invitation/$invitationId'
+    | '/pay/$token'
+    | '/q/$token'
     | '/contacts/$contactId'
     | '/contacts/new'
     | '/invoices/$invoiceId'
@@ -234,6 +264,7 @@ export interface FileRouteTypes {
     | '/quotes/new'
     | '/api/auth/$'
     | '/api/cron/mark-overdue'
+    | '/api/payments/stripe-webhook'
     | '/api/trpc/$'
     | '/contacts/'
     | '/invoices/'
@@ -248,6 +279,8 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/settings'
     | '/accept-invitation/$invitationId'
+    | '/pay/$token'
+    | '/q/$token'
     | '/'
     | '/contacts/$contactId'
     | '/contacts/new'
@@ -257,6 +290,7 @@ export interface FileRouteTypes {
     | '/quotes/new'
     | '/api/auth/$'
     | '/api/cron/mark-overdue'
+    | '/api/payments/stripe-webhook'
     | '/api/trpc/$'
     | '/contacts'
     | '/invoices'
@@ -272,6 +306,8 @@ export interface FileRouteTypes {
     | '/_app/onboarding'
     | '/_app/settings'
     | '/accept-invitation/$invitationId'
+    | '/pay/$token'
+    | '/q/$token'
     | '/_app/'
     | '/_app/contacts/$contactId'
     | '/_app/contacts/new'
@@ -281,6 +317,7 @@ export interface FileRouteTypes {
     | '/_app/quotes/new'
     | '/api/auth/$'
     | '/api/cron/mark-overdue'
+    | '/api/payments/stripe-webhook'
     | '/api/trpc/$'
     | '/_app/contacts/'
     | '/_app/invoices/'
@@ -293,8 +330,11 @@ export interface RootRouteChildren {
   SetupRoute: typeof SetupRoute
   SignupRoute: typeof SignupRoute
   AcceptInvitationInvitationIdRoute: typeof AcceptInvitationInvitationIdRoute
+  PayTokenRoute: typeof PayTokenRoute
+  QTokenRoute: typeof QTokenRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiCronMarkOverdueRoute: typeof ApiCronMarkOverdueRoute
+  ApiPaymentsStripeWebhookRoute: typeof ApiPaymentsStripeWebhookRoute
   ApiTrpcSplatRoute: typeof ApiTrpcSplatRoute
 }
 
@@ -334,6 +374,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/q/$token': {
+      id: '/q/$token'
+      path: '/q/$token'
+      fullPath: '/q/$token'
+      preLoaderRoute: typeof QTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pay/$token': {
+      id: '/pay/$token'
+      path: '/pay/$token'
+      fullPath: '/pay/$token'
+      preLoaderRoute: typeof PayTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/accept-invitation/$invitationId': {
       id: '/accept-invitation/$invitationId'
@@ -396,6 +450,13 @@ declare module '@tanstack/react-router' {
       path: '/api/trpc/$'
       fullPath: '/api/trpc/$'
       preLoaderRoute: typeof ApiTrpcSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/payments/stripe-webhook': {
+      id: '/api/payments/stripe-webhook'
+      path: '/api/payments/stripe-webhook'
+      fullPath: '/api/payments/stripe-webhook'
+      preLoaderRoute: typeof ApiPaymentsStripeWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/cron/mark-overdue': {
@@ -499,8 +560,11 @@ const rootRouteChildren: RootRouteChildren = {
   SetupRoute: SetupRoute,
   SignupRoute: SignupRoute,
   AcceptInvitationInvitationIdRoute: AcceptInvitationInvitationIdRoute,
+  PayTokenRoute: PayTokenRoute,
+  QTokenRoute: QTokenRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiCronMarkOverdueRoute: ApiCronMarkOverdueRoute,
+  ApiPaymentsStripeWebhookRoute: ApiPaymentsStripeWebhookRoute,
   ApiTrpcSplatRoute: ApiTrpcSplatRoute,
 }
 export const routeTree = rootRouteImport

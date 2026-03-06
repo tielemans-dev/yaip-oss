@@ -170,6 +170,9 @@ model OrgSettings {
   onboardingCompletedAt DateTime?
   aiOpenRouterApiKeyEnc String?
   aiOpenRouterModel String @default("openai/gpt-4o-mini")
+  stripePublishableKey String?
+  stripeSecretKeyEnc String?
+  stripeWebhookSecretEnc String?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
@@ -275,6 +278,13 @@ model Invoice {
   complianceStatus String      @default("valid")
   complianceErrors Json?
   legalText      Json?
+  paymentStatus  String        @default("unpaid")
+  paidAt         DateTime?
+  publicPaymentIssuedAt DateTime?
+  publicPaymentKeyVersion Int @default(1)
+  stripeCheckoutSessionId String?
+  stripePaymentIntentId String?
+  paymentFailureReason String?
   paymentReference String?
   purchaseOrderRef String?
   einvoiceFormat String?
@@ -291,6 +301,8 @@ model Invoice {
   @@index([organizationId])
   @@index([contactId])
   @@index([organizationId, status])
+  @@index([organizationId, paymentStatus])
+  @@index([organizationId, publicPaymentIssuedAt])
   @@map("invoice")
 }
 
@@ -341,6 +353,10 @@ model Quote {
   legalText      Json?
   purchaseOrderRef String?
   paymentReference String?
+  publicAccessKeyVersion Int @default(1)
+  publicAccessIssuedAt DateTime?
+  publicDecisionAt DateTime?
+  publicRejectionReason String?
   notes          String?
   items          QuoteItem[]
   invoices       Invoice[]
@@ -351,6 +367,7 @@ model Quote {
   @@index([organizationId])
   @@index([contactId])
   @@index([organizationId, status])
+  @@index([organizationId, publicDecisionAt])
   @@map("quote")
 }
 

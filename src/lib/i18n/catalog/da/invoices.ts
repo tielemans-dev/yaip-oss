@@ -51,6 +51,7 @@ export const daInvoicesMessages = {
   "invoices.detail.error.updateFailed": "Kunne ikke opdatere faktura",
   "invoices.detail.error.sendFailed": "Kunne ikke sende faktura",
   "invoices.detail.error.markPaidFailed": "Kunne ikke markere som betalt",
+  "invoices.detail.error.paymentLinkFailed": "Kunne ikke oprette betalingslink",
   "invoices.detail.error.deleteFailed": "Kunne ikke slette faktura",
   "invoices.detail.error.pdfFailed": "Kunne ikke generere PDF",
   "invoices.detail.action.back": "Tilbage til fakturaer",
@@ -58,7 +59,13 @@ export const daInvoicesMessages = {
   "invoices.detail.action.edit": "Rediger",
   "invoices.detail.action.send": "Send",
   "invoices.detail.action.sending": "Sender...",
+  "invoices.detail.action.createPaymentLink": "Opret betalingslink",
+  "invoices.detail.action.generatingPaymentLink": "Opretter link...",
   "invoices.detail.action.delete": "Slet",
   "invoices.detail.action.updating": "Opdaterer...",
   "invoices.detail.action.markPaid": "Marker som betalt",
+  "invoices.detail.paymentLink.title": "Betalingslink til kunde",
+  "invoices.detail.paymentLink.description":
+    "Del dette hostede link med kunden for at modtage betaling via Stripe.",
+  "invoices.detail.paymentLink.copy": "Kopiér link",
 } as const

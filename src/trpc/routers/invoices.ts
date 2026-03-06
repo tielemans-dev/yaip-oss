@@ -9,6 +9,10 @@ import { prisma } from "../../lib/db"
 import { sendInvoiceEmail } from "../../lib/email"
 import { billingProvider } from "../../lib/billing"
 import { assertCloudOnboardingComplete } from "../../lib/onboarding/guard"
+import {
+  getPublicInvoicePaymentUrl,
+} from "../../lib/payments/public"
+import { getStripePaymentConfigurationState } from "../../lib/payments/stripe"
 import { router, orgProcedure } from "../init"
 
 const isoDateSchema = z.string().refine(
@@ -62,6 +66,7 @@ export const invoicesRouter = router({
         subtotal: inv.subtotalNet.toNumber(),
         taxAmount: inv.totalTax.toNumber(),
         total: inv.totalGross.toNumber(),
+        publicPaymentUrl: getPublicInvoicePaymentUrl(inv),
       }))
     }),
 
@@ -81,6 +86,7 @@ export const invoicesRouter = router({
         subtotal: invoice.subtotalNet.toNumber(),
         taxAmount: invoice.totalTax.toNumber(),
         total: invoice.totalGross.toNumber(),
+        publicPaymentUrl: getPublicInvoicePaymentUrl(invoice),
         items: invoice.items.map((item) => ({
           ...item,
           ...mapInvoiceItemForUi(item),
@@ -512,6 +518,68 @@ export const invoicesRouter = router({
       return { ...updated, emailSent, emailSkipReason }
     }),
 
+  createPaymentLink: orgProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const invoice = await prisma.invoice.findFirstOrThrow({
+        where: { id: input.id, organizationId: ctx.organizationId },
+      })
+
+      if (invoice.paymentStatus === "paid" || invoice.status === "paid") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Paid invoices do not need payment links",
+        })
+      }
+
+      if (invoice.status !== "sent" && invoice.status !== "overdue") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Only sent or overdue invoices can create payment links",
+        })
+      }
+
+      const settings = await prisma.orgSettings.findUnique({
+        where: { organizationId: ctx.organizationId },
+        select: {
+          stripePublishableKey: true,
+          stripeSecretKeyEnc: true,
+          stripeWebhookSecretEnc: true,
+        },
+      })
+
+      if (
+        !getStripePaymentConfigurationState({
+          stripePublishableKey: settings?.stripePublishableKey ?? null,
+          stripeSecretKeyEnc: settings?.stripeSecretKeyEnc ?? null,
+          stripeWebhookSecretEnc: settings?.stripeWebhookSecretEnc ?? null,
+        }).configured
+      ) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Stripe payment links are not configured for this organization",
+        })
+      }
+
+      const issuedAt = invoice.publicPaymentIssuedAt ?? new Date()
+      const updated = await prisma.invoice.update({
+        where: { id: invoice.id },
+        data: {
+          publicPaymentIssuedAt: issuedAt,
+        },
+      })
+
+      const url = getPublicInvoicePaymentUrl(updated)
+      if (!url) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create payment link",
+        })
+      }
+
+      return { url }
+    }),
+
   markOverdue: orgProcedure.mutation(async ({ ctx }) => {
     const { count } = await prisma.invoice.updateMany({
       where: {
@@ -531,16 +599,20 @@ export const invoicesRouter = router({
         where: { id: input.id, organizationId: ctx.organizationId },
       })
 
-      if (invoice.status !== "sent") {
+      if (invoice.status !== "sent" && invoice.status !== "overdue") {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Only sent invoices can be marked as paid",
+          message: "Only sent or overdue invoices can be marked as paid",
         })
       }
 
       return prisma.invoice.update({
         where: { id: input.id },
-        data: { status: "paid" },
+        data: {
+          status: "paid",
+          paymentStatus: "paid",
+          paidAt: new Date(),
+        },
       })
     }),
 })

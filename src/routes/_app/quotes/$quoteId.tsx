@@ -87,6 +87,9 @@ type Quote = {
   total: number
   currency: string
   notes: string | null
+  publicViewUrl: string | null
+  publicDecisionAt: string | null
+  publicRejectionReason: string | null
   contact: Contact
   items: QuoteItem[]
   invoices: { id: string; number: string }[]
@@ -600,12 +603,6 @@ function QuoteDetailPage() {
           )}
           {quote.status === "sent" && (
             <>
-              <Button size="sm" disabled={acting} onClick={handleConvertToInvoice}>
-                <ArrowRight className="size-4" />
-                {acting
-                  ? t("quotes.detail.action.converting")
-                  : t("quotes.detail.action.convertToInvoice")}
-              </Button>
               <Button variant="outline" size="sm" disabled={acting} onClick={handleReject}>
                 <XCircle className="size-4" />
                 {acting
@@ -613,6 +610,14 @@ function QuoteDetailPage() {
                   : t("quotes.detail.action.markRejected")}
               </Button>
             </>
+          )}
+          {quote.status === "accepted" && quote.invoices.length === 0 && (
+            <Button size="sm" disabled={acting} onClick={handleConvertToInvoice}>
+              <ArrowRight className="size-4" />
+              {acting
+                ? t("quotes.detail.action.converting")
+                : t("quotes.detail.action.convertToInvoice")}
+            </Button>
           )}
         </div>
       </div>
@@ -674,6 +679,39 @@ function QuoteDetailPage() {
               </p>
             </div>
           )}
+
+          {quote.publicViewUrl ? (
+            <div className="grid gap-2 rounded-md border p-4">
+              <div>
+                <h3 className="text-sm font-medium">Public quote link</h3>
+                <p className="text-sm text-muted-foreground">
+                  Share this link with the customer to review and accept the quote.
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Input readOnly value={quote.publicViewUrl} />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(quote.publicViewUrl ?? "")
+                  }}
+                >
+                  Copy link
+                </Button>
+              </div>
+              {quote.status === "sent" ? (
+                <p className="text-sm text-muted-foreground">
+                  Waiting for customer acceptance before invoice conversion.
+                </p>
+              ) : null}
+              {quote.status === "rejected" && quote.publicRejectionReason ? (
+                <p className="text-sm text-muted-foreground">
+                  Customer rejection reason: {quote.publicRejectionReason}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
 
           {/* Quote To */}
           <div>

@@ -103,6 +103,8 @@ type SettingsData = {
   quoteNextNum: number
   aiByokConfigured: boolean
   aiOpenRouterModel: string
+  stripeByokConfigured: boolean
+  stripePublishableKey: string | null
   primaryTaxId: string | null
   primaryTaxIdScheme: string | null
 }
@@ -156,6 +158,8 @@ function SettingsPage() {
   const [logoError, setLogoError] = useState<string | null>(null)
   const [aiOpenRouterModel, setAiOpenRouterModel] = useState("openai/gpt-4o-mini")
   const [clearAiOpenRouterApiKey, setClearAiOpenRouterApiKey] = useState(false)
+  const [clearStripeSecretKey, setClearStripeSecretKey] = useState(false)
+  const [clearStripeWebhookSecret, setClearStripeWebhookSecret] = useState(false)
   const [openRouterModels, setOpenRouterModels] = useState<string[]>(OPENROUTER_FALLBACK_MODELS)
   const [loadingOpenRouterModels, setLoadingOpenRouterModels] = useState(false)
   const [openRouterModelsError, setOpenRouterModelsError] = useState<string | null>(null)
@@ -289,6 +293,9 @@ function SettingsPage() {
     const quotePrefixInput = ((form.get("quotePrefix") as string) || "").trim()
     const aiOpenRouterModelInput = aiOpenRouterModel.trim()
     const aiOpenRouterApiKeyInput = ((form.get("aiOpenRouterApiKey") as string) || "").trim()
+    const stripePublishableKeyInput = ((form.get("stripePublishableKey") as string) || "").trim()
+    const stripeSecretKeyInput = ((form.get("stripeSecretKey") as string) || "").trim()
+    const stripeWebhookSecretInput = ((form.get("stripeWebhookSecret") as string) || "").trim()
     const normalizedCompanyLogo = companyLogo.trim()
 
     if (
@@ -350,9 +357,16 @@ function SettingsPage() {
         aiOpenRouterModel: aiOpenRouterModelInput || undefined,
         aiOpenRouterApiKey: aiOpenRouterApiKeyInput || undefined,
         clearAiOpenRouterApiKey,
+        stripePublishableKey: stripePublishableKeyInput || undefined,
+        stripeSecretKey: stripeSecretKeyInput || undefined,
+        stripeWebhookSecret: stripeWebhookSecretInput || undefined,
+        clearStripeSecretKey,
+        clearStripeWebhookSecret,
       })
       setTimezone(timezoneInput)
       setClearAiOpenRouterApiKey(false)
+      setClearStripeSecretKey(false)
+      setClearStripeWebhookSecret(false)
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
     } catch (err) {
@@ -779,6 +793,100 @@ function SettingsPage() {
                 </div>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("settings.section.payments.title")}</CardTitle>
+            <CardDescription>
+              {t("settings.section.payments.description")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="stripePublishableKey">{t("settings.payments.stripePublishableKey.label")}</Label>
+              <Input
+                id="stripePublishableKey"
+                name="stripePublishableKey"
+                autoComplete="off"
+                placeholder="pk_test_..."
+                defaultValue={settings.stripePublishableKey ?? ""}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="stripeSecretKey">{t("settings.payments.stripeSecretKey.label")}</Label>
+              <Input
+                id="stripeSecretKey"
+                name="stripeSecretKey"
+                type="password"
+                autoComplete="off"
+                placeholder="sk_test_..."
+                onChange={() => setClearStripeSecretKey(false)}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="stripeWebhookSecret">{t("settings.payments.stripeWebhookSecret.label")}</Label>
+              <Input
+                id="stripeWebhookSecret"
+                name="stripeWebhookSecret"
+                type="password"
+                autoComplete="off"
+                placeholder="whsec_..."
+                onChange={() => setClearStripeWebhookSecret(false)}
+              />
+              <p className="text-xs text-muted-foreground">
+                {settings.stripeByokConfigured
+                  ? t("settings.payments.configuredHelp")
+                  : t("settings.payments.notConfiguredHelp")}
+              </p>
+            </div>
+
+            {settings.stripeByokConfigured && (
+              <div className="flex flex-wrap items-center gap-2">
+                {!clearStripeSecretKey ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setClearStripeSecretKey(true)}
+                  >
+                    {t("settings.payments.removeSecret")}
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setClearStripeSecretKey(false)}
+                  >
+                    {t("settings.payments.undo")}
+                  </Button>
+                )}
+
+                {!clearStripeWebhookSecret ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setClearStripeWebhookSecret(true)}
+                  >
+                    {t("settings.payments.removeWebhook")}
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setClearStripeWebhookSecret(false)}
+                  >
+                    {t("settings.payments.undo")}
+                  </Button>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 

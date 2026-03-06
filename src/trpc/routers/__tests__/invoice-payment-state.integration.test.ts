@@ -1,0 +1,112 @@
+import "dotenv/config"
+import { randomUUID } from "node:crypto"
+import { describe, expect, it } from "vitest"
+import { prisma } from "../../../lib/db"
+import { appRouter } from "../../router"
+
+const hasDatabaseUrl = Boolean(process.env.DATABASE_URL)
+const describeIfDatabase = hasDatabaseUrl ? describe : describe.skip
+
+describeIfDatabase("invoice payment state", () => {
+  it("defaults invoices to unpaid and records manual settlement cleanly", async () => {
+    const orgId = randomUUID()
+    const slug = `invoice-payment-${Date.now()}-${Math.floor(Math.random() * 1_000_000)}`
+
+    const caller = appRouter.createCaller({
+      session: {
+        user: {
+          id: "invoice-payment-user",
+          email: "invoice-payment@example.com",
+          name: "Invoice Payment User",
+        },
+        session: {
+          activeOrganizationId: orgId,
+        },
+      },
+    } as never)
+
+    try {
+      await prisma.organization.create({
+        data: {
+          id: orgId,
+          name: "Invoice Payment Org",
+          slug,
+          createdAt: new Date(),
+          subscriptionStatus: "pro",
+        },
+      })
+
+      await prisma.orgSettings.create({
+        data: {
+          organizationId: orgId,
+          countryCode: "DK",
+          locale: "da-DK",
+          timezone: "Europe/Copenhagen",
+          defaultCurrency: "DKK",
+          currency: "DKK",
+          taxRegime: "eu_vat",
+          pricesIncludeTax: false,
+          invoicePrefix: "INVPAY",
+          quotePrefix: "QTEPAY",
+        },
+      })
+
+      await prisma.organizationTaxId.create({
+        data: {
+          organizationId: orgId,
+          scheme: "DK_CVR",
+          value: "12345678",
+          countryCode: "DK",
+          isPrimary: true,
+        },
+      })
+
+      const contact = await prisma.contact.create({
+        data: {
+          organizationId: orgId,
+          name: "Buyer Name",
+          email: "buyer@example.com",
+          company: "Buyer Co",
+          country: "DK",
+        },
+      })
+
+      const invoice = await caller.invoices.create({
+        contactId: contact.id,
+        dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        taxRate: 25,
+        items: [{ description: "Consulting", quantity: 2, unitPrice: 1000 }],
+      })
+
+      expect(invoice.paymentStatus).toBe("unpaid")
+      expect(invoice.paidAt).toBeNull()
+
+      await caller.invoices.send({ id: invoice.id })
+      await prisma.invoice.update({
+        where: { id: invoice.id },
+        data: {
+          dueDate: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        },
+      })
+      await caller.invoices.markOverdue()
+
+      const overdue = await caller.invoices.get({ id: invoice.id })
+      expect(overdue.status).toBe("overdue")
+
+      const paid = await caller.invoices.markPaid({ id: invoice.id })
+
+      expect(paid.status).toBe("paid")
+      expect(paid.paymentStatus).toBe("paid")
+      expect(paid.paidAt).toBeTruthy()
+
+      await expect(caller.invoices.markPaid({ id: invoice.id })).rejects.toThrow(
+        "Only sent or overdue invoices can be marked as paid"
+      )
+
+      const reloaded = await caller.invoices.get({ id: invoice.id })
+      expect(reloaded.paymentStatus).toBe("paid")
+    } finally {
+      await prisma.organization.deleteMany({ where: { id: orgId } })
+    }
+  })
+})
