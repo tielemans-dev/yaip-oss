@@ -84,7 +84,7 @@ describeIfDatabase("invoice payment links", () => {
         items: [{ description: "Consulting", quantity: 2, unitPrice: 1000 }],
       })
 
-      await caller.invoices.send({ id: invoice.id })
+      await caller.invoices.send({ id: invoice.id, allowSendWithoutEmail: true })
 
       await expect(caller.invoices.createPaymentLink({ id: invoice.id })).rejects.toThrow(
         "Stripe payment links are not configured for this organization"

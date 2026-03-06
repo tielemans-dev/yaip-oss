@@ -81,7 +81,7 @@ describeIfDatabase("invoice payment state", () => {
       expect(invoice.paymentStatus).toBe("unpaid")
       expect(invoice.paidAt).toBeNull()
 
-      await caller.invoices.send({ id: invoice.id })
+      await caller.invoices.send({ id: invoice.id, allowSendWithoutEmail: true })
       await prisma.invoice.update({
         where: { id: invoice.id },
         data: {

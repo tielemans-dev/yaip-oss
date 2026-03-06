@@ -6,6 +6,10 @@ import {
   validateDocument,
 } from "../../lib/compliance"
 import { prisma } from "../../lib/db"
+import {
+  createEmailDeliveryAttempt,
+  getEmailDeliveryRuntimeStatus,
+} from "../../lib/email-delivery"
 import { sendInvoiceEmail } from "../../lib/email"
 import { billingProvider } from "../../lib/billing"
 import { assertCloudOnboardingComplete } from "../../lib/onboarding/guard"
@@ -13,6 +17,7 @@ import {
   getPublicInvoicePaymentUrl,
 } from "../../lib/payments/public"
 import { getStripePaymentConfigurationState } from "../../lib/payments/stripe"
+import { getRuntimeCapabilities } from "../../lib/runtime/extensions"
 import { router, orgProcedure } from "../init"
 
 const isoDateSchema = z.string().refine(
@@ -27,6 +32,8 @@ const invoiceLineItemInputSchema = z.object({
   quantity: z.number().positive().max(1_000_000),
   unitPrice: z.number().min(0).max(1_000_000_000),
 })
+
+const emailAddressSchema = z.string().trim().email()
 
 function mapInvoiceItemForUi(item: {
   quantity: { toNumber: () => number }
@@ -425,7 +432,12 @@ export const invoicesRouter = router({
     }),
 
   send: orgProcedure
-    .input(z.object({ id: z.string() }))
+    .input(
+      z.object({
+        id: z.string(),
+        allowSendWithoutEmail: z.boolean().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const invoice = await prisma.invoice.findFirstOrThrow({
         where: { id: input.id, organizationId: ctx.organizationId },
@@ -485,47 +497,91 @@ export const invoicesRouter = router({
             publicPaymentKeyVersion: invoice.publicPaymentKeyVersion,
           })
         : null
+      const emailDelivery = getEmailDeliveryRuntimeStatus({
+        managed: getRuntimeCapabilities().emailDelivery.managed,
+        resendApiKey: process.env.RESEND_API_KEY,
+        fromEmail: process.env.FROM_EMAIL,
+      })
+      const contactEmail = invoice.contact.email?.trim() ?? ""
       let emailSent = false
       let emailSkipReason: string | undefined
 
-      if (!invoice.contact.email) {
-        emailSkipReason = "Contact has no email address"
-      } else if (!process.env.RESEND_API_KEY) {
-        emailSkipReason = "Email not configured (RESEND_API_KEY missing)"
-      } else {
-        try {
-          await sendInvoiceEmail({
-            to: invoice.contact.email,
-            invoice: {
-              ...invoice,
-              issueDate: sentAt,
-              subtotal: invoice.subtotalNet.toNumber(),
-              taxAmount: invoice.totalTax.toNumber(),
-              total: invoice.totalGross.toNumber(),
-              items: invoice.items.map((i) => ({
-                description: i.description,
-                quantity: i.quantity.toNumber(),
-                unitPrice: i.unitPriceGross.toNumber(),
-                total: i.lineGross.toNumber(),
-              })),
-            },
-            org: {
-              companyName: orgSettings?.companyName,
-              companyEmail: orgSettings?.companyEmail,
-              locale: orgSettings?.locale,
-              timezone: orgSettings?.timezone,
-            },
-            contactName: invoice.contact.name,
-            publicPaymentUrl,
-          })
-          emailSent = true
-        } catch {
+      if (!emailAddressSchema.safeParse(contactEmail).success) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Contact has no email address",
+        })
+      }
+
+      if (!emailDelivery.available) {
+        if (!input.allowSendWithoutEmail) {
           throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message:
-              "Failed to send invoice email. Invoice was not marked as sent.",
+            code: "BAD_REQUEST",
+            message: "Email delivery is not configured",
           })
         }
+
+        emailSkipReason = "Email delivery is not configured"
+        const updated = await prisma.invoice.update({
+          where: { id: input.id },
+          data: {
+            status: "sent",
+            issueDate: sentAt,
+            publicPaymentIssuedAt,
+            ...createEmailDeliveryAttempt({
+              at: sentAt,
+              outcome: "skipped",
+              code: "provider_missing",
+              message: emailSkipReason,
+            }),
+          },
+        })
+
+        return { ...updated, emailSent, emailSkipReason }
+      }
+
+      try {
+        await sendInvoiceEmail({
+          to: contactEmail,
+          invoice: {
+            ...invoice,
+            issueDate: sentAt,
+            subtotal: invoice.subtotalNet.toNumber(),
+            taxAmount: invoice.totalTax.toNumber(),
+            total: invoice.totalGross.toNumber(),
+            items: invoice.items.map((i) => ({
+              description: i.description,
+              quantity: i.quantity.toNumber(),
+              unitPrice: i.unitPriceGross.toNumber(),
+              total: i.lineGross.toNumber(),
+            })),
+          },
+          org: {
+            companyName: orgSettings?.companyName,
+            companyEmail: orgSettings?.companyEmail,
+            locale: orgSettings?.locale,
+            timezone: orgSettings?.timezone,
+          },
+          contactName: invoice.contact.name,
+          publicPaymentUrl,
+        })
+        emailSent = true
+      } catch {
+        await prisma.invoice.update({
+          where: { id: input.id },
+          data: {
+            ...createEmailDeliveryAttempt({
+              outcome: "failed",
+              code: "send_failed",
+              message: "Failed to send invoice email.",
+            }),
+          },
+        })
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message:
+            "Failed to send invoice email. Invoice was not marked as sent.",
+        })
       }
 
       const updated = await prisma.invoice.update({
@@ -534,10 +590,122 @@ export const invoicesRouter = router({
           status: "sent",
           issueDate: sentAt,
           publicPaymentIssuedAt,
+          ...createEmailDeliveryAttempt({
+            at: sentAt,
+            outcome: "sent",
+            code: "sent",
+            message: "Invoice email sent.",
+          }),
         },
       })
 
       return { ...updated, emailSent, emailSkipReason }
+    }),
+
+  resendEmail: orgProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const invoice = await prisma.invoice.findFirstOrThrow({
+        where: { id: input.id, organizationId: ctx.organizationId },
+        include: {
+          contact: true,
+          items: { orderBy: { sortOrder: "asc" } },
+        },
+      })
+
+      if (!["sent", "overdue"].includes(invoice.status)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Only sent or overdue invoices can be resent by email",
+        })
+      }
+
+      const orgSettings = await prisma.orgSettings.findUnique({
+        where: { organizationId: ctx.organizationId },
+      })
+      const stripeConfigured = getStripePaymentConfigurationState({
+        stripePublishableKey: orgSettings?.stripePublishableKey ?? null,
+        stripeSecretKeyEnc: orgSettings?.stripeSecretKeyEnc ?? null,
+        stripeWebhookSecretEnc: orgSettings?.stripeWebhookSecretEnc ?? null,
+      }).configured
+      const publicPaymentUrl =
+        stripeConfigured && invoice.publicPaymentIssuedAt
+          ? getPublicInvoicePaymentUrl(invoice)
+          : null
+      const emailDelivery = getEmailDeliveryRuntimeStatus({
+        managed: getRuntimeCapabilities().emailDelivery.managed,
+        resendApiKey: process.env.RESEND_API_KEY,
+        fromEmail: process.env.FROM_EMAIL,
+      })
+      const contactEmail = invoice.contact.email?.trim() ?? ""
+
+      if (!emailAddressSchema.safeParse(contactEmail).success) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Contact has no email address",
+        })
+      }
+
+      if (!emailDelivery.available) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Email delivery is not configured",
+        })
+      }
+
+      try {
+        await sendInvoiceEmail({
+          to: contactEmail,
+          invoice: {
+            ...invoice,
+            subtotal: invoice.subtotalNet.toNumber(),
+            taxAmount: invoice.totalTax.toNumber(),
+            total: invoice.totalGross.toNumber(),
+            items: invoice.items.map((i) => ({
+              description: i.description,
+              quantity: i.quantity.toNumber(),
+              unitPrice: i.unitPriceGross.toNumber(),
+              total: i.lineGross.toNumber(),
+            })),
+          },
+          org: {
+            companyName: orgSettings?.companyName,
+            companyEmail: orgSettings?.companyEmail,
+            locale: orgSettings?.locale,
+            timezone: orgSettings?.timezone,
+          },
+          contactName: invoice.contact.name,
+          publicPaymentUrl,
+        })
+      } catch {
+        await prisma.invoice.update({
+          where: { id: input.id },
+          data: {
+            ...createEmailDeliveryAttempt({
+              outcome: "failed",
+              code: "send_failed",
+              message: "Failed to send invoice email.",
+            }),
+          },
+        })
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to resend invoice email.",
+        })
+      }
+
+      const updated = await prisma.invoice.update({
+        where: { id: input.id },
+        data: {
+          ...createEmailDeliveryAttempt({
+            outcome: "sent",
+            code: "sent",
+            message: "Invoice email sent.",
+          }),
+        },
+      })
+
+      return { ...updated, emailSent: true, emailSkipReason: undefined }
     }),
 
   createPaymentLink: orgProcedure
