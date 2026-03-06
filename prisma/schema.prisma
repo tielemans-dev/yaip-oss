@@ -282,6 +282,10 @@ model Invoice {
   paidAt         DateTime?
   publicPaymentIssuedAt DateTime?
   publicPaymentKeyVersion Int @default(1)
+  lastEmailAttemptAt DateTime?
+  lastEmailAttemptOutcome String?
+  lastEmailAttemptCode String?
+  lastEmailAttemptMessage String?
   stripeCheckoutSessionId String?
   stripePaymentIntentId String?
   paymentFailureReason String?
@@ -357,6 +361,10 @@ model Quote {
   publicAccessIssuedAt DateTime?
   publicDecisionAt DateTime?
   publicRejectionReason String?
+  lastEmailAttemptAt DateTime?
+  lastEmailAttemptOutcome String?
+  lastEmailAttemptCode String?
+  lastEmailAttemptMessage String?
   notes          String?
   items          QuoteItem[]
   invoices       Invoice[]
