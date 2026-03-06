@@ -77,6 +77,22 @@ export const enSettingsMessages = {
   "settings.nextInvoiceNumber.label": "Next Invoice Number",
   "settings.quotePrefix.label": "Quote Prefix",
   "settings.nextQuoteNumber.label": "Next Quote Number",
+  "settings.section.emailDelivery.title": "Email Delivery",
+  "settings.section.emailDelivery.description":
+    "Check outbound email configuration and current availability.",
+  "settings.emailDelivery.status.configured": "Configured",
+  "settings.emailDelivery.status.missing_configuration": "Missing configuration",
+  "settings.emailDelivery.status.managed": "Managed by Cloud",
+  "settings.emailDelivery.status.managed_unavailable": "Temporarily unavailable",
+  "settings.emailDelivery.sender.label": "Sender",
+  "settings.emailDelivery.missing.label": "Missing env vars",
+  "settings.emailDelivery.help.configured": "Email delivery is ready to send.",
+  "settings.emailDelivery.help.missing_configuration":
+    "Configure the missing environment variables to enable delivery.",
+  "settings.emailDelivery.help.managed":
+    "Email delivery is managed by cloud infrastructure.",
+  "settings.emailDelivery.help.managed_unavailable":
+    "Email delivery is managed by cloud infrastructure but currently unavailable.",
   "settings.section.payments.title": "Payments (Stripe BYOK)",
   "settings.section.payments.description":
     "Configure your own Stripe account for hosted invoice payment links.",

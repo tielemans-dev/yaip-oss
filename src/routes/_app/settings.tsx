@@ -13,6 +13,7 @@ import { Input } from "../../components/ui/input"
 import { Label } from "../../components/ui/label"
 import { Textarea } from "../../components/ui/textarea"
 import { Badge } from "../../components/ui/badge"
+import { EmailDeliveryCard } from "../../components/settings/email-delivery-card"
 import {
   Select,
   SelectContent,
@@ -105,6 +106,14 @@ type SettingsData = {
   aiOpenRouterModel: string
   stripeByokConfigured: boolean
   stripePublishableKey: string | null
+  emailDelivery: {
+    managed: boolean
+    configured: boolean
+    available: boolean
+    sender: string
+    missing: string[]
+    status: "configured" | "missing_configuration" | "managed" | "managed_unavailable"
+  }
   primaryTaxId: string | null
   primaryTaxIdScheme: string | null
 }
@@ -795,6 +804,8 @@ function SettingsPage() {
             </div>
           </CardContent>
         </Card>
+
+        <EmailDeliveryCard emailDelivery={settings.emailDelivery} />
 
         <Card>
           <CardHeader>

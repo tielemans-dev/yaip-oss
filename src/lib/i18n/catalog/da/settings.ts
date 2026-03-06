@@ -78,6 +78,22 @@ export const daSettingsMessages = {
   "settings.nextInvoiceNumber.label": "Næste fakturanummer",
   "settings.quotePrefix.label": "Tilbudspræfiks",
   "settings.nextQuoteNumber.label": "Næste tilbudsnummer",
+  "settings.section.emailDelivery.title": "E-maillevering",
+  "settings.section.emailDelivery.description":
+    "Kontroller konfigurationen af udgående e-mail og den aktuelle tilgængelighed.",
+  "settings.emailDelivery.status.configured": "Konfigureret",
+  "settings.emailDelivery.status.missing_configuration": "Manglende konfiguration",
+  "settings.emailDelivery.status.managed": "Administreret af Cloud",
+  "settings.emailDelivery.status.managed_unavailable": "Midlertidigt utilgængelig",
+  "settings.emailDelivery.sender.label": "Afsender",
+  "settings.emailDelivery.missing.label": "Manglende miljøvariabler",
+  "settings.emailDelivery.help.configured": "E-maillevering er klar til at sende.",
+  "settings.emailDelivery.help.missing_configuration":
+    "Konfigurer de manglende miljøvariabler for at aktivere levering.",
+  "settings.emailDelivery.help.managed":
+    "E-maillevering administreres af cloud-infrastrukturen.",
+  "settings.emailDelivery.help.managed_unavailable":
+    "E-maillevering administreres af cloud-infrastrukturen, men er midlertidigt utilgængelig.",
   "settings.section.payments.title": "Betalinger (Stripe BYOK)",
   "settings.section.payments.description":
     "Konfigurer din egen Stripe-konto til hostede betalingslinks for fakturaer.",
