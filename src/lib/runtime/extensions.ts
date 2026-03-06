@@ -17,16 +17,23 @@ export type PaymentsCapabilities = {
   provider: "stripe" | null
 }
 
+export type EmailDeliveryCapabilities = {
+  enabled: boolean
+  managed: boolean
+}
+
 export type RuntimeCapabilities = {
   aiInvoiceDraft: AIInvoiceDraftCapabilities
   onboardingAi: OnboardingAICapabilities
   payments: PaymentsCapabilities
+  emailDelivery: EmailDeliveryCapabilities
 }
 
 export type RuntimeCapabilityPatch = {
   aiInvoiceDraft?: Partial<AIInvoiceDraftCapabilities>
   onboardingAi?: Partial<OnboardingAICapabilities>
   payments?: Partial<PaymentsCapabilities>
+  emailDelivery?: Partial<EmailDeliveryCapabilities>
 }
 
 export type RuntimeExtension = {
@@ -74,6 +81,10 @@ function mergeCapabilities(
       ...base.payments,
       ...patch.payments,
     },
+    emailDelivery: {
+      ...base.emailDelivery,
+      ...patch.emailDelivery,
+    },
   }
 }
 
@@ -109,6 +120,10 @@ function readDefaultCapabilities(
       enabled: false,
       managed: false,
       provider: null,
+    },
+    emailDelivery: {
+      enabled: true,
+      managed: false,
     },
   }
 }

@@ -22,6 +22,8 @@ describe("runtime extension capabilities", () => {
     expect(caps.aiInvoiceDraft.byok).toBe(true)
     expect(caps.aiInvoiceDraft.managed).toBe(false)
     expect(caps.onboardingAi.enabled).toBe(false)
+    expect(caps.emailDelivery.enabled).toBe(true)
+    expect(caps.emailDelivery.managed).toBe(false)
   })
 
   it("allows private extension to enable managed AI", async () => {
