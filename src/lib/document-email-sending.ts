@@ -13,6 +13,8 @@ export type DocumentSendingDomainRecord = {
   status?: string | null
 }
 
+export type DocumentSendingSyncSource = "manual" | "webhook"
+
 export type DocumentSendingDomainState = {
   domain: string | null
   providerId: string | null
@@ -20,6 +22,11 @@ export type DocumentSendingDomainState = {
   records: DocumentSendingDomainRecord[]
   failureReason: string | null
   verifiedAt: Date | null
+}
+
+export type DocumentSendingSyncState = {
+  lastSyncedAt: Date | null
+  lastSyncSource: DocumentSendingSyncSource | null
 }
 
 export type DocumentEmailEnvelope = {
@@ -61,6 +68,26 @@ export function readDocumentSendingDomainState(input: {
     records: readDocumentSendingDomainRecords(input.documentSendingDomainRecords),
     failureReason: input.documentSendingDomainFailureReason?.trim() || null,
     verifiedAt: input.documentSendingDomainVerifiedAt ?? null,
+  }
+}
+
+export function readDocumentSendingSyncState(input: {
+  documentSendingLastSyncedAt?: Date | null
+  documentSendingLastSyncSource?: string | null
+}): DocumentSendingSyncState {
+  return {
+    lastSyncedAt: input.documentSendingLastSyncedAt ?? null,
+    lastSyncSource: toDocumentSendingSyncSource(input.documentSendingLastSyncSource),
+  }
+}
+
+export function createDocumentSendingSyncUpdate(input: {
+  at?: Date
+  source: DocumentSendingSyncSource
+}) {
+  return {
+    documentSendingLastSyncedAt: input.at ?? new Date(),
+    documentSendingLastSyncSource: input.source,
   }
 }
 
@@ -141,6 +168,18 @@ function toDocumentSendingDomainStatus(
       return value
     default:
       return "not_configured"
+  }
+}
+
+function toDocumentSendingSyncSource(
+  value: string | DocumentSendingSyncSource | null | undefined
+): DocumentSendingSyncSource | null {
+  switch (value) {
+    case "manual":
+    case "webhook":
+      return value
+    default:
+      return null
   }
 }
 

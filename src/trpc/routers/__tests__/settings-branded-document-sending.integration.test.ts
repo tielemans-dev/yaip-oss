@@ -86,6 +86,8 @@ describeIfDatabase("settings branded document sending", () => {
         records: [],
         failureReason: null,
         verifiedAt: null,
+        lastSyncedAt: null,
+        lastSyncSource: null,
         sharedSender: {
           fromName: "Acme via YAIP",
           fromEmail: "billing@yaip.example",
@@ -155,6 +157,8 @@ describeIfDatabase("settings branded document sending", () => {
 
       expect(settings.documentSending.managed).toBe(true)
       expect(settings.documentSending.supportsCustomDomain).toBe(true)
+      expect(settings.documentSending.lastSyncedAt).toBeNull()
+      expect(settings.documentSending.lastSyncSource).toBeNull()
     } finally {
       restoreEnv(previous)
       await prisma.organization.deleteMany({ where: { id: orgId } })
@@ -256,6 +260,8 @@ describeIfDatabase("settings branded document sending", () => {
         documentSendingDomain: "billing.acme.com",
         documentSendingDomainProviderId: "dom_123",
         documentSendingDomainStatus: "pending_dns",
+        documentSendingLastSyncedAt: new Date("2026-03-06T17:30:00.000Z"),
+        documentSendingLastSyncSource: "webhook",
       },
     })
 
@@ -268,6 +274,19 @@ describeIfDatabase("settings branded document sending", () => {
       })
       expect(result.status).toBe("verified")
       expect(result.verifiedAt).toBeInstanceOf(Date)
+      expect(result.lastSyncSource).toBe("manual")
+      expect(result.lastSyncedAt).toBeInstanceOf(Date)
+
+      const stored = await prisma.orgSettings.findUniqueOrThrow({
+        where: { organizationId: orgId },
+        select: {
+          documentSendingLastSyncedAt: true,
+          documentSendingLastSyncSource: true,
+        },
+      })
+
+      expect(stored.documentSendingLastSyncedAt).toBeInstanceOf(Date)
+      expect(stored.documentSendingLastSyncSource).toBe("manual")
     } finally {
       await prisma.organization.deleteMany({ where: { id: orgId } })
     }

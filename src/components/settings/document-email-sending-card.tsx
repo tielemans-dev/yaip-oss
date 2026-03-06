@@ -25,6 +25,8 @@ export type DocumentSendingStatus =
   | "verified"
   | "failed"
 
+export type DocumentSendingSyncSource = "manual" | "webhook"
+
 export type DocumentSendingState = {
   managed: boolean
   supportsCustomDomain: boolean
@@ -39,6 +41,8 @@ export type DocumentSendingState = {
   }[]
   failureReason: string | null
   verifiedAt: Date | null
+  lastSyncedAt: Date | null
+  lastSyncSource: DocumentSendingSyncSource | null
   sharedSender: DocumentSenderPreview
   effectiveSender: DocumentSenderPreview
 }
@@ -208,6 +212,30 @@ export function DocumentEmailSendingCard({
                 </div>
                 <div className="text-sm text-muted-foreground">
                   {documentSending.verifiedAt.toISOString()}
+                </div>
+              </div>
+            ) : null}
+
+            {documentSending.lastSyncedAt ? (
+              <div className="grid gap-1">
+                <div className="text-sm font-medium">
+                  {t("settings.documentSending.lastSyncedAt.label")}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {documentSending.lastSyncedAt.toISOString()}
+                </div>
+              </div>
+            ) : null}
+
+            {documentSending.lastSyncSource ? (
+              <div className="grid gap-1">
+                <div className="text-sm font-medium">
+                  {t("settings.documentSending.lastSyncSource.label")}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {t(
+                    `settings.documentSending.lastSyncSource.${documentSending.lastSyncSource}`
+                  )}
                 </div>
               </div>
             ) : null}

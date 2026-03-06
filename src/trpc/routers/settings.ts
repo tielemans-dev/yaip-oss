@@ -3,7 +3,9 @@ import { TRPCError } from "@trpc/server"
 import { router, orgProcedure } from "../init"
 import { prisma } from "../../lib/db"
 import {
+  createDocumentSendingSyncUpdate,
   readDocumentSendingDomainState,
+  readDocumentSendingSyncState,
   resolveDocumentEmailEnvelope,
   validateDocumentSendingDomain,
 } from "../../lib/document-email-sending"
@@ -341,6 +343,7 @@ export const settingsRouter = router({
           documentSendingDomainRecords: refreshed.records,
           documentSendingDomainFailureReason: refreshed.failureReason,
           documentSendingDomainVerifiedAt: refreshed.verifiedAt,
+          ...createDocumentSendingSyncUpdate({ source: "manual" }),
         },
       })
 
@@ -399,6 +402,8 @@ function buildDocumentSendingState(input: {
     documentSendingDomainRecords?: unknown
     documentSendingDomainFailureReason?: string | null
     documentSendingDomainVerifiedAt?: Date | null
+    documentSendingLastSyncedAt?: Date | null
+    documentSendingLastSyncSource?: string | null
   }
   managed: boolean
   supportsCustomDomain: boolean
@@ -417,6 +422,7 @@ function buildDocumentSendingState(input: {
     sharedFromEmail: process.env.FROM_EMAIL ?? "noreply@yaip.app",
     branded: brandedState,
   })
+  const syncState = readDocumentSendingSyncState(input.settings)
 
   return {
     managed: input.managed,
@@ -426,6 +432,8 @@ function buildDocumentSendingState(input: {
     records: brandedState.records,
     failureReason: brandedState.failureReason,
     verifiedAt: brandedState.verifiedAt,
+    lastSyncedAt: syncState.lastSyncedAt,
+    lastSyncSource: syncState.lastSyncSource,
     sharedSender,
     effectiveSender,
   }
