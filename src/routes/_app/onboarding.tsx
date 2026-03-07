@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { authClient, useSession } from '../../lib/auth-client'
 import { isCloudDistribution } from '../../lib/distribution'
@@ -101,6 +101,7 @@ function parseCloudOnboardingValues(values?: Record<string, unknown> | null): Cl
 function OnboardingPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
+  const router = useRouter()
   const { data: session } = useSession()
   const hasActiveOrg = Boolean(session?.session.activeOrganizationId)
 
@@ -235,7 +236,8 @@ function OnboardingPage() {
     })
 
     setSubmitting(false)
-    navigate({ to: '/onboarding' })
+    await router.invalidate()
+    navigate({ to: '/', replace: true })
   }
 
   async function handleCompleteCloudOnboarding(e: React.FormEvent) {
