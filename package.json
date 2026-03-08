@@ -1,8 +1,22 @@
 {
   "name": "@yaip/oss",
-  "private": true,
+  "version": "0.1.0",
+  "private": false,
   "license": "PolyForm-Noncommercial-1.0.0",
   "type": "module",
+  "files": [
+    "generated",
+    "prisma",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": "./src/router.tsx",
+    "./build": "./src/build/index.ts",
+    "./runtime": "./src/lib/runtime/bootstrap.ts",
+    "./styles.css": "./src/styles.css"
+  },
   "imports": {
     "#/*": "./src/*"
   },
@@ -79,5 +93,8 @@
     "vite": "^7.1.7",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.0.5"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

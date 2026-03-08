@@ -31,7 +31,7 @@ export type ManagedDocumentDomainProvider = {
   deleteDomain: (input: { providerId: string; domain: string }) => Promise<void>
 }
 
-type RuntimeServices = {
+export type RuntimeServices = {
   billingProvider: BillingProvider
   onboardingAiService: OnboardingAiService
   managedDocumentDomainProvider: ManagedDocumentDomainProvider
