@@ -28,7 +28,10 @@ jobs:
 
       - name: Read package version
         id: package_version
-        run: echo "value=$(node -p \"require('./package.json').version\")" >> "$GITHUB_OUTPUT"
+        run: >-
+          node -e "console.log('value=' +
+          JSON.parse(require('node:fs').readFileSync('package.json',
+          'utf8')).version)" >> "$GITHUB_OUTPUT"
 
       - name: Verify tag matches package version
         run: test "v${{ steps.package_version.outputs.value }}" = "$GITHUB_REF_NAME"
