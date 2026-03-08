@@ -63,3 +63,6 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      - name: Verify packed package artifact
+        run: node scripts/check-packed-build.mjs
