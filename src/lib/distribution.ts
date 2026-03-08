@@ -1,6 +1,8 @@
+import { getRuntimeEnv } from "./runtime/platform"
+
 const runtimeEnv =
   typeof process !== "undefined"
-    ? process.env
+    ? getRuntimeEnv()
     : ({} as Record<string, string | undefined>)
 
 const viteDistribution =

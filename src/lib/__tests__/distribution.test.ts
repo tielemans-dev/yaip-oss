@@ -1,23 +1,20 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-const ENV_KEYS = [
-  "YAIP_DISTRIBUTION",
-  "YAIP_BILLING_ENABLED",
-  "BETTER_AUTH_GOOGLE_CLIENT_ID",
-  "BETTER_AUTH_GOOGLE_CLIENT_SECRET",
-  "BETTER_AUTH_GITHUB_CLIENT_ID",
-  "BETTER_AUTH_GITHUB_CLIENT_SECRET",
-] as const
-
-function clearDistributionEnv() {
-  for (const key of ENV_KEYS) {
-    delete process.env[key]
+function createPlatformEnv(env: Record<string, string | undefined>) {
+  return {
+    id: `test-${Math.random()}`,
+    getRuntimeKind: () => "worker" as const,
+    getEnv: (name: string) => env[name],
+    getBinding: () => undefined,
+    getPrisma: () => {
+      throw new Error("distribution test should not request prisma")
+    },
+    getAuthHooks: () => ({}),
   }
 }
 
 describe("distribution flags", () => {
   afterEach(() => {
-    clearDistributionEnv()
     vi.resetModules()
   })
 
@@ -29,15 +26,25 @@ describe("distribution flags", () => {
   })
 
   it("enables billing in cloud distribution by default", async () => {
-    process.env.YAIP_DISTRIBUTION = "cloud"
+    const { setRuntimePlatform } = await import("../runtime/platform")
+    setRuntimePlatform(
+      createPlatformEnv({
+        YAIP_DISTRIBUTION: "cloud",
+      })
+    )
     const mod = await import("../distribution")
     expect(mod.isCloudDistribution).toBe(true)
     expect(mod.billingEnabled).toBe(true)
   })
 
   it("allows disabling billing in cloud distribution with env flag", async () => {
-    process.env.YAIP_DISTRIBUTION = "cloud"
-    process.env.YAIP_BILLING_ENABLED = "false"
+    const { setRuntimePlatform } = await import("../runtime/platform")
+    setRuntimePlatform(
+      createPlatformEnv({
+        YAIP_DISTRIBUTION: "cloud",
+        YAIP_BILLING_ENABLED: "false",
+      })
+    )
     const mod = await import("../distribution")
     expect(mod.billingEnabled).toBe(false)
   })
@@ -47,10 +54,14 @@ describe("distribution flags", () => {
     expect(mod.oauthEnabled).toBe(false)
 
     vi.resetModules()
-    process.env.BETTER_AUTH_GOOGLE_CLIENT_ID = "google-id"
-    process.env.BETTER_AUTH_GOOGLE_CLIENT_SECRET = "google-secret"
+    const { setRuntimePlatform } = await import("../runtime/platform")
+    setRuntimePlatform(
+      createPlatformEnv({
+        BETTER_AUTH_GOOGLE_CLIENT_ID: "google-id",
+        BETTER_AUTH_GOOGLE_CLIENT_SECRET: "google-secret",
+      })
+    )
     mod = await import("../distribution")
     expect(mod.oauthEnabled).toBe(true)
   })
 })
-

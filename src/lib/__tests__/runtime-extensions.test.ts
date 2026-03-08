@@ -1,16 +1,20 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-const ENV_KEYS = ["YAIP_AI_BYOK_ENABLED", "YAIP_AI_MANAGED_ENABLED"] as const
-
-function clearEnv() {
-  for (const key of ENV_KEYS) {
-    delete process.env[key]
+function createPlatformEnv(env: Record<string, string | undefined>) {
+  return {
+    id: `test-${Math.random()}`,
+    getRuntimeKind: () => "worker" as const,
+    getEnv: (name: string) => env[name],
+    getBinding: () => undefined,
+    getPrisma: () => {
+      throw new Error("runtime extension test should not request prisma")
+    },
+    getAuthHooks: () => ({}),
   }
 }
 
 describe("runtime extension capabilities", () => {
   afterEach(() => {
-    clearEnv()
     vi.resetModules()
   })
 
@@ -64,5 +68,23 @@ describe("runtime extension capabilities", () => {
 
     mod.setRuntimeExtensions([])
     expect(mod.getRuntimeCapabilities().aiInvoiceDraft.byok).toBe(true)
+  })
+
+  it("reads managed capability defaults from the active runtime platform", async () => {
+    const { setRuntimePlatform } = await import("../runtime/platform")
+    setRuntimePlatform(
+      createPlatformEnv({
+        YAIP_DISTRIBUTION: "cloud",
+        YAIP_AI_BYOK_ENABLED: "false",
+        YAIP_AI_MANAGED_ENABLED: "true",
+      })
+    )
+
+    const mod = await import("../runtime/extensions")
+    const caps = mod.getRuntimeCapabilities()
+
+    expect(caps.aiInvoiceDraft.byok).toBe(false)
+    expect(caps.aiInvoiceDraft.managed).toBe(true)
+    expect(caps.aiInvoiceDraft.enabled).toBe(true)
   })
 })

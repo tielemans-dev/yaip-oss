@@ -1,3 +1,5 @@
+import { getRuntimeEnv } from "./platform"
+
 export type AIInvoiceDraftCapabilities = {
   enabled: boolean
   byok: boolean
@@ -152,7 +154,7 @@ export function getRuntimeExtensions() {
 }
 
 export function getRuntimeCapabilities(
-  env: Record<string, string | undefined> = process.env
+  env: Record<string, string | undefined> = getRuntimeEnv()
 ) {
   let capabilities = readDefaultCapabilities(env)
 

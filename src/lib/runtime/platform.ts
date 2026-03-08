@@ -1,6 +1,8 @@
 export type RuntimeKind = "node" | "worker"
 
-export type RuntimeAuthHooks = Record<string, unknown>
+import { defaultNodePlatform } from "./node-platform"
+
+import type { AuthHooks } from "./auth-config"
 
 export type RuntimePlatform = {
   id: string
@@ -8,18 +10,7 @@ export type RuntimePlatform = {
   getEnv: (name: string) => string | undefined
   getBinding: <T>(name: string) => T | undefined
   getPrisma: () => unknown
-  getAuthHooks: () => RuntimeAuthHooks
-}
-
-const defaultNodePlatform: RuntimePlatform = {
-  id: "oss-node",
-  getRuntimeKind: () => "node",
-  getEnv: (name) => process.env[name],
-  getBinding: () => undefined,
-  getPrisma: () => {
-    throw new Error("Default runtime platform does not provide a Prisma client yet")
-  },
-  getAuthHooks: () => ({}),
+  getAuthHooks: () => AuthHooks
 }
 
 let runtimePlatform: RuntimePlatform | undefined
@@ -34,4 +25,14 @@ export function resetRuntimePlatform() {
 
 export function getRuntimePlatform(): RuntimePlatform {
   return runtimePlatform ?? defaultNodePlatform
+}
+
+export function getRuntimeEnv() {
+  return new Proxy({} as Record<string, string | undefined>, {
+    get(_target, property) {
+      return typeof property === "string"
+        ? getRuntimePlatform().getEnv(property)
+        : undefined
+    },
+  })
 }
