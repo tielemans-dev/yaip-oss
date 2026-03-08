@@ -135,7 +135,10 @@ export async function runInvoiceQuoteSmokeFlow(
       | undefined
 
     try {
-      quoteSent = await caller.quotes.send({ id: quoteCreate.id })
+      quoteSent = await caller.quotes.send({
+        id: quoteCreate.id,
+        allowSendWithoutEmail: true,
+      })
     } catch (error) {
       sendBlockedWithoutTaxId = true
       sendBlockedMessage = error instanceof Error ? error.message : String(error)
@@ -152,7 +155,10 @@ export async function runInvoiceQuoteSmokeFlow(
         },
       })
 
-      quoteSent = await caller.quotes.send({ id: quoteCreate.id })
+      quoteSent = await caller.quotes.send({
+        id: quoteCreate.id,
+        allowSendWithoutEmail: true,
+      })
     }
 
     const token = signQuotePublicToken(
@@ -177,7 +183,10 @@ export async function runInvoiceQuoteSmokeFlow(
       notes: "Converted invoice updated",
     })
 
-    const convertedInvoiceSent = await caller.invoices.send({ id: convertedInvoice.id })
+    const convertedInvoiceSent = await caller.invoices.send({
+      id: convertedInvoice.id,
+      allowSendWithoutEmail: true,
+    })
 
     const directInvoice = await caller.invoices.create({
       contactId: contact.id,
@@ -193,7 +202,10 @@ export async function runInvoiceQuoteSmokeFlow(
       notes: "Updated direct invoice",
     })
 
-    const directInvoiceSent = await caller.invoices.send({ id: directInvoice.id })
+    const directInvoiceSent = await caller.invoices.send({
+      id: directInvoice.id,
+      allowSendWithoutEmail: true,
+    })
 
     return {
       orgId,
