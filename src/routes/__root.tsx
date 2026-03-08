@@ -1,7 +1,7 @@
 import { HeadContent, Scripts, createRootRoute, Link, redirect } from '@tanstack/react-router'
 import { TooltipProvider } from '../components/ui/tooltip'
 import { useI18n, I18nProvider } from '../lib/i18n/react'
-import { getInstallationStatus } from '../lib/installation'
+import { getInstallationStatus, normalizeInstallationStatus } from '../lib/installation'
 import { shouldRedirectToSetup } from '../lib/setup-guard'
 
 import appCss from '../styles.css?url'
@@ -20,7 +20,7 @@ function NotFound() {
 
 export const Route = createRootRoute({
   beforeLoad: async ({ location }) => {
-    const installation = await getInstallationStatus()
+    const installation = normalizeInstallationStatus(await getInstallationStatus())
     if (
       shouldRedirectToSetup(
         location.pathname,
