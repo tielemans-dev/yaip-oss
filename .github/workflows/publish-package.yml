@@ -1,4 +1,4 @@
-name: Publish Package
+name: Publish Package Artifact
 
 on:
   push:
@@ -9,7 +9,7 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
 
     steps:
       - name: Checkout
@@ -25,7 +25,6 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-          registry-url: https://registry.npmjs.org
 
       - name: Verify tag matches package version
         run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
@@ -42,7 +41,20 @@ jobs:
       - name: Verify packed package artifact
         run: node scripts/check-packed-build.mjs
 
-      - name: Publish package
-        run: pnpm publish --access public --no-git-checks
+      - name: Pack release artifact
+        run: |
+          mkdir -p release-artifacts
+          pnpm pack --pack-destination release-artifacts
+
+      - name: Publish GitHub release artifact
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          tarball="$(find release-artifacts -maxdepth 1 -type f -name '*.tgz' -print -quit)"
+          test -n "$tarball"
+
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "$tarball" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "$tarball" --title "$GITHUB_REF_NAME" --notes ""
+          fi

@@ -109,7 +109,7 @@ The app will be available at [http://localhost:3000](http://localhost:3000).
 
 - This repository is the OSS runtime baseline.
 - This repository now also owns the versioned app artifact consumed by hosted cloud builds.
-- Stable consumer entrypoints are exposed through the published `@yaip/oss` package export surface.
+- Stable consumer entrypoints are exposed through the versioned `@yaip/oss` release artifact export surface.
 - Hosted cloud-specific modules (managed billing/webhooks/infra) belong to a private `yaip-cloud` repository.
 - Ownership and constraints are documented in `docs/architecture/oss-cloud-boundary.md`.
 - Release and cutover checklist is documented in `docs/releases/oss-v1-cutover.md`.
