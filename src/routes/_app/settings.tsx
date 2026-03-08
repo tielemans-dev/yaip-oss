@@ -45,6 +45,7 @@ import {
 } from "../../components/ui/alert-dialog"
 import { Settings, UserPlus, X, Crown, User, Eye } from "lucide-react"
 import { useI18n } from "../../lib/i18n/react"
+import { shouldAutoLoadOpenRouterModels } from "./-settings.helpers"
 
 export const Route = createFileRoute("/_app/settings")({
   component: SettingsPage,
@@ -219,8 +220,18 @@ function SettingsPage() {
         const existingLogo = data.companyLogo ?? ""
         setCompanyLogo(existingLogo)
         setCompanyLogoUrlInput(isDataImageLogo(existingLogo) ? "" : existingLogo)
-        setAiOpenRouterModel(data.aiOpenRouterModel || "openai/gpt-4o-mini")
+        const nextAiOpenRouterModel = data.aiOpenRouterModel || "openai/gpt-4o-mini"
+        setAiOpenRouterModel(nextAiOpenRouterModel)
         setDocumentSendingDomainInput(data.documentSending.requestedDomain ?? "")
+
+        if (
+          shouldAutoLoadOpenRouterModels(
+            nextAiOpenRouterModel,
+            OPENROUTER_FALLBACK_MODELS
+          )
+        ) {
+          void loadOpenRouterModels()
+        }
       })
       .catch(() =>
         setError(t("settings.error.loadFailed"))
@@ -244,10 +255,6 @@ function SettingsPage() {
       setLoadingOpenRouterModels(false)
     }
   }
-
-  useEffect(() => {
-    loadOpenRouterModels()
-  }, [t])
 
   useEffect(() => {
     async function loadTeam() {

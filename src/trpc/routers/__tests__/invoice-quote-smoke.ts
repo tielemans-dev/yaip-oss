@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto"
 import { prisma } from "../../../lib/db"
+import { decidePublicQuoteByToken } from "../../../lib/quotes/public-access"
+import { signQuotePublicToken } from "../../../lib/quotes/public"
 import { appRouter } from "../../router"
 
 export type InvoiceQuoteSmokeResult = {
@@ -46,12 +48,15 @@ const defaultOptions: InvoiceQuoteSmokeOptions = {
   pricesIncludeTax: false,
 }
 
+const PUBLIC_QUOTE_TEST_SECRET = "test-public-quote-secret"
+
 export async function runInvoiceQuoteSmokeFlow(
   options?: Partial<InvoiceQuoteSmokeOptions>
 ): Promise<InvoiceQuoteSmokeResult> {
   const config = { ...defaultOptions, ...options }
   const orgId = randomUUID()
   const slug = `smoke-${Date.now()}-${Math.floor(Math.random() * 1_000_000)}`
+  const previousQuoteSecret = process.env.YAIP_PUBLIC_QUOTE_SECRET
 
   const ctx = {
     session: {
@@ -69,6 +74,8 @@ export async function runInvoiceQuoteSmokeFlow(
   const caller = appRouter.createCaller(ctx as never)
 
   try {
+    process.env.YAIP_PUBLIC_QUOTE_SECRET = PUBLIC_QUOTE_TEST_SECRET
+
     await prisma.organization.create({
       data: {
         id: orgId,
@@ -148,6 +155,19 @@ export async function runInvoiceQuoteSmokeFlow(
       quoteSent = await caller.quotes.send({ id: quoteCreate.id })
     }
 
+    const token = signQuotePublicToken(
+      {
+        quoteId: quoteCreate.id,
+        keyVersion: quoteSent.publicAccessKeyVersion ?? 1,
+        scope: "quote_public",
+      },
+      PUBLIC_QUOTE_TEST_SECRET
+    )
+
+    await decidePublicQuoteByToken(token, PUBLIC_QUOTE_TEST_SECRET, {
+      decision: "accepted",
+    })
+
     const convertedInvoice = await caller.quotes.convertToInvoice({ id: quoteCreate.id })
 
     const convertedInvoiceUpdated = await caller.invoices.update({
@@ -201,6 +221,7 @@ export async function runInvoiceQuoteSmokeFlow(
       },
     }
   } finally {
+    process.env.YAIP_PUBLIC_QUOTE_SECRET = previousQuoteSecret
     await prisma.organization.deleteMany({ where: { id: orgId } })
   }
 }

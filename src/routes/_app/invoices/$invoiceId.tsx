@@ -51,7 +51,6 @@ import {
   AlertDialogTrigger,
 } from "../../../components/ui/alert-dialog"
 import { Printer, CheckCircle, Pencil, Trash2, Plus, ArrowLeft, Download } from "lucide-react"
-import { downloadInvoicePdf } from "../../../lib/invoice-pdf"
 import { useI18n } from "../../../lib/i18n/react"
 
 export const Route = createFileRoute("/_app/invoices/$invoiceId")({
@@ -149,6 +148,23 @@ function StatusBadge({ status, label }: { status: string; label: string }) {
       {label}
     </Badge>
   )
+}
+
+async function downloadInvoicePdfFile(
+  invoice: Invoice,
+  orgSettings: {
+    companyName?: string | null
+    companyEmail?: string | null
+    companyPhone?: string | null
+    companyAddress?: string | null
+    companyLogo?: string | null
+    locale?: string | null
+    timezone?: string | null
+    stripeByokConfigured?: boolean
+  }
+) {
+  const { downloadInvoicePdf } = await import("../../../lib/invoice-pdf")
+  await downloadInvoicePdf(invoice, orgSettings)
 }
 
 function InvoiceDetailPage() {
@@ -733,7 +749,7 @@ function InvoiceDetailPage() {
               if (!invoice) return
               setDownloading(true)
               try {
-                await downloadInvoicePdf(invoice, orgSettings)
+                await downloadInvoicePdfFile(invoice, orgSettings)
               } catch {
                 setError(t("invoices.detail.error.pdfFailed"))
               } finally {

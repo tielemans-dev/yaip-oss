@@ -28,6 +28,7 @@ import {
 } from "../../../components/ui/alert-dialog"
 import { Plus, Trash2, FileText } from "lucide-react"
 import { useI18n } from "../../../lib/i18n/react"
+import { loadInvoicesListData } from "./-index.helpers"
 
 export const Route = createFileRoute("/_app/invoices/")({
   component: InvoicesListPage,
@@ -84,8 +85,10 @@ function InvoicesListPage() {
 
   async function loadInvoices() {
     try {
-      await trpc.invoices.markOverdue.mutate()
-      const data = await trpc.invoices.list.query()
+      const data = await loadInvoicesListData({
+        list: () => trpc.invoices.list.query(),
+        markOverdue: () => trpc.invoices.markOverdue.mutate(),
+      })
       setInvoices(data as unknown as Invoice[])
     } catch {
       // Auth or org errors handled by layout
