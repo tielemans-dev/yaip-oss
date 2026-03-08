@@ -1,12 +1,14 @@
 import { createServerFn } from "@tanstack/react-start"
 import { getRequestHeaders } from "@tanstack/react-start/server"
-import { auth } from "./auth"
-import { prisma } from "./db"
 import { getCloudOnboardingState } from "./cloud-onboarding"
 
 export const getActiveOrgCloudOnboardingStatus = createServerFn({
   method: "GET",
 }).handler(async () => {
+  const [{ auth }, { prisma }] = await Promise.all([
+    import("./auth"),
+    import("./db"),
+  ])
   const headers = getRequestHeaders()
   const session = await auth.api.getSession({ headers })
   const organizationId = session?.session.activeOrganizationId

@@ -5,6 +5,7 @@
   "license": "PolyForm-Noncommercial-1.0.0",
   "type": "module",
   "files": [
+    "build",
     "generated",
     "prisma",
     "src",
@@ -13,8 +14,20 @@
   ],
   "exports": {
     ".": "./src/router.tsx",
-    "./build": "./src/build/index.ts",
+    "./auth-client": "./src/lib/auth-client.ts",
+    "./auth/providers": "./src/lib/auth/providers.ts",
+    "./build": "./build/index.mjs",
+    "./document-email-sending": "./src/lib/document-email-sending.ts",
+    "./email": "./src/lib/email.ts",
+    "./onboarding/ai-contract": "./src/lib/onboarding/ai-contract.ts",
+    "./onboarding/ai-fallback": "./src/lib/onboarding/ai-fallback.ts",
+    "./permissions": "./src/lib/permissions.ts",
+    "./redirect-target": "./src/lib/redirect-target.ts",
     "./runtime": "./src/lib/runtime/bootstrap.ts",
+    "./runtime/auth-config": "./src/lib/runtime/auth-config.ts",
+    "./runtime/extensions": "./src/lib/runtime/extensions.ts",
+    "./runtime/platform": "./src/lib/runtime/platform.ts",
+    "./runtime/services": "./src/lib/runtime/services.ts",
     "./styles.css": "./src/styles.css"
   },
   "imports": {

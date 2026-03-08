@@ -22,6 +22,8 @@ const entries = execFileSync("tar", ["-tzf", path.join(outDir, tarball)], {
   .split("\n")
 
 for (const requiredEntry of [
+  "package/build/index.mjs",
+  "package/build/resolve-app-paths.mjs",
   "package/src/routes/__root.tsx",
   "package/src/styles.css",
   "package/src/router.tsx",

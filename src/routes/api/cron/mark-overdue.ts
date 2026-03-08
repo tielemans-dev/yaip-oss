@@ -1,5 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { prisma } from "../../../lib/db"
+
+async function markOverdueInvoices() {
+  const { prisma } = await import("../../../lib/db")
+  return prisma.invoice.updateMany({
+    where: {
+      status: { in: ["sent", "viewed"] },
+      dueDate: { lt: new Date() },
+    },
+    data: { status: "overdue" },
+  })
+}
 
 export const Route = createFileRoute("/api/cron/mark-overdue")({
   server: {
@@ -17,13 +27,7 @@ export const Route = createFileRoute("/api/cron/mark-overdue")({
           return new Response("Unauthorized", { status: 401 })
         }
 
-        const { count } = await prisma.invoice.updateMany({
-          where: {
-            status: { in: ["sent", "viewed"] },
-            dueDate: { lt: new Date() },
-          },
-          data: { status: "overdue" },
-        })
+        const { count } = await markOverdueInvoices()
 
         return Response.json({ ok: true, marked: count })
       },

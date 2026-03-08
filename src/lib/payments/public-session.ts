@@ -1,8 +1,5 @@
 import { createServerFn } from "@tanstack/react-start"
 import { z } from "zod"
-import { loadPublicInvoiceByToken } from "./public-access"
-import { getPublicInvoicePaymentSecret } from "./public"
-import { resolvePublicInvoiceCheckout } from "./public-checkout"
 
 const invoicePaymentTokenSchema = z.object({
   token: z.string().trim().min(1),
@@ -11,6 +8,10 @@ const invoicePaymentTokenSchema = z.object({
 export const getPublicInvoiceSession = createServerFn({ method: "GET" })
   .inputValidator(invoicePaymentTokenSchema)
   .handler(async ({ data }) => {
+    const [{ loadPublicInvoiceByToken }, { getPublicInvoicePaymentSecret }] = await Promise.all([
+      import("./public-access"),
+      import("./public"),
+    ])
     const session = await loadPublicInvoiceByToken(data.token, getPublicInvoicePaymentSecret())
     if (!session) {
       return { kind: "invalid" } as const
@@ -25,5 +26,6 @@ export const getPublicInvoiceSession = createServerFn({ method: "GET" })
 export const beginPublicInvoiceCheckout = createServerFn({ method: "POST" })
   .inputValidator(invoicePaymentTokenSchema)
   .handler(async ({ data }) => {
+    const { resolvePublicInvoiceCheckout } = await import("./public-checkout")
     return resolvePublicInvoiceCheckout(data.token)
   })

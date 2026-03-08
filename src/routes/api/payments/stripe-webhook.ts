@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { processStripeWebhookRequest } from "../../../lib/payments/webhooks"
 
 export const Route = createFileRoute("/api/payments/stripe-webhook")({
   server: {
@@ -13,6 +12,7 @@ export const Route = createFileRoute("/api/payments/stripe-webhook")({
         const payload = await request.text()
 
         try {
+          const { processStripeWebhookRequest } = await import("../../../lib/payments/webhooks")
           const result = await processStripeWebhookRequest(payload, signature)
           return Response.json({ ok: true, ...result })
         } catch {

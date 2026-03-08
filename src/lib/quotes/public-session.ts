@@ -1,7 +1,5 @@
 import { createServerFn } from "@tanstack/react-start"
 import { z } from "zod"
-import { decidePublicQuoteByToken, loadPublicQuoteByToken } from "./public-access"
-import { getPublicQuoteSecret } from "./public-url"
 
 const publicQuoteTokenSchema = z.object({
   token: z.string().trim().min(1),
@@ -15,6 +13,10 @@ const publicQuoteDecisionSchema = publicQuoteTokenSchema.extend({
 export const getPublicQuoteSession = createServerFn({ method: "GET" })
   .inputValidator(publicQuoteTokenSchema)
   .handler(async ({ data }) => {
+    const [{ loadPublicQuoteByToken }, { getPublicQuoteSecret }] = await Promise.all([
+      import("./public-access"),
+      import("./public-url"),
+    ])
     const session = await loadPublicQuoteByToken(data.token, getPublicQuoteSecret())
     if (!session) {
       return { kind: "invalid" } as const
@@ -30,6 +32,10 @@ export const submitPublicQuoteDecision = createServerFn({ method: "POST" })
   .inputValidator(publicQuoteDecisionSchema)
   .handler(async ({ data }) => {
     try {
+      const [{ decidePublicQuoteByToken }, { getPublicQuoteSecret }] = await Promise.all([
+        import("./public-access"),
+        import("./public-url"),
+      ])
       const session = await decidePublicQuoteByToken(data.token, getPublicQuoteSecret(), {
         decision: data.decision,
         rejectionReason: data.decision === "rejected" ? data.rejectionReason : undefined,
