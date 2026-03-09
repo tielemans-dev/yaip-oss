@@ -1,0 +1,16 @@
+{
+  "name": "@yaip/scripts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "pnpm exec oxlint --deny-warnings --report-unused-disable-directives .",
+    "typecheck": "pnpm exec tsc --noEmit -p tsconfig.json",
+    "test": "pnpm exec vitest run __tests__/*.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "oxlint": "^1.50.0",
+    "typescript": "^5.7.2",
+    "vitest": "^3.0.5"
+  }
+}

@@ -10,7 +10,7 @@ This document defines how private cloud code can extend OSS behavior without for
 
 ## OSS Contract
 
-`src/lib/runtime/extensions.ts` exports:
+`apps/oss/src/lib/runtime/extensions.ts` exports:
 
 - `setRuntimeExtensions(extensions)` to register runtime extensions
 - `getRuntimeExtensions()` for inspection/testing

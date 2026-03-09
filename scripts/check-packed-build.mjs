@@ -4,8 +4,10 @@ import { tmpdir } from "node:os"
 import path from "node:path"
 
 const outDir = mkdtempSync(path.join(tmpdir(), "yaip-oss-pack-"))
+const appDir = path.resolve("apps/oss")
 
 execFileSync("pnpm", ["pack", "--pack-destination", outDir], {
+  cwd: appDir,
   stdio: "inherit",
 })
 

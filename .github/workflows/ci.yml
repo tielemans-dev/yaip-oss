@@ -41,7 +41,7 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile --ignore-workspace
+        run: pnpm install --frozen-lockfile
 
       - name: Lint
         run: pnpm lint
@@ -50,10 +50,10 @@ jobs:
         run: pnpm typecheck
 
       - name: Generate Prisma client
-        run: pnpm exec prisma generate
+        run: pnpm --filter @yaip/oss exec prisma generate
 
       - name: Apply migrations
-        run: pnpm exec prisma migrate deploy
+        run: pnpm --filter @yaip/oss exec prisma migrate deploy
 
       - name: Validate Prisma schema
         run: pnpm exec prisma validate

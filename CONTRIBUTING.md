@@ -13,7 +13,7 @@ Do not submit changes that:
 - Add private cloud module imports into OSS runtime code
 - Add managed AI subscription entitlements or billing coupling into OSS core
 
-Use extension interfaces in `src/lib/runtime/extensions.ts` when you need cloud-specific behavior.
+Use extension interfaces in `apps/oss/src/lib/runtime/extensions.ts` when you need cloud-specific behavior.
 
 ## Pull Request Expectations
 

@@ -1,8 +1,12 @@
 #!/usr/bin/env node
 import fs from "node:fs"
 import path from "node:path"
+import { fileURLToPath } from "node:url"
 
-const catalogRoot = path.resolve("src/lib/i18n/catalog")
+const scriptDir = path.dirname(fileURLToPath(import.meta.url))
+const repoRoot = path.resolve(scriptDir, "..")
+const appRoot = path.join(repoRoot, "apps/oss")
+const catalogRoot = path.join(appRoot, "src/lib/i18n/catalog")
 
 function listLanguageDirs() {
   return fs

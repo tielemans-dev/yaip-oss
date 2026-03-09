@@ -30,7 +30,7 @@ jobs:
         id: package_version
         run: >-
           node -e "console.log('value=' +
-          JSON.parse(require('node:fs').readFileSync('package.json',
+          JSON.parse(require('node:fs').readFileSync('apps/oss/package.json',
           'utf8')).version)" >> "$GITHUB_OUTPUT"
 
       - name: Verify tag matches package version
@@ -51,7 +51,7 @@ jobs:
       - name: Pack release artifact
         run: |
           mkdir -p release-artifacts
-          pnpm pack --pack-destination release-artifacts
+          pnpm --dir apps/oss pack --pack-destination ../../release-artifacts
 
       - name: Publish GitHub release artifact
         env:
