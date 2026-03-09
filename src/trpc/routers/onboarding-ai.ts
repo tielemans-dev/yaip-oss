@@ -317,7 +317,7 @@ export const onboardingAiRouter = router({
       const missing = toMissingFieldList(input.missing ?? snapshot.readiness.missing)
       const currentValues = {
         ...snapshot.values,
-        ...(input.currentValues ?? {}),
+        ...input.currentValues,
       }
       const suggestion = await getOnboardingAiService().suggestPatch({
         userMessage: input.userMessage,

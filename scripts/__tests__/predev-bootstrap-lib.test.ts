@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest"
-import { resolveDatabaseTarget } from "../predev-bootstrap-lib.mjs"
+
+// @ts-expect-error Local .mjs helper has no TypeScript declaration file yet.
+const { resolveDatabaseTarget } = (await import("../predev-bootstrap-lib.mjs")) as {
+  resolveDatabaseTarget: (databaseUrl: string | undefined) =>
+    | { kind: "missing" }
+    | { kind: "invalid" }
+    | { kind: "local"; host: string }
+    | { kind: "remote"; host: string }
+}
 
 describe("resolveDatabaseTarget", () => {
   it("treats localhost postgres URLs as local", () => {

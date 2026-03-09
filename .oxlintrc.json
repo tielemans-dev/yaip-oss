@@ -1,0 +1,9 @@
+{
+  "$schema": "https://oxc.rs/schema.json",
+  "ignorePatterns": [
+    "build/**",
+    "generated/**",
+    "node_modules/**",
+    "src/routeTree.gen.ts"
+  ]
+}

@@ -1,0 +1,10 @@
+# Maintainability Plans
+
+1. `2026-03-09-t3code-aggressive-adoption-design.md` - approved architecture and migration design for the aggressive T3code-inspired adoption pass
+2. `2026-03-09-t3code-aggressive-adoption.md` - executable implementation plan for the workspace split, contracts extraction, quality gates, observability, and browser coverage
+3. Workspace split - move the app into `apps/oss` while preserving the published `@yaip/oss` surface
+4. Contracts extraction - introduce shared schemas and branded IDs under `packages/contracts`
+5. Shared runtime extraction - move reusable helpers into `packages/shared` with explicit exports
+6. Effect boundary expansion - harden remote integrations without rewriting the app architecture
+7. Browser smoke coverage - add Playwright coverage for setup, auth, public quote, invoice payment, and document sending
+8. Structured observability - add JSONL logging for payment, onboarding, email, and public document flows

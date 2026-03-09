@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.base.json",
+  "include": [
+    "scripts/**/*.d.ts",
+    "scripts/**/*.ts",
+    "scripts/**/*.mts",
+    "scripts/**/*.cts",
+    "src/build/**/*.ts",
+    "vite.config.ts",
+    "vitest.config.ts",
+    "prisma.config.ts"
+  ],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "types": ["node", "vite/client"]
+  }
+}
