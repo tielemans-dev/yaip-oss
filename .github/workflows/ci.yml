@@ -56,10 +56,10 @@ jobs:
         run: pnpm --filter @yaip/oss exec prisma migrate deploy
 
       - name: Validate Prisma schema
-        run: pnpm exec prisma validate
+        run: pnpm --filter @yaip/oss exec prisma validate
 
       - name: Verify migration status
-        run: pnpm exec prisma migrate status
+        run: pnpm --filter @yaip/oss exec prisma migrate status
 
       - name: Run unit and router tests
         run: pnpm test
