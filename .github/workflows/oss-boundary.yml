@@ -43,11 +43,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
       - name: Generate Prisma client
-        run: pnpm exec prisma generate
+        run: pnpm --filter @yaip/oss exec prisma generate
 
       - name: Apply migrations
-        run: pnpm exec prisma migrate deploy
+        run: pnpm --filter @yaip/oss exec prisma migrate deploy
 
       - name: Run OSS boundary checks
         run: bash scripts/check-oss-boundaries.sh

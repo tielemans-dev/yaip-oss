@@ -8,9 +8,12 @@ dist-ssr
 .tanstack
 .wrangler
 .output
+.turbo
 .vinxi
 __unconfig*
 todos.json
 .worktrees/
+apps/oss/playwright-report/
+apps/oss/test-results/
 
 /generated/prisma

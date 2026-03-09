@@ -23,11 +23,11 @@ check_absent() {
 
 check_absent "from ['\"]stripe['\"]|require\\(['\"]stripe['\"]\\)|@stripe" \
   "Stripe SDK imports are not allowed in OSS runtime" \
-  src package.json
+  apps/oss/src apps/oss/package.json
 
 check_absent "api/webhooks/stripe|webhooks/stripe" \
   "Stripe webhook routes are not allowed in OSS runtime" \
-  src/routes
+  apps/oss/src/routes
 
 check_absent "STRIPE_" \
   "STRIPE_* variables are not allowed in OSS templates/docs" \
@@ -35,7 +35,7 @@ check_absent "STRIPE_" \
 
 check_absent "yaip-cloud|@yaip/cloud|cloud-private" \
   "OSS runtime must not import private cloud modules" \
-  src package.json
+  apps/oss/src apps/oss/package.json
 
 if [[ "$status" -ne 0 ]]; then
   exit "$status"

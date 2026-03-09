@@ -43,17 +43,23 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
       - name: Generate Prisma client
-        run: pnpm exec prisma generate
+        run: pnpm --filter @yaip/oss exec prisma generate
 
       - name: Apply migrations
-        run: pnpm exec prisma migrate deploy
+        run: pnpm --filter @yaip/oss exec prisma migrate deploy
 
       - name: Validate Prisma schema
-        run: pnpm exec prisma validate
+        run: pnpm --filter @yaip/oss exec prisma validate
 
       - name: Verify migration status
-        run: pnpm exec prisma migrate status
+        run: pnpm --filter @yaip/oss exec prisma migrate status
 
       - name: Run unit and router tests
         run: pnpm test
@@ -63,6 +69,12 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      - name: Install Playwright browser
+        run: pnpm --filter @yaip/oss exec playwright install --with-deps chromium
+
+      - name: Run browser smoke tests
+        run: pnpm test:e2e
 
       - name: Verify packed package artifact
         run: node scripts/check-packed-build.mjs

@@ -4,10 +4,25 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
+ENV_FILE=""
+
 if [[ -f .env ]]; then
+  ENV_FILE=".env"
+else
+  COMMON_GIT_DIR="$(git rev-parse --git-common-dir 2>/dev/null || true)"
+  if [[ -n "$COMMON_GIT_DIR" ]]; then
+    COMMON_GIT_DIR_ABS="$(cd "$COMMON_GIT_DIR" && pwd)"
+    COMMON_ENV_FILE="$(dirname "$COMMON_GIT_DIR_ABS")/.env"
+    if [[ -f "$COMMON_ENV_FILE" ]]; then
+      ENV_FILE="$COMMON_ENV_FILE"
+    fi
+  fi
+fi
+
+if [[ -n "$ENV_FILE" ]]; then
   set -a
   # shellcheck disable=SC1091
-  source .env
+  source "$ENV_FILE"
   set +a
 fi
 

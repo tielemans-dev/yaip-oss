@@ -1,8 +1,14 @@
 #!/usr/bin/env node
 
-import "dotenv/config"
+import dotenv from "dotenv"
 import { spawnSync } from "node:child_process"
 import { resolveDatabaseTarget } from "./predev-bootstrap-lib.mjs"
+import { discoverWorkspaceEnvFile } from "./workspace-env.js"
+
+const envFile = discoverWorkspaceEnvFile()
+if (envFile) {
+  dotenv.config({ path: envFile })
+}
 
 function run(command, args) {
   const result = spawnSync(command, args, {

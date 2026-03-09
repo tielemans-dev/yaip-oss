@@ -1,9 +1,13 @@
 #!/usr/bin/env node
 import fs from "node:fs"
 import path from "node:path"
+import { fileURLToPath } from "node:url"
 
-const sourceRoot = path.resolve("src")
-const allowlistPath = path.resolve("scripts/i18n/tm-allowlist.json")
+const scriptDir = path.dirname(fileURLToPath(import.meta.url))
+const repoRoot = path.resolve(scriptDir, "..")
+const appRoot = path.join(repoRoot, "apps/oss")
+const sourceRoot = path.join(appRoot, "src")
+const allowlistPath = path.join(repoRoot, "scripts/i18n/tm-allowlist.json")
 
 function listSourceFiles(dirPath, output = []) {
   const entries = fs.readdirSync(dirPath, { withFileTypes: true })
@@ -40,7 +44,7 @@ const files = listSourceFiles(sourceRoot)
 const actual = {}
 
 for (const fullPath of files) {
-  const relativePath = path.relative(process.cwd(), fullPath).replaceAll(path.sep, "/")
+  const relativePath = path.relative(appRoot, fullPath).replaceAll(path.sep, "/")
   const count = countTmCallsInFile(fullPath)
   if (count > 0) {
     actual[relativePath] = count

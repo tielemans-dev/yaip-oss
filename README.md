@@ -18,6 +18,7 @@ Source-available invoicing for freelancers and small businesses.
 - [Prisma](https://www.prisma.io) + PostgreSQL — Database ORM
 - [Better Auth](https://www.better-auth.com) — Authentication with organization support
 - [shadcn/ui](https://ui.shadcn.com) + Tailwind CSS — UI components
+- [Turbo](https://turbo.build/repo) — Repository task orchestration
 
 ## Getting Started
 
@@ -47,6 +48,8 @@ Source-available invoicing for freelancers and small businesses.
    ```bash
    cp .env.example .env
    ```
+
+   Git worktrees also fall back to the main repository's `.env` if the worktree does not have its own copy.
 
    Generate a secure auth secret:
 
@@ -122,10 +125,29 @@ Run the standard test suite:
 pnpm test
 ```
 
+Run the repo quality gates:
+
+```bash
+pnpm lint
+pnpm typecheck
+```
+
+Run the full application TypeScript backlog check:
+
+```bash
+pnpm typecheck:app
+```
+
 Run the DB-backed invoice/quote smoke flow (create/edit/send/convert) against your local PostgreSQL configured in `.env`:
 
 ```bash
 pnpm test:integration
+```
+
+Run the browser smoke suite against a local PostgreSQL and app server:
+
+```bash
+pnpm --filter @yaip/oss test:e2e
 ```
 
 ## Onboarding Behavior
@@ -158,6 +180,7 @@ pnpm test:integration
 Contributions welcome! Please open an issue first to discuss what you'd like to change.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for OSS/cloud boundary and PR policy.
+Repository-local coding agent instructions live in `AGENTS.md` and `CLAUDE.md`.
 
 ## License
 

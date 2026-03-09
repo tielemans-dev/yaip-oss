@@ -1,4 +1,4 @@
-name: Publish Package Artifact
+name: Publish Package Artifacts
 
 on:
   push:
@@ -30,11 +30,31 @@ jobs:
         id: package_version
         run: >-
           node -e "console.log('value=' +
-          JSON.parse(require('node:fs').readFileSync('package.json',
+          JSON.parse(require('node:fs').readFileSync('apps/oss/package.json',
+          'utf8')).version)" >> "$GITHUB_OUTPUT"
+
+      - name: Read contracts package version
+        id: contracts_version
+        run: >-
+          node -e "console.log('value=' +
+          JSON.parse(require('node:fs').readFileSync('packages/contracts/package.json',
+          'utf8')).version)" >> "$GITHUB_OUTPUT"
+
+      - name: Read shared package version
+        id: shared_version
+        run: >-
+          node -e "console.log('value=' +
+          JSON.parse(require('node:fs').readFileSync('packages/shared/package.json',
           'utf8')).version)" >> "$GITHUB_OUTPUT"
 
       - name: Verify tag matches package version
         run: test "v${{ steps.package_version.outputs.value }}" = "$GITHUB_REF_NAME"
+
+      - name: Verify contracts package version matches app version
+        run: test "${{ steps.contracts_version.outputs.value }}" = "${{ steps.package_version.outputs.value }}"
+
+      - name: Verify shared package version matches app version
+        run: test "${{ steps.shared_version.outputs.value }}" = "${{ steps.package_version.outputs.value }}"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -48,22 +68,24 @@ jobs:
       - name: Verify packed package artifact
         run: node scripts/check-packed-build.mjs
 
-      - name: Pack release artifact
+      - name: Pack release artifacts
         run: |
           mkdir -p release-artifacts
-          pnpm pack --pack-destination release-artifacts
+          pnpm --dir packages/contracts pack --pack-destination ../../release-artifacts
+          pnpm --dir packages/shared pack --pack-destination ../../release-artifacts
+          pnpm --dir apps/oss pack --pack-destination ../../release-artifacts
 
-      - name: Publish GitHub release artifact
+      - name: Publish GitHub release artifacts
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          tarball="$(find release-artifacts -maxdepth 1 -type f -name '*.tgz' -print -quit)"
-          test -n "$tarball"
+          mapfile -t tarballs < <(find release-artifacts -maxdepth 1 -type f -name '*.tgz' -print | sort)
+          test "${#tarballs[@]}" -gt 0
 
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" "$tarball" --clobber
+            gh release upload "$GITHUB_REF_NAME" "${tarballs[@]}" --clobber
           else
-            gh release create "$GITHUB_REF_NAME" "$tarball" --title "$GITHUB_REF_NAME" --notes ""
+            gh release create "$GITHUB_REF_NAME" "${tarballs[@]}" --title "$GITHUB_REF_NAME" --notes ""
           fi
 
       - name: Skip cloud release sync when dispatch token is not configured

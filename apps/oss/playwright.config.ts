@@ -1,0 +1,40 @@
+import { defineConfig } from "@playwright/test"
+
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
+const databaseUrl =
+  process.env.DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/yaip?schema=public"
+
+export default defineConfig({
+  testDir: "./tests/e2e",
+  fullyParallel: false,
+  workers: 1,
+  timeout: 60_000,
+  reporter: [["list"], ["html", { open: "never" }]],
+  use: {
+    baseURL,
+    trace: "retain-on-failure",
+  },
+  webServer: {
+    command:
+      "pnpm exec prisma generate && pnpm exec prisma migrate deploy && pnpm exec vite dev --port 3000 --host 127.0.0.1",
+    cwd: import.meta.dirname,
+    reuseExistingServer: !process.env.CI,
+    timeout: 120_000,
+    url: baseURL,
+    env: {
+      ...process.env,
+      DATABASE_URL: databaseUrl,
+      BETTER_AUTH_SECRET:
+        process.env.BETTER_AUTH_SECRET ?? "playwright-auth-secret-that-is-over-32-characters",
+      BETTER_AUTH_URL: baseURL,
+      VITE_YAIP_DISTRIBUTION: "selfhost",
+      YAIP_APP_ORIGIN: baseURL,
+      YAIP_DISTRIBUTION: "selfhost",
+      YAIP_JSON_LOGS: "false",
+      YAIP_PUBLIC_PAYMENT_SECRET:
+        process.env.YAIP_PUBLIC_PAYMENT_SECRET ?? "payment-link-e2e-secret-123456",
+      YAIP_PUBLIC_QUOTE_SECRET:
+        process.env.YAIP_PUBLIC_QUOTE_SECRET ?? "quote-link-e2e-secret-123456",
+    },
+  },
+})

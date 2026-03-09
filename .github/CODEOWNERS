@@ -4,5 +4,5 @@
 /docs/architecture/oss-cloud-boundary.md @tielemans-dev
 /docs/architecture/runtime-extension-interface.md @tielemans-dev
 /scripts/check-oss-boundaries.sh @tielemans-dev
-/src/lib/billing/ @tielemans-dev
-/src/lib/runtime/extensions.ts @tielemans-dev
+/apps/oss/src/lib/billing/ @tielemans-dev
+/apps/oss/src/lib/runtime/extensions.ts @tielemans-dev
