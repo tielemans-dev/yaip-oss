@@ -15,4 +15,22 @@ describe("repository Bun contract", () => {
     expect(packageJson.workspaces).toEqual([".", "apps/*", "packages/*", "scripts"])
     expect(existsSync(new URL("../../.bun-version", import.meta.url))).toBe(true)
   })
+
+  it("does not keep pnpm in active package scripts or helper commands", () => {
+    const files = [
+      "package.json",
+      "apps/oss/package.json",
+      "packages/contracts/package.json",
+      "packages/shared/package.json",
+      "scripts/package.json",
+      "scripts/predev-bootstrap.mjs",
+      "scripts/check-packed-build.mjs",
+      "apps/oss/playwright.config.ts",
+    ]
+
+    for (const file of files) {
+      const text = readFileSync(new URL(`../../${file}`, import.meta.url), "utf8")
+      expect(text).not.toContain("pnpm")
+    }
+  })
 })

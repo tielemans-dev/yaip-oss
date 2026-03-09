@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "lint": "pnpm exec oxlint --deny-warnings --report-unused-disable-directives .",
-    "typecheck": "pnpm exec tsc --noEmit -p tsconfig.json",
-    "test": "pnpm exec vitest run __tests__/*.test.ts"
+    "lint": "oxlint --deny-warnings --report-unused-disable-directives .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run __tests__/*.test.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

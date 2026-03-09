@@ -23,9 +23,9 @@
     "./runtime": "./src/runtime.ts"
   },
   "scripts": {
-    "lint": "pnpm exec oxlint --deny-warnings --report-unused-disable-directives src",
-    "typecheck": "pnpm exec tsc --noEmit -p tsconfig.json",
-    "test": "pnpm exec vitest run"
+    "lint": "oxlint --deny-warnings --report-unused-disable-directives src",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
   },
   "publishConfig": {
     "access": "public"

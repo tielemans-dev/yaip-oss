@@ -16,7 +16,7 @@ export default defineConfig({
   },
   webServer: {
     command:
-      "pnpm exec prisma generate && pnpm exec prisma migrate deploy && pnpm exec vite dev --port 3000 --host 127.0.0.1",
+      "bunx prisma generate && bunx prisma migrate deploy && bunx vite dev --port 3000 --host 127.0.0.1",
     cwd: import.meta.dirname,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

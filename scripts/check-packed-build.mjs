@@ -6,11 +6,12 @@ import path from "node:path"
 const appDir = path.resolve("apps/oss")
 const contractsDir = path.resolve("packages/contracts")
 const sharedDir = path.resolve("packages/shared")
+const bunCommand = process.platform === "win32" ? "bun.exe" : "bun"
 
 function packPackage(cwd, prefix) {
   const outDir = mkdtempSync(path.join(tmpdir(), prefix))
 
-  execFileSync("pnpm", ["pack", "--pack-destination", outDir], {
+  execFileSync(bunCommand, ["pm", "pack", "--destination", outDir], {
     cwd,
     stdio: "inherit",
   })
@@ -18,7 +19,7 @@ function packPackage(cwd, prefix) {
   const tarball = readdirSync(outDir).find((entry) => entry.endsWith(".tgz"))
 
   if (!tarball) {
-    throw new Error(`expected pnpm pack to produce a tarball for ${cwd}`)
+    throw new Error(`expected bun pm pack to produce a tarball for ${cwd}`)
   }
 
   return path.join(outDir, tarball)

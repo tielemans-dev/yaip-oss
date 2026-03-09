@@ -26,22 +26,22 @@ if (process.env.YAIP_SKIP_PREDEV_BOOTSTRAP === "1") {
 }
 
 const target = resolveDatabaseTarget(process.env.DATABASE_URL)
-const pnpmCommand = process.platform === "win32" ? "pnpm.cmd" : "pnpm"
+const bunCommand = process.platform === "win32" ? "bun.exe" : "bun"
 
 if (target.kind === "missing") {
-  console.error("DATABASE_URL is required. Set it in .env before running pnpm dev.")
+  console.error("DATABASE_URL is required. Set it in .env before running bun dev.")
   process.exit(1)
 }
 
 if (target.kind === "invalid") {
-  console.error("DATABASE_URL is invalid. Update it in .env before running pnpm dev.")
+  console.error("DATABASE_URL is invalid. Update it in .env before running bun dev.")
   process.exit(1)
 }
 
 if (target.kind === "local") {
   console.log(`Detected local DATABASE_URL host (${target.host}). Starting local Postgres...`)
-  run(pnpmCommand, ["db:start"])
+  run(bunCommand, ["run", "db:start"])
 }
 
 console.log("Applying Prisma migrations...")
-run(pnpmCommand, ["exec", "prisma", "migrate", "deploy"])
+run(bunCommand, ["x", "prisma", "migrate", "deploy"])
