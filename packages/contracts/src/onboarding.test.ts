@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
   onboardingAiSuggestionSchema,
   onboardingApplySourceSchema,
+  onboardingInvoicingIdentitySchema,
   onboardingMissingFieldSchema,
   onboardingPatchSchema,
   onboardingValuesSchema,
@@ -12,6 +13,7 @@ describe("onboarding contracts", () => {
     const parsed = onboardingPatchSchema.parse({
       companyName: "Acme Inc",
       countryCode: "dk",
+      invoicingIdentity: "registered_business",
       defaultCurrency: "USD",
       invoicePrefix: "INV",
       quotePrefix: "QTE",
@@ -24,11 +26,13 @@ describe("onboarding contracts", () => {
     const parsed = onboardingValuesSchema.parse({
       companyName: null,
       countryCode: "us",
+      invoicingIdentity: "individual",
       invoiceNextNum: null,
       quoteNextNum: 12,
     })
 
     expect(parsed.countryCode).toBe("US")
+    expect(parsed.invoicingIdentity).toBe("individual")
     expect(parsed.quoteNextNum).toBe(12)
   })
 
@@ -45,5 +49,6 @@ describe("onboarding contracts", () => {
     expect(parsed.patch.companyName).toBe("Acme Inc")
     expect(onboardingMissingFieldSchema.parse("companyName")).toBe("companyName")
     expect(onboardingApplySourceSchema.parse("ai")).toBe("ai")
+    expect(onboardingInvoicingIdentitySchema.parse("individual")).toBe("individual")
   })
 })

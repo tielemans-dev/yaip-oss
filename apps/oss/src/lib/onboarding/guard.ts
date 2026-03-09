@@ -15,6 +15,7 @@ export async function assertCloudOnboardingComplete(
     select: {
       onboardingStatus: true,
       onboardingProfile: true,
+      onboardingInvoicingIdentity: true,
       onboardingVersion: true,
       onboardingCompletedAt: true,
       countryCode: true,

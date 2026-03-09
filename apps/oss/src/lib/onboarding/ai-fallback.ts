@@ -112,6 +112,8 @@ export function suggestOnboardingPatchHeuristically(
 
   const requiredRules = getRequirementRules({
     countryCode: patch.countryCode ?? input.currentValues.countryCode ?? null,
+    invoicingIdentity:
+      patch.invoicingIdentity ?? input.currentValues.invoicingIdentity ?? null,
     taxRegime: patch.taxRegime ?? input.currentValues.taxRegime ?? null,
   })
 

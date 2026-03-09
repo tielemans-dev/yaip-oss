@@ -1852,6 +1852,7 @@ export const OrgSettingsScalarFieldEnum = {
   onboardingStatus: 'onboardingStatus',
   onboardingMethod: 'onboardingMethod',
   onboardingProfile: 'onboardingProfile',
+  onboardingInvoicingIdentity: 'onboardingInvoicingIdentity',
   onboardingVersion: 'onboardingVersion',
   onboardingCompletedAt: 'onboardingCompletedAt',
   aiOpenRouterApiKeyEnc: 'aiOpenRouterApiKeyEnc',

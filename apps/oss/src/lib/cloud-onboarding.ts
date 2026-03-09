@@ -48,6 +48,7 @@ export type CloudOnboardingSettingsSnapshot = {
   onboardingStatus?: string | null
   onboardingMethod?: string | null
   onboardingProfile: string | null
+  onboardingInvoicingIdentity?: string | null
   onboardingVersion: number | null
   onboardingCompletedAt: Date | null
   countryCode?: string | null
@@ -114,8 +115,9 @@ export function getCloudOnboardingState(
       "companyAddress" in settings ||
       "companyEmail" in settings)
   const readiness = hasReadinessFields
-    ? evaluateOnboardingReadiness({
+      ? evaluateOnboardingReadiness({
         countryCode: settings.countryCode ?? null,
+        invoicingIdentity: settings.onboardingInvoicingIdentity ?? null,
         locale: settings.locale ?? null,
         timezone: settings.timezone ?? null,
         defaultCurrency: settings.defaultCurrency ?? null,

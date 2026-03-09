@@ -88,6 +88,7 @@ describeIfDatabase("onboarding router integration", () => {
         companyAddress: "Main St 1",
         companyEmail: "billing@acme.example",
         countryCode: "DK",
+        invoicingIdentity: "registered_business",
         locale: "da-DK",
         timezone: "Europe/Copenhagen",
         defaultCurrency: "DKK",
@@ -100,11 +101,41 @@ describeIfDatabase("onboarding router integration", () => {
       })
       expect(draft.status).toBe("in_progress")
       expect(draft.missing).toEqual([])
+      expect(draft.values.invoicingIdentity).toBe("registered_business")
 
       const completed = await caller.onboarding.completeManual({ method: "manual" })
       expect(completed.status).toBe("complete")
       expect(completed.isComplete).toBe(true)
       expect(completed.missing).toEqual([])
+    } finally {
+      await prisma.organization.deleteMany({ where: { id: orgId } })
+    }
+  })
+
+  it("does not require a primary tax id for danish individuals", async () => {
+    const { orgId, caller } = await createCloudCaller()
+
+    try {
+      const draft = await caller.onboarding.saveDraft({
+        companyName: "Freelance Norden",
+        companyAddress: "Main St 1",
+        companyEmail: "billing@acme.example",
+        countryCode: "DK",
+        invoicingIdentity: "individual",
+        locale: "da-DK",
+        timezone: "Europe/Copenhagen",
+        defaultCurrency: "DKK",
+        taxRegime: "eu_vat",
+        pricesIncludeTax: true,
+        invoicePrefix: "INV",
+        quotePrefix: "QTE",
+      })
+
+      expect(draft.missing).toEqual([])
+      expect(draft.values.invoicingIdentity).toBe("individual")
+
+      const completed = await caller.onboarding.completeManual({ method: "manual" })
+      expect(completed.isComplete).toBe(true)
     } finally {
       await prisma.organization.deleteMany({ where: { id: orgId } })
     }

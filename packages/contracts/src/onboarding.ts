@@ -3,6 +3,11 @@ import { countryCodeSchema, currencyCodeSchema } from "./baseSchemas"
 
 export { countryCodeSchema, currencyCodeSchema }
 
+export const onboardingInvoicingIdentitySchema = z.enum([
+  "individual",
+  "registered_business",
+])
+
 export const onboardingTaxRegimeSchema = z.enum([
   "us_sales_tax",
   "eu_vat",
@@ -31,6 +36,7 @@ export const onboardingPatchSchema = z
     companyAddress: z.string().trim().min(1).max(240).optional(),
     companyEmail: z.string().trim().email().optional(),
     countryCode: countryCodeSchema.optional(),
+    invoicingIdentity: onboardingInvoicingIdentitySchema.optional(),
     locale: z.string().trim().min(2).max(16).optional(),
     timezone: z.string().trim().min(1).max(120).optional(),
     defaultCurrency: currencyCodeSchema.optional(),
@@ -53,6 +59,7 @@ export const onboardingValuesSchema = z
       z.string().trim().email().nullable().optional()
     ),
     countryCode: countryCodeSchema.nullable().optional(),
+    invoicingIdentity: onboardingInvoicingIdentitySchema.nullable().optional(),
     locale: z.string().trim().min(2).max(16).nullable().optional(),
     timezone: z.string().trim().min(1).max(120).nullable().optional(),
     defaultCurrency: currencyCodeSchema.nullable().optional(),
@@ -89,6 +96,9 @@ export const onboardingAiSuggestionSchema = z
 export const onboardingApplySourceSchema = z.enum(["ai", "manual"])
 
 export type OnboardingTaxRegime = z.infer<typeof onboardingTaxRegimeSchema>
+export type OnboardingInvoicingIdentity = z.infer<
+  typeof onboardingInvoicingIdentitySchema
+>
 export type OnboardingMissingField = z.infer<typeof onboardingMissingFieldSchema>
 export type OnboardingPatch = z.infer<typeof onboardingPatchSchema>
 export type OnboardingValues = z.infer<typeof onboardingValuesSchema>

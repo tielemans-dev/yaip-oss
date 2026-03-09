@@ -9,6 +9,7 @@ import {
 import { isCloudDistribution } from "../../lib/distribution"
 import { prisma } from "../../lib/db"
 import { evaluateOnboardingReadiness } from "../../lib/onboarding/readiness"
+import { onboardingInvoicingIdentitySchema } from "@yaip/contracts/onboarding"
 import { orgProcedure, router } from "../init"
 
 const onboardingInputSchema = z.object({
@@ -25,6 +26,7 @@ const onboardingDraftSchema = z.object({
     .length(2)
     .transform((value) => value.toUpperCase())
     .optional(),
+  invoicingIdentity: onboardingInvoicingIdentitySchema.optional(),
   locale: z.string().trim().min(2).max(16).optional(),
   timezone: z.string().trim().min(1).max(120).optional(),
   defaultCurrency: z
@@ -71,6 +73,7 @@ async function loadOnboardingSnapshot(organizationId: string) {
       onboardingStatus: true,
       onboardingMethod: true,
       onboardingProfile: true,
+      onboardingInvoicingIdentity: true,
       onboardingVersion: true,
       onboardingCompletedAt: true,
       countryCode: true,
@@ -97,6 +100,7 @@ async function loadOnboardingSnapshot(organizationId: string) {
 
   const readiness = evaluateOnboardingReadiness({
     countryCode: settings.countryCode,
+    invoicingIdentity: settings.onboardingInvoicingIdentity,
     locale: settings.locale,
     timezone: settings.timezone,
     defaultCurrency: settings.defaultCurrency,
@@ -116,6 +120,7 @@ async function loadOnboardingSnapshot(organizationId: string) {
     onboardingStatus: settings.onboardingStatus,
     onboardingMethod: settings.onboardingMethod,
     onboardingProfile: settings.onboardingProfile,
+    onboardingInvoicingIdentity: settings.onboardingInvoicingIdentity,
     onboardingVersion: settings.onboardingVersion,
     onboardingCompletedAt: settings.onboardingCompletedAt,
     countryCode: settings.countryCode,
@@ -142,6 +147,7 @@ async function loadOnboardingSnapshot(organizationId: string) {
       companyAddress: settings.companyAddress,
       companyEmail: settings.companyEmail,
       countryCode: settings.countryCode,
+      invoicingIdentity: settings.onboardingInvoicingIdentity,
       locale: settings.locale,
       timezone: settings.timezone,
       defaultCurrency: settings.defaultCurrency,
@@ -202,6 +208,9 @@ export const onboardingRouter = router({
         settingsUpdateData.companyAddress = input.companyAddress ?? null
       if ("companyEmail" in input) settingsUpdateData.companyEmail = input.companyEmail ?? null
       if ("countryCode" in input) settingsUpdateData.countryCode = input.countryCode
+      if ("invoicingIdentity" in input) {
+        settingsUpdateData.onboardingInvoicingIdentity = input.invoicingIdentity
+      }
       if ("locale" in input) settingsUpdateData.locale = input.locale
       if ("timezone" in input) settingsUpdateData.timezone = input.timezone
       if ("defaultCurrency" in input)

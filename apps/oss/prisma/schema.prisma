@@ -166,6 +166,7 @@ model OrgSettings {
   onboardingStatus String     @default("not_started")
   onboardingMethod String?
   onboardingProfile String?
+  onboardingInvoicingIdentity String?
   onboardingVersion Int?
   onboardingCompletedAt DateTime?
   aiOpenRouterApiKeyEnc String?

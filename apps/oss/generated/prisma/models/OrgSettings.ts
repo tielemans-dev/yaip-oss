@@ -63,6 +63,7 @@ export type OrgSettingsMinAggregateOutputType = {
   onboardingStatus: string | null
   onboardingMethod: string | null
   onboardingProfile: string | null
+  onboardingInvoicingIdentity: string | null
   onboardingVersion: number | null
   onboardingCompletedAt: Date | null
   aiOpenRouterApiKeyEnc: string | null
@@ -104,6 +105,7 @@ export type OrgSettingsMaxAggregateOutputType = {
   onboardingStatus: string | null
   onboardingMethod: string | null
   onboardingProfile: string | null
+  onboardingInvoicingIdentity: string | null
   onboardingVersion: number | null
   onboardingCompletedAt: Date | null
   aiOpenRouterApiKeyEnc: string | null
@@ -145,6 +147,7 @@ export type OrgSettingsCountAggregateOutputType = {
   onboardingStatus: number
   onboardingMethod: number
   onboardingProfile: number
+  onboardingInvoicingIdentity: number
   onboardingVersion: number
   onboardingCompletedAt: number
   aiOpenRouterApiKeyEnc: number
@@ -203,6 +206,7 @@ export type OrgSettingsMinAggregateInputType = {
   onboardingStatus?: true
   onboardingMethod?: true
   onboardingProfile?: true
+  onboardingInvoicingIdentity?: true
   onboardingVersion?: true
   onboardingCompletedAt?: true
   aiOpenRouterApiKeyEnc?: true
@@ -244,6 +248,7 @@ export type OrgSettingsMaxAggregateInputType = {
   onboardingStatus?: true
   onboardingMethod?: true
   onboardingProfile?: true
+  onboardingInvoicingIdentity?: true
   onboardingVersion?: true
   onboardingCompletedAt?: true
   aiOpenRouterApiKeyEnc?: true
@@ -285,6 +290,7 @@ export type OrgSettingsCountAggregateInputType = {
   onboardingStatus?: true
   onboardingMethod?: true
   onboardingProfile?: true
+  onboardingInvoicingIdentity?: true
   onboardingVersion?: true
   onboardingCompletedAt?: true
   aiOpenRouterApiKeyEnc?: true
@@ -414,6 +420,7 @@ export type OrgSettingsGroupByOutputType = {
   onboardingStatus: string
   onboardingMethod: string | null
   onboardingProfile: string | null
+  onboardingInvoicingIdentity: string | null
   onboardingVersion: number | null
   onboardingCompletedAt: Date | null
   aiOpenRouterApiKeyEnc: string | null
@@ -479,6 +486,7 @@ export type OrgSettingsWhereInput = {
   onboardingStatus?: Prisma.StringFilter<"OrgSettings"> | string
   onboardingMethod?: Prisma.StringNullableFilter<"OrgSettings"> | string | null
   onboardingProfile?: Prisma.StringNullableFilter<"OrgSettings"> | string | null
+  onboardingInvoicingIdentity?: Prisma.StringNullableFilter<"OrgSettings"> | string | null
   onboardingVersion?: Prisma.IntNullableFilter<"OrgSettings"> | number | null
   onboardingCompletedAt?: Prisma.DateTimeNullableFilter<"OrgSettings"> | Date | string | null
   aiOpenRouterApiKeyEnc?: Prisma.StringNullableFilter<"OrgSettings"> | string | null
@@ -522,6 +530,7 @@ export type OrgSettingsOrderByWithRelationInput = {
   onboardingStatus?: Prisma.SortOrder
   onboardingMethod?: Prisma.SortOrderInput | Prisma.SortOrder
   onboardingProfile?: Prisma.SortOrderInput | Prisma.SortOrder
+  onboardingInvoicingIdentity?: Prisma.SortOrderInput | Prisma.SortOrder
   onboardingVersion?: Prisma.SortOrderInput | Prisma.SortOrder
   onboardingCompletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   aiOpenRouterApiKeyEnc?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -568,6 +577,7 @@ export type OrgSettingsWhereUniqueInput = Prisma.AtLeast<{
   onboardingStatus?: Prisma.StringFilter<"OrgSettings"> | string
   onboardingMethod?: Prisma.StringNullableFilter<"OrgSettings"> | string | null
   onboardingProfile?: Prisma.StringNullableFilter<"OrgSettings"> | string | null
+  onboardingInvoicingIdentity?: Prisma.StringNullableFilter<"OrgSettings"> | string | null
   onboardingVersion?: Prisma.IntNullableFilter<"OrgSettings"> | number | null
   onboardingCompletedAt?: Prisma.DateTimeNullableFilter<"OrgSettings"> | Date | string | null
   aiOpenRouterApiKeyEnc?: Prisma.StringNullableFilter<"OrgSettings"> | string | null
@@ -611,6 +621,7 @@ export type OrgSettingsOrderByWithAggregationInput = {
   onboardingStatus?: Prisma.SortOrder
   onboardingMethod?: Prisma.SortOrderInput | Prisma.SortOrder
   onboardingProfile?: Prisma.SortOrderInput | Prisma.SortOrder
+  onboardingInvoicingIdentity?: Prisma.SortOrderInput | Prisma.SortOrder
   onboardingVersion?: Prisma.SortOrderInput | Prisma.SortOrder
   onboardingCompletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   aiOpenRouterApiKeyEnc?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -661,6 +672,7 @@ export type OrgSettingsScalarWhereWithAggregatesInput = {
   onboardingStatus?: Prisma.StringWithAggregatesFilter<"OrgSettings"> | string
   onboardingMethod?: Prisma.StringNullableWithAggregatesFilter<"OrgSettings"> | string | null
   onboardingProfile?: Prisma.StringNullableWithAggregatesFilter<"OrgSettings"> | string | null
+  onboardingInvoicingIdentity?: Prisma.StringNullableWithAggregatesFilter<"OrgSettings"> | string | null
   onboardingVersion?: Prisma.IntNullableWithAggregatesFilter<"OrgSettings"> | number | null
   onboardingCompletedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"OrgSettings"> | Date | string | null
   aiOpenRouterApiKeyEnc?: Prisma.StringNullableWithAggregatesFilter<"OrgSettings"> | string | null
@@ -702,6 +714,7 @@ export type OrgSettingsCreateInput = {
   onboardingStatus?: string
   onboardingMethod?: string | null
   onboardingProfile?: string | null
+  onboardingInvoicingIdentity?: string | null
   onboardingVersion?: number | null
   onboardingCompletedAt?: Date | string | null
   aiOpenRouterApiKeyEnc?: string | null
@@ -745,6 +758,7 @@ export type OrgSettingsUncheckedCreateInput = {
   onboardingStatus?: string
   onboardingMethod?: string | null
   onboardingProfile?: string | null
+  onboardingInvoicingIdentity?: string | null
   onboardingVersion?: number | null
   onboardingCompletedAt?: Date | string | null
   aiOpenRouterApiKeyEnc?: string | null
@@ -786,6 +800,7 @@ export type OrgSettingsUpdateInput = {
   onboardingStatus?: Prisma.StringFieldUpdateOperationsInput | string
   onboardingMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   onboardingProfile?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  onboardingInvoicingIdentity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   onboardingVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   onboardingCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aiOpenRouterApiKeyEnc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -829,6 +844,7 @@ export type OrgSettingsUncheckedUpdateInput = {
   onboardingStatus?: Prisma.StringFieldUpdateOperationsInput | string
   onboardingMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   onboardingProfile?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  onboardingInvoicingIdentity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   onboardingVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   onboardingCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aiOpenRouterApiKeyEnc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -871,6 +887,7 @@ export type OrgSettingsCreateManyInput = {
   onboardingStatus?: string
   onboardingMethod?: string | null
   onboardingProfile?: string | null
+  onboardingInvoicingIdentity?: string | null
   onboardingVersion?: number | null
   onboardingCompletedAt?: Date | string | null
   aiOpenRouterApiKeyEnc?: string | null
@@ -912,6 +929,7 @@ export type OrgSettingsUpdateManyMutationInput = {
   onboardingStatus?: Prisma.StringFieldUpdateOperationsInput | string
   onboardingMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   onboardingProfile?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  onboardingInvoicingIdentity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   onboardingVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   onboardingCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aiOpenRouterApiKeyEnc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -954,6 +972,7 @@ export type OrgSettingsUncheckedUpdateManyInput = {
   onboardingStatus?: Prisma.StringFieldUpdateOperationsInput | string
   onboardingMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   onboardingProfile?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  onboardingInvoicingIdentity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   onboardingVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   onboardingCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aiOpenRouterApiKeyEnc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1001,6 +1020,7 @@ export type OrgSettingsCountOrderByAggregateInput = {
   onboardingStatus?: Prisma.SortOrder
   onboardingMethod?: Prisma.SortOrder
   onboardingProfile?: Prisma.SortOrder
+  onboardingInvoicingIdentity?: Prisma.SortOrder
   onboardingVersion?: Prisma.SortOrder
   onboardingCompletedAt?: Prisma.SortOrder
   aiOpenRouterApiKeyEnc?: Prisma.SortOrder
@@ -1050,6 +1070,7 @@ export type OrgSettingsMaxOrderByAggregateInput = {
   onboardingStatus?: Prisma.SortOrder
   onboardingMethod?: Prisma.SortOrder
   onboardingProfile?: Prisma.SortOrder
+  onboardingInvoicingIdentity?: Prisma.SortOrder
   onboardingVersion?: Prisma.SortOrder
   onboardingCompletedAt?: Prisma.SortOrder
   aiOpenRouterApiKeyEnc?: Prisma.SortOrder
@@ -1091,6 +1112,7 @@ export type OrgSettingsMinOrderByAggregateInput = {
   onboardingStatus?: Prisma.SortOrder
   onboardingMethod?: Prisma.SortOrder
   onboardingProfile?: Prisma.SortOrder
+  onboardingInvoicingIdentity?: Prisma.SortOrder
   onboardingVersion?: Prisma.SortOrder
   onboardingCompletedAt?: Prisma.SortOrder
   aiOpenRouterApiKeyEnc?: Prisma.SortOrder
@@ -1186,6 +1208,7 @@ export type OrgSettingsCreateWithoutOrganizationInput = {
   onboardingStatus?: string
   onboardingMethod?: string | null
   onboardingProfile?: string | null
+  onboardingInvoicingIdentity?: string | null
   onboardingVersion?: number | null
   onboardingCompletedAt?: Date | string | null
   aiOpenRouterApiKeyEnc?: string | null
@@ -1227,6 +1250,7 @@ export type OrgSettingsUncheckedCreateWithoutOrganizationInput = {
   onboardingStatus?: string
   onboardingMethod?: string | null
   onboardingProfile?: string | null
+  onboardingInvoicingIdentity?: string | null
   onboardingVersion?: number | null
   onboardingCompletedAt?: Date | string | null
   aiOpenRouterApiKeyEnc?: string | null
@@ -1284,6 +1308,7 @@ export type OrgSettingsUpdateWithoutOrganizationInput = {
   onboardingStatus?: Prisma.StringFieldUpdateOperationsInput | string
   onboardingMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   onboardingProfile?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  onboardingInvoicingIdentity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   onboardingVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   onboardingCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aiOpenRouterApiKeyEnc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1325,6 +1350,7 @@ export type OrgSettingsUncheckedUpdateWithoutOrganizationInput = {
   onboardingStatus?: Prisma.StringFieldUpdateOperationsInput | string
   onboardingMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   onboardingProfile?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  onboardingInvoicingIdentity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   onboardingVersion?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   onboardingCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   aiOpenRouterApiKeyEnc?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1369,6 +1395,7 @@ export type OrgSettingsSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   onboardingStatus?: boolean
   onboardingMethod?: boolean
   onboardingProfile?: boolean
+  onboardingInvoicingIdentity?: boolean
   onboardingVersion?: boolean
   onboardingCompletedAt?: boolean
   aiOpenRouterApiKeyEnc?: boolean
@@ -1412,6 +1439,7 @@ export type OrgSettingsSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   onboardingStatus?: boolean
   onboardingMethod?: boolean
   onboardingProfile?: boolean
+  onboardingInvoicingIdentity?: boolean
   onboardingVersion?: boolean
   onboardingCompletedAt?: boolean
   aiOpenRouterApiKeyEnc?: boolean
@@ -1455,6 +1483,7 @@ export type OrgSettingsSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
   onboardingStatus?: boolean
   onboardingMethod?: boolean
   onboardingProfile?: boolean
+  onboardingInvoicingIdentity?: boolean
   onboardingVersion?: boolean
   onboardingCompletedAt?: boolean
   aiOpenRouterApiKeyEnc?: boolean
@@ -1498,6 +1527,7 @@ export type OrgSettingsSelectScalar = {
   onboardingStatus?: boolean
   onboardingMethod?: boolean
   onboardingProfile?: boolean
+  onboardingInvoicingIdentity?: boolean
   onboardingVersion?: boolean
   onboardingCompletedAt?: boolean
   aiOpenRouterApiKeyEnc?: boolean
@@ -1517,7 +1547,7 @@ export type OrgSettingsSelectScalar = {
   updatedAt?: boolean
 }
 
-export type OrgSettingsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "organizationId" | "countryCode" | "locale" | "timezone" | "defaultCurrency" | "taxRegime" | "pricesIncludeTax" | "currency" | "taxRate" | "companyName" | "companyAddress" | "companyEmail" | "companyPhone" | "companyLogo" | "invoicePrefix" | "invoiceNextNum" | "quotePrefix" | "quoteNextNum" | "onboardingStatus" | "onboardingMethod" | "onboardingProfile" | "onboardingVersion" | "onboardingCompletedAt" | "aiOpenRouterApiKeyEnc" | "aiOpenRouterModel" | "stripePublishableKey" | "stripeSecretKeyEnc" | "stripeWebhookSecretEnc" | "documentSendingDomain" | "documentSendingDomainProviderId" | "documentSendingDomainStatus" | "documentSendingDomainRecords" | "documentSendingDomainFailureReason" | "documentSendingDomainVerifiedAt" | "documentSendingLastSyncedAt" | "documentSendingLastSyncSource" | "createdAt" | "updatedAt", ExtArgs["result"]["orgSettings"]>
+export type OrgSettingsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "organizationId" | "countryCode" | "locale" | "timezone" | "defaultCurrency" | "taxRegime" | "pricesIncludeTax" | "currency" | "taxRate" | "companyName" | "companyAddress" | "companyEmail" | "companyPhone" | "companyLogo" | "invoicePrefix" | "invoiceNextNum" | "quotePrefix" | "quoteNextNum" | "onboardingStatus" | "onboardingMethod" | "onboardingProfile" | "onboardingInvoicingIdentity" | "onboardingVersion" | "onboardingCompletedAt" | "aiOpenRouterApiKeyEnc" | "aiOpenRouterModel" | "stripePublishableKey" | "stripeSecretKeyEnc" | "stripeWebhookSecretEnc" | "documentSendingDomain" | "documentSendingDomainProviderId" | "documentSendingDomainStatus" | "documentSendingDomainRecords" | "documentSendingDomainFailureReason" | "documentSendingDomainVerifiedAt" | "documentSendingLastSyncedAt" | "documentSendingLastSyncSource" | "createdAt" | "updatedAt", ExtArgs["result"]["orgSettings"]>
 export type OrgSettingsInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   organization?: boolean | Prisma.OrganizationDefaultArgs<ExtArgs>
 }
@@ -1556,6 +1586,7 @@ export type $OrgSettingsPayload<ExtArgs extends runtime.Types.Extensions.Interna
     onboardingStatus: string
     onboardingMethod: string | null
     onboardingProfile: string | null
+    onboardingInvoicingIdentity: string | null
     onboardingVersion: number | null
     onboardingCompletedAt: Date | null
     aiOpenRouterApiKeyEnc: string | null
@@ -2019,6 +2050,7 @@ export interface OrgSettingsFieldRefs {
   readonly onboardingStatus: Prisma.FieldRef<"OrgSettings", 'String'>
   readonly onboardingMethod: Prisma.FieldRef<"OrgSettings", 'String'>
   readonly onboardingProfile: Prisma.FieldRef<"OrgSettings", 'String'>
+  readonly onboardingInvoicingIdentity: Prisma.FieldRef<"OrgSettings", 'String'>
   readonly onboardingVersion: Prisma.FieldRef<"OrgSettings", 'Int'>
   readonly onboardingCompletedAt: Prisma.FieldRef<"OrgSettings", 'DateTime'>
   readonly aiOpenRouterApiKeyEnc: Prisma.FieldRef<"OrgSettings", 'String'>

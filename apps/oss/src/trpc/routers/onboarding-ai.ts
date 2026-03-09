@@ -3,6 +3,7 @@ import {
   countryCodeSchema,
   onboardingApplySourceSchema,
   onboardingAiSuggestionSchema,
+  onboardingInvoicingIdentitySchema,
   onboardingMissingFieldSchema,
   onboardingPatchSchema,
   onboardingTaxRegimeSchema,
@@ -30,6 +31,7 @@ const onboardingLogger = appLogger.child("onboarding-ai")
 
 const getRequirementRulesInputSchema = z.object({
   countryCode: countryCodeSchema.optional(),
+  invoicingIdentity: onboardingInvoicingIdentitySchema.optional(),
   taxRegime: onboardingTaxRegimeSchema.optional(),
 })
 
@@ -79,6 +81,7 @@ async function loadSnapshot(organizationId: string) {
       onboardingStatus: true,
       onboardingMethod: true,
       onboardingProfile: true,
+      onboardingInvoicingIdentity: true,
       onboardingVersion: true,
       onboardingCompletedAt: true,
       countryCode: true,
@@ -108,6 +111,7 @@ async function loadSnapshot(organizationId: string) {
     companyAddress: settings.companyAddress,
     companyEmail: settings.companyEmail,
     countryCode: settings.countryCode,
+    invoicingIdentity: settings.onboardingInvoicingIdentity,
     locale: settings.locale,
     timezone: settings.timezone,
     defaultCurrency: settings.defaultCurrency,
@@ -124,6 +128,7 @@ async function loadSnapshot(organizationId: string) {
     onboardingStatus: settings.onboardingStatus,
     onboardingMethod: settings.onboardingMethod,
     onboardingProfile: settings.onboardingProfile,
+    onboardingInvoicingIdentity: settings.onboardingInvoicingIdentity,
     onboardingVersion: settings.onboardingVersion,
     onboardingCompletedAt: settings.onboardingCompletedAt,
     countryCode: settings.countryCode,
@@ -147,6 +152,7 @@ async function loadSnapshot(organizationId: string) {
     companyAddress: settings.companyAddress,
     companyEmail: settings.companyEmail,
     countryCode: settings.countryCode,
+    invoicingIdentity: settings.onboardingInvoicingIdentity,
     locale: settings.locale,
     timezone: settings.timezone,
     defaultCurrency: settings.defaultCurrency,
@@ -203,6 +209,9 @@ async function applyPatchToOrgSettings(
   if ("companyAddress" in patch) updateData.companyAddress = patch.companyAddress
   if ("companyEmail" in patch) updateData.companyEmail = patch.companyEmail
   if ("countryCode" in patch) updateData.countryCode = patch.countryCode
+  if ("invoicingIdentity" in patch) {
+    updateData.onboardingInvoicingIdentity = patch.invoicingIdentity
+  }
   if ("locale" in patch) updateData.locale = patch.locale
   if ("timezone" in patch) updateData.timezone = patch.timezone
   if ("defaultCurrency" in patch) updateData.defaultCurrency = patch.defaultCurrency
@@ -256,6 +265,7 @@ export const onboardingAiRouter = router({
     const snapshot = await loadSnapshot(ctx.organizationId)
     const requiredNow = getRequirementRules({
       countryCode: snapshot.values.countryCode,
+      invoicingIdentity: snapshot.values.invoicingIdentity,
       taxRegime: snapshot.values.taxRegime,
     }).requiredFields
 
@@ -350,6 +360,7 @@ export const onboardingAiRouter = router({
         companyAddress: input.values.companyAddress ?? null,
         companyEmail: input.values.companyEmail ?? null,
         countryCode: input.values.countryCode ?? null,
+        invoicingIdentity: input.values.invoicingIdentity ?? null,
         locale: input.values.locale ?? null,
         timezone: input.values.timezone ?? null,
         defaultCurrency: input.values.defaultCurrency ?? null,
@@ -377,6 +388,7 @@ export const onboardingAiRouter = router({
       assertCloudOnboardingAiEnabled()
       const rules = getRequirementRules({
         countryCode: input.values?.countryCode,
+        invoicingIdentity: input.values?.invoicingIdentity,
         taxRegime: input.values?.taxRegime,
       })
       const requiredMissing = toMissingFieldList(input.missing).filter((field) =>
