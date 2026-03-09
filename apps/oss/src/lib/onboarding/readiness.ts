@@ -2,12 +2,14 @@ import type {
   OnboardingMissingField,
   OnboardingTaxRegime,
 } from "@yaip/contracts/onboarding"
+import { getOnboardingRules } from "./rules"
 
 export type SupportedTaxRegime = OnboardingTaxRegime
 export type { OnboardingMissingField }
 
 export type OnboardingReadinessInput = {
   countryCode: string | null
+  invoicingIdentity?: string | null
   locale: string | null
   timezone: string | null
   defaultCurrency: string | null
@@ -36,10 +38,6 @@ function hasPositiveInteger(value: number | null | undefined) {
   return Number.isInteger(value) && (value ?? 0) > 0
 }
 
-function shouldRequirePrimaryTaxId(input: OnboardingReadinessInput) {
-  return input.taxRegime === "eu_vat"
-}
-
 export function evaluateOnboardingReadiness(
   input: OnboardingReadinessInput
 ): OnboardingReadinessResult {
@@ -58,7 +56,14 @@ export function evaluateOnboardingReadiness(
   if (!hasText(input.quotePrefix)) missing.push("quotePrefix")
   if (!hasPositiveInteger(input.quoteNextNum)) missing.push("quoteNextNum")
 
-  if (shouldRequirePrimaryTaxId(input) && !hasText(input.primaryTaxId)) {
+  if (
+    getOnboardingRules({
+      countryCode: input.countryCode,
+      invoicingIdentity: input.invoicingIdentity,
+      taxRegime: input.taxRegime,
+    }).requirePrimaryTaxId &&
+    !hasText(input.primaryTaxId)
+  ) {
     missing.push("primaryTaxId")
   }
 

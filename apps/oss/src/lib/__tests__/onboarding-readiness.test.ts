@@ -9,6 +9,7 @@ function buildInput(
 ): OnboardingReadinessInput {
   return {
     countryCode: "US",
+    invoicingIdentity: "registered_business",
     locale: "en-US",
     timezone: "UTC",
     defaultCurrency: "USD",
@@ -58,6 +59,7 @@ describe("evaluateOnboardingReadiness", () => {
     const result = evaluateOnboardingReadiness(
       buildInput({
         countryCode: "DK",
+        invoicingIdentity: "registered_business",
         taxRegime: "eu_vat",
         primaryTaxId: " ",
       })
@@ -65,6 +67,20 @@ describe("evaluateOnboardingReadiness", () => {
 
     expect(result.isComplete).toBe(false)
     expect(result.missing).toContain("primaryTaxId")
+  })
+
+  it("does not require primary tax id when the tax field is hidden", () => {
+    const result = evaluateOnboardingReadiness(
+      buildInput({
+        countryCode: "DK",
+        invoicingIdentity: "individual",
+        taxRegime: "eu_vat",
+        primaryTaxId: " ",
+      })
+    )
+
+    expect(result.isComplete).toBe(true)
+    expect(result.missing).not.toContain("primaryTaxId")
   })
 
   it("marks onboarding complete when required values are present", () => {

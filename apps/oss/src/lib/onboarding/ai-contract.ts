@@ -7,6 +7,7 @@ import {
   type OnboardingPatch,
   type OnboardingTaxRegime,
 } from "@yaip/contracts/onboarding"
+import { getOnboardingRules } from "./rules"
 
 export {
   onboardingAiSuggestionSchema,
@@ -65,13 +66,13 @@ const FIELD_QUESTIONS: Record<OnboardingMissingField, string> = {
 
 export function getRequirementRules(input: {
   countryCode?: string | null
+  invoicingIdentity?: string | null
   taxRegime?: OnboardingTaxRegime | string | null
 }): OnboardingRequirementRules {
-  const taxRegime = input.taxRegime ?? null
-  const requiredFields =
-    taxRegime === "eu_vat"
-      ? [...REQUIRED_BASE_FIELDS, "primaryTaxId"]
-      : [...REQUIRED_BASE_FIELDS]
+  const rules = getOnboardingRules(input)
+  const requiredFields = rules.requirePrimaryTaxId
+    ? [...REQUIRED_BASE_FIELDS, "primaryTaxId"]
+    : [...REQUIRED_BASE_FIELDS]
 
   return {
     requiredFields,
@@ -83,10 +84,9 @@ export function getRequirementRules(input: {
       taxRegime: "Allowed values: us_sales_tax, eu_vat, custom.",
       invoicePrefix: "Uppercase letters/numbers/hyphen, max 10 chars.",
       quotePrefix: "Uppercase letters/numbers/hyphen, max 10 chars.",
-      primaryTaxId:
-        taxRegime === "eu_vat"
-          ? "Required when tax regime is eu_vat."
-          : "Optional unless local policy requires it.",
+      primaryTaxId: rules.requirePrimaryTaxId
+        ? rules.primaryTaxIdCopy.help
+        : "Optional unless local policy requires it.",
     },
   }
 }
