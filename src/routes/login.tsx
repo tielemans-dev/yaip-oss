@@ -14,6 +14,7 @@ import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { z } from 'zod'
 import { useI18n } from '../lib/i18n/react'
+import { getOrganizationAccessState } from '../lib/organization-access'
 
 const loginSearchSchema = z.object({
   redirect: z.string().optional(),
@@ -51,6 +52,26 @@ function LoginPage() {
     setLoading(false)
 
     if (result.data) {
+      try {
+        const organizations = await authClient.organization.list()
+        const accessState = getOrganizationAccessState({
+          organizations: organizations.data ?? [],
+        })
+
+        if (accessState.kind === 'auto-select') {
+          await authClient.organization.setActive({
+            organizationId: accessState.organizationId,
+          })
+        }
+
+        if (accessState.kind === 'choose' || accessState.kind === 'create') {
+          navigate({ to: '/onboarding' })
+          return
+        }
+      } catch {
+        // Fall through to the normal post-login route and let app guards recover.
+      }
+
       if (redirect) {
         navigate({ to: redirect })
       } else {

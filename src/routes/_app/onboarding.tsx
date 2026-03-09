@@ -2,6 +2,11 @@ import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { authClient, useSession } from '../../lib/auth-client'
 import { isCloudDistribution } from '../../lib/distribution'
+import {
+  getOrganizationAccessState,
+  type OrganizationAccessState,
+  type OrganizationSummary,
+} from '../../lib/organization-access'
 import { trpc } from '../../trpc/client'
 import { Button } from '../../components/ui/button'
 import {
@@ -111,12 +116,69 @@ function OnboardingPage() {
   const [statusLoading, setStatusLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [orgAccessState, setOrgAccessState] = useState<OrganizationAccessState>({
+    kind: 'create',
+  })
+  const [orgAccessLoading, setOrgAccessLoading] = useState(false)
   const [method, setMethod] = useState<CloudOnboardingMethod>('manual')
   const [missingFields, setMissingFields] = useState<string[]>([])
   const [runtimeCapabilities, setRuntimeCapabilities] = useState<RuntimeCapabilities | null>(null)
   const [values, setValues] = useState<CloudOnboardingValues>(
     DEFAULT_CLOUD_ONBOARDING_VALUES
   )
+
+  useEffect(() => {
+    if (hasActiveOrg) {
+      setOrgAccessLoading(false)
+      return
+    }
+
+    let cancelled = false
+    setOrgAccessLoading(true)
+
+    async function loadOrganizations() {
+      try {
+        const result = await authClient.organization.list()
+        if (cancelled) {
+          return
+        }
+
+        const accessState = getOrganizationAccessState({
+          organizations: (result.data ?? []) as OrganizationSummary[],
+        })
+
+        if (accessState.kind === 'auto-select') {
+          await authClient.organization.setActive({
+            organizationId: accessState.organizationId,
+          })
+
+          if (cancelled) {
+            return
+          }
+
+          await router.invalidate()
+          navigate({ to: '/', replace: true })
+          return
+        }
+
+        setOrgAccessState(accessState)
+      } catch {
+        if (!cancelled) {
+          setOrgAccessState({ kind: 'create' })
+        }
+      } finally {
+        if (!cancelled) {
+          setOrgAccessLoading(false)
+        }
+      }
+    }
+
+    void loadOrganizations()
+
+    return () => {
+      cancelled = true
+    }
+  }, [hasActiveOrg, navigate, router])
 
   useEffect(() => {
     if (!isCloudDistribution || !hasActiveOrg) {
@@ -240,6 +302,21 @@ function OnboardingPage() {
     navigate({ to: '/', replace: true })
   }
 
+  async function handleSelectOrganization(organizationId: string) {
+    setError(null)
+    setSubmitting(true)
+
+    try {
+      await authClient.organization.setActive({ organizationId })
+      await router.invalidate()
+      navigate({ to: '/', replace: true })
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : t('auth.onboarding.error')
+      setError(message)
+      setSubmitting(false)
+    }
+  }
+
   async function handleCompleteCloudOnboarding(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
@@ -274,6 +351,65 @@ function OnboardingPage() {
   }
 
   if (!hasActiveOrg) {
+    if (orgAccessLoading) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-background px-4">
+          <Card className="w-full max-w-sm">
+            <CardHeader>
+              <CardTitle className="text-2xl">{t('auth.onboarding.select.title')}</CardTitle>
+              <CardDescription>
+                {t('auth.onboarding.select.loading')}
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
+      )
+    }
+
+    if (orgAccessState.kind === 'choose') {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-background px-4">
+          <Card className="w-full max-w-sm">
+            <CardHeader>
+              <CardTitle className="text-2xl">{t('auth.onboarding.select.title')}</CardTitle>
+              <CardDescription>
+                {t('auth.onboarding.select.description')}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
+              {error && (
+                <p className="text-sm text-destructive" role="alert">
+                  {error}
+                </p>
+              )}
+              {orgAccessState.organizations.map((organization) => (
+                <Button
+                  key={organization.id}
+                  type="button"
+                  variant="outline"
+                  className="w-full justify-start"
+                  disabled={submitting}
+                  onClick={() => void handleSelectOrganization(organization.id)}
+                >
+                  {organization.name}
+                </Button>
+              ))}
+            </CardContent>
+            <CardFooter>
+              <Button
+                type="button"
+                className="w-full"
+                disabled={submitting}
+                onClick={() => setOrgAccessState({ kind: 'create' })}
+              >
+                {t('auth.onboarding.submit')}
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      )
+    }
+
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4">
         <Card className="w-full max-w-sm">
