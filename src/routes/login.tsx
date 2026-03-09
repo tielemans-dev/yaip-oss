@@ -14,6 +14,7 @@ import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { z } from 'zod'
 import { useI18n } from '../lib/i18n/react'
+import { isCloudDistribution } from '../lib/distribution'
 import { getOrganizationAccessState } from '../lib/organization-access'
 
 const loginSearchSchema = z.object({
@@ -62,6 +63,11 @@ function LoginPage() {
           await authClient.organization.setActive({
             organizationId: accessState.organizationId,
           })
+
+          if (isCloudDistribution) {
+            navigate({ to: '/onboarding' })
+            return
+          }
         }
 
         if (accessState.kind === 'choose' || accessState.kind === 'create') {
