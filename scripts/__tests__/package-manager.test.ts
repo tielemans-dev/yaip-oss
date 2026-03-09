@@ -1,14 +1,18 @@
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 
 import { describe, expect, it } from "vitest"
 
-describe("package.json packageManager", () => {
-  it("declares a pnpm version for CI bootstrap", () => {
-    const packageJson = JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8")) as {
+describe("repository Bun contract", () => {
+  it("declares Bun as package manager and pins a Bun version file", () => {
+    const packageJson = JSON.parse(
+      readFileSync(new URL("../../package.json", import.meta.url), "utf8")
+    ) as {
       packageManager?: string
+      workspaces?: string[]
     }
 
-    expect(packageJson.packageManager).toBeDefined()
-    expect(packageJson.packageManager).toMatch(/^pnpm@/)
+    expect(packageJson.packageManager).toMatch(/^bun@/)
+    expect(packageJson.workspaces).toEqual([".", "apps/*", "packages/*", "scripts"])
+    expect(existsSync(new URL("../../.bun-version", import.meta.url))).toBe(true)
   })
 })
