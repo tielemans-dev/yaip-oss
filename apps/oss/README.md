@@ -43,11 +43,13 @@ Source-available invoicing for freelancers and small businesses.
    pnpm install
    ```
 
-3. Copy the env file and fill in values:
+3. From the workspace root, copy the env file and fill in values:
 
    ```bash
    cp .env.example .env
    ```
+
+   Git worktrees also fall back to the main repository's `.env` if the worktree does not have its own copy.
 
    Generate a secure auth secret:
 

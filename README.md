@@ -49,6 +49,8 @@ Source-available invoicing for freelancers and small businesses.
    cp .env.example .env
    ```
 
+   Git worktrees also fall back to the main repository's `.env` if the worktree does not have its own copy.
+
    Generate a secure auth secret:
 
    ```bash
