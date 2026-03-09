@@ -12,7 +12,9 @@ import {
 } from "@yaip/contracts/onboarding"
 import { z } from "zod"
 import { getCloudOnboardingState } from "../../lib/cloud-onboarding"
+import { prisma } from "../../lib/db"
 import { isCloudDistribution } from "../../lib/distribution"
+import { appLogger } from "../../lib/observability"
 import {
   evaluateOnboardingReadiness,
 } from "../../lib/onboarding/readiness"
@@ -20,10 +22,11 @@ import {
   getRequirementRules,
   listFollowupQuestions as buildFollowupQuestions,
 } from "../../lib/onboarding/ai-contract"
-import { prisma } from "../../lib/db"
 import { getRuntimeCapabilities } from "../../lib/runtime/extensions"
 import { getOnboardingAiService } from "../../lib/runtime/services"
 import { orgProcedure, router } from "../init"
+
+const onboardingLogger = appLogger.child("onboarding-ai")
 
 const getRequirementRulesInputSchema = z.object({
   countryCode: countryCodeSchema.optional(),
@@ -281,21 +284,56 @@ export const onboardingAiRouter = router({
         ...snapshot.values,
         ...input.currentValues,
       }
-      const suggestion = await getOnboardingAiService().suggestPatch({
-        userMessage: input.userMessage,
-        currentValues,
-        missing,
-      })
+      try {
+        const suggestion = await getOnboardingAiService().suggestPatch({
+          userMessage: input.userMessage,
+          currentValues,
+          missing,
+        })
+        const parsedSuggestion = onboardingAiSuggestionSchema.parse(suggestion)
 
-      return onboardingAiSuggestionSchema.parse(suggestion)
+        onboardingLogger.info("onboarding_ai.suggestion.generated", {
+          organizationId: ctx.organizationId,
+          missingCount: missing.length,
+          updatedFieldCount: Object.keys(parsedSuggestion.patch).length,
+        })
+
+        return parsedSuggestion
+      } catch (error) {
+        onboardingLogger.error("onboarding_ai.suggestion.failed", {
+          organizationId: ctx.organizationId,
+          missingCount: missing.length,
+          error,
+        })
+        throw error
+      }
     }),
 
   applyOnboardingPatch: orgProcedure
     .input(applyOnboardingPatchInputSchema)
     .mutation(async ({ ctx, input }) => {
       assertCloudOnboardingAiEnabled()
-      await applyPatchToOrgSettings(ctx.organizationId, input.patch, input.source)
+      try {
+        await applyPatchToOrgSettings(ctx.organizationId, input.patch, input.source)
+      } catch (error) {
+        onboardingLogger.error("onboarding_ai.apply.failed", {
+          organizationId: ctx.organizationId,
+          source: input.source,
+          patchFields: Object.keys(input.patch),
+          error,
+        })
+        throw error
+      }
       const snapshot = await loadSnapshot(ctx.organizationId)
+
+      onboardingLogger.info("onboarding_ai.apply.succeeded", {
+        organizationId: ctx.organizationId,
+        source: input.source,
+        patchFields: Object.keys(input.patch),
+        missingCount: snapshot.readiness.missing.length,
+        isComplete: snapshot.readiness.isComplete,
+      })
+
       return {
         values: snapshot.values,
         missing: snapshot.readiness.missing,

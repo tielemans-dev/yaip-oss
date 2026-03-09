@@ -5,6 +5,7 @@ import path from "node:path"
 
 const appDir = path.resolve("apps/oss")
 const contractsDir = path.resolve("packages/contracts")
+const sharedDir = path.resolve("packages/shared")
 
 function packPackage(cwd, prefix) {
   const outDir = mkdtempSync(path.join(tmpdir(), prefix))
@@ -77,9 +78,31 @@ for (const requiredEntry of [
 
 const appManifest = readManifest(appTarball)
 const contractsManifest = readManifest(contractsTarball)
+const sharedTarball = packPackage(sharedDir, "yaip-shared-pack-")
+const sharedEntries = listEntries(sharedTarball)
+
+for (const requiredEntry of [
+  "package/package.json",
+  "package/src/index.ts",
+  "package/src/http.ts",
+  "package/src/logging.ts",
+  "package/src/runtimeEnv.ts",
+]) {
+  if (!sharedEntries.includes(requiredEntry)) {
+    throw new Error(`packed shared tarball is missing ${requiredEntry}`)
+  }
+}
+
+const sharedManifest = readManifest(sharedTarball)
 
 if (appManifest.dependencies?.["@yaip/contracts"] !== contractsManifest.version) {
   throw new Error(
     `expected packed @yaip/oss dependency on @yaip/contracts to be ${contractsManifest.version}`
+  )
+}
+
+if (appManifest.dependencies?.["@yaip/shared"] !== sharedManifest.version) {
+  throw new Error(
+    `expected packed @yaip/oss dependency on @yaip/shared to be ${sharedManifest.version}`
   )
 }

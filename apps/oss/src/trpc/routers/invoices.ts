@@ -17,12 +17,15 @@ import {
 import { sendInvoiceEmail } from "../../lib/email"
 import { billingProvider } from "../../lib/billing"
 import { assertCloudOnboardingComplete } from "../../lib/onboarding/guard"
+import { appLogger } from "../../lib/observability"
 import {
   getPublicInvoicePaymentUrl,
 } from "../../lib/payments/public"
 import { getStripePaymentConfigurationState } from "../../lib/payments/stripe"
 import { getRuntimeCapabilities } from "../../lib/runtime/extensions"
 import { router, orgProcedure } from "../init"
+
+const invoiceLogger = appLogger.child("invoices")
 
 const isoDateSchema = z.string().refine(
   (value) => !Number.isNaN(new Date(value).getTime()),
@@ -532,6 +535,11 @@ export const invoicesRouter = router({
         }
 
         emailSkipReason = "Email delivery is not configured"
+        invoiceLogger.warn("invoice.email.skipped", {
+          organizationId: ctx.organizationId,
+          invoiceId: invoice.id,
+          reason: "provider_missing",
+        })
         const updated = await prisma.invoice.update({
           where: { id: input.id },
           data: {
@@ -579,7 +587,18 @@ export const invoicesRouter = router({
           publicPaymentUrl,
         })
         emailSent = true
-      } catch {
+        invoiceLogger.info("invoice.email.sent", {
+          organizationId: ctx.organizationId,
+          invoiceId: invoice.id,
+          usingBrandedDomain: envelope.usingBrandedDomain,
+          hasPublicPaymentUrl: Boolean(publicPaymentUrl),
+        })
+      } catch (error) {
+        invoiceLogger.error("invoice.email.failed", {
+          organizationId: ctx.organizationId,
+          invoiceId: invoice.id,
+          error,
+        })
         await prisma.invoice.update({
           where: { id: input.id },
           data: {
@@ -699,7 +718,18 @@ export const invoicesRouter = router({
           contactName: invoice.contact.name,
           publicPaymentUrl,
         })
-      } catch {
+        invoiceLogger.info("invoice.email.resent", {
+          organizationId: ctx.organizationId,
+          invoiceId: invoice.id,
+          usingBrandedDomain: envelope.usingBrandedDomain,
+          hasPublicPaymentUrl: Boolean(publicPaymentUrl),
+        })
+      } catch (error) {
+        invoiceLogger.error("invoice.email.resend_failed", {
+          organizationId: ctx.organizationId,
+          invoiceId: invoice.id,
+          error,
+        })
         await prisma.invoice.update({
           where: { id: input.id },
           data: {
@@ -738,6 +768,11 @@ export const invoicesRouter = router({
       })
 
       if (invoice.paymentStatus === "paid" || invoice.status === "paid") {
+        invoiceLogger.warn("invoice.payment_link.rejected", {
+          organizationId: ctx.organizationId,
+          invoiceId: invoice.id,
+          reason: "already_paid",
+        })
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Paid invoices do not need payment links",
@@ -745,6 +780,12 @@ export const invoicesRouter = router({
       }
 
       if (invoice.status !== "sent" && invoice.status !== "overdue") {
+        invoiceLogger.warn("invoice.payment_link.rejected", {
+          organizationId: ctx.organizationId,
+          invoiceId: invoice.id,
+          reason: "invalid_status",
+          status: invoice.status,
+        })
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Only sent or overdue invoices can create payment links",
@@ -767,6 +808,11 @@ export const invoicesRouter = router({
           stripeWebhookSecretEnc: settings?.stripeWebhookSecretEnc ?? null,
         }).configured
       ) {
+        invoiceLogger.warn("invoice.payment_link.rejected", {
+          organizationId: ctx.organizationId,
+          invoiceId: invoice.id,
+          reason: "stripe_not_configured",
+        })
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Stripe payment links are not configured for this organization",
@@ -783,11 +829,21 @@ export const invoicesRouter = router({
 
       const url = getPublicInvoicePaymentUrl(updated)
       if (!url) {
+        invoiceLogger.error("invoice.payment_link.failed", {
+          organizationId: ctx.organizationId,
+          invoiceId: invoice.id,
+        })
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to create payment link",
         })
       }
+
+      invoiceLogger.info("invoice.payment_link.created", {
+        organizationId: ctx.organizationId,
+        invoiceId: invoice.id,
+        publicPaymentIssuedAt: issuedAt,
+      })
 
       return { url }
     }),

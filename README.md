@@ -142,6 +142,12 @@ Run the DB-backed invoice/quote smoke flow (create/edit/send/convert) against yo
 pnpm test:integration
 ```
 
+Run the browser smoke suite against a local PostgreSQL and app server:
+
+```bash
+pnpm --filter @yaip/oss test:e2e
+```
+
 ## Onboarding Behavior
 
 - `selfhost` distribution keeps onboarding manual and local.

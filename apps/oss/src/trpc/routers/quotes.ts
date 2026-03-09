@@ -16,9 +16,12 @@ import {
 } from "../../lib/document-email-sending"
 import { sendQuoteEmail } from "../../lib/email"
 import { assertCloudOnboardingComplete } from "../../lib/onboarding/guard"
+import { appLogger } from "../../lib/observability"
 import { getPublicQuoteUrl } from "../../lib/quotes/public-url"
 import { getRuntimeCapabilities } from "../../lib/runtime/extensions"
 import { router, orgProcedure } from "../init"
+
+const quoteLogger = appLogger.child("quotes")
 
 const isoDateSchema = z.string().refine(
   (value) => !Number.isNaN(new Date(value).getTime()),
@@ -515,6 +518,11 @@ export const quotesRouter = router({
         }
 
         emailSkipReason = "Email delivery is not configured"
+        quoteLogger.warn("quote.email.skipped", {
+          organizationId: ctx.organizationId,
+          quoteId: quote.id,
+          reason: "provider_missing",
+        })
         const updated = await prisma.quote.update({
           where: { id: input.id },
           data: {
@@ -562,7 +570,18 @@ export const quotesRouter = router({
           publicQuoteUrl,
         })
         emailSent = true
-      } catch {
+        quoteLogger.info("quote.email.sent", {
+          organizationId: ctx.organizationId,
+          quoteId: quote.id,
+          usingBrandedDomain: envelope.usingBrandedDomain,
+          hasPublicQuoteUrl: Boolean(publicQuoteUrl),
+        })
+      } catch (error) {
+        quoteLogger.error("quote.email.failed", {
+          organizationId: ctx.organizationId,
+          quoteId: quote.id,
+          error,
+        })
         await prisma.quote.update({
           where: { id: input.id },
           data: {
@@ -680,7 +699,18 @@ export const quotesRouter = router({
           contactName: quote.contact.name,
           publicQuoteUrl,
         })
-      } catch {
+        quoteLogger.info("quote.email.resent", {
+          organizationId: ctx.organizationId,
+          quoteId: quote.id,
+          usingBrandedDomain: envelope.usingBrandedDomain,
+          hasPublicQuoteUrl: Boolean(publicQuoteUrl),
+        })
+      } catch (error) {
+        quoteLogger.error("quote.email.resend_failed", {
+          organizationId: ctx.organizationId,
+          quoteId: quote.id,
+          error,
+        })
         await prisma.quote.update({
           where: { id: input.id },
           data: {

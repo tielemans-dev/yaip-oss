@@ -4,6 +4,11 @@ import {
   type InvoicePaymentState,
   type InvoicePaymentTokenPayload,
 } from "@yaip/contracts/payments"
+import {
+  buildAbsoluteUrl,
+  resolveAppOrigin,
+} from "@yaip/shared/http"
+import { readFallbackSecret } from "@yaip/shared/runtimeEnv"
 
 export type { InvoicePaymentState, InvoicePaymentTokenPayload }
 
@@ -17,18 +22,6 @@ function base64UrlDecode(value: string) {
 
 function signValue(value: string, secret: string) {
   return createHmac("sha256", secret).update(value).digest("base64url")
-}
-
-function parseOrigin(value: string | undefined) {
-  if (!value) {
-    return null
-  }
-
-  try {
-    return new URL(value).origin
-  } catch {
-    return null
-  }
 }
 
 export function getInvoicePaymentState(snapshot: {
@@ -79,14 +72,12 @@ export function verifyInvoicePaymentToken(
 }
 
 export function getPublicInvoicePaymentSecret() {
-  const explicit = process.env.YAIP_PUBLIC_PAYMENT_SECRET?.trim()
-  if (explicit && explicit.length >= 16) {
-    return explicit
-  }
-
-  const fallback = process.env.BETTER_AUTH_SECRET?.trim()
-  if (fallback && fallback.length >= 16) {
-    return fallback
+  const secret = readFallbackSecret(
+    process.env.YAIP_PUBLIC_PAYMENT_SECRET,
+    process.env.BETTER_AUTH_SECRET
+  )
+  if (secret) {
+    return secret
   }
 
   throw new Error("YAIP_PUBLIC_PAYMENT_SECRET or BETTER_AUTH_SECRET must be configured")
@@ -107,10 +98,10 @@ export function getPublicInvoicePaymentUrl(invoice: {
     return null
   }
 
-  const origin =
-    parseOrigin(process.env.YAIP_APP_ORIGIN) ??
-    parseOrigin(process.env.BETTER_AUTH_URL) ??
+  const origin = resolveAppOrigin(
+    [process.env.YAIP_APP_ORIGIN, process.env.BETTER_AUTH_URL],
     ""
+  )
 
   const token = signInvoicePaymentToken(
     {
@@ -121,5 +112,5 @@ export function getPublicInvoicePaymentUrl(invoice: {
     getPublicInvoicePaymentSecret()
   )
 
-  return `${origin}/pay/${encodeURIComponent(token)}`
+  return buildAbsoluteUrl(origin, `/pay/${encodeURIComponent(token)}`)
 }

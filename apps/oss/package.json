@@ -52,13 +52,15 @@
     "typecheck": "tsc --noEmit -p tsconfig.quality.json",
     "typecheck:app": "tsc --noEmit -p tsconfig.json",
     "test": "pnpm i18n:check && vitest run -c vitest.config.ts",
-    "test:integration": "vitest run -c vitest.config.ts src/trpc/routers/__tests__/*.integration.test.ts"
+    "test:integration": "vitest run -c vitest.config.ts src/trpc/routers/__tests__/*.integration.test.ts",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@prisma/adapter-pg": "^7.4.1",
     "@prisma/client": "^7.4.1",
     "@yaip/contracts": "workspace:*",
+    "@yaip/shared": "workspace:*",
     "@react-pdf/renderer": "^4.3.2",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-devtools": "^0.7.0",
@@ -102,6 +104,7 @@
     "@types/pg": "^8.16.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "@playwright/test": "^1.56.0",
     "@vitejs/plugin-react": "^5.0.4",
     "dotenv": "^17.3.1",
     "jsdom": "^27.0.0",

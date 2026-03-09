@@ -1,6 +1,9 @@
 import { prisma } from "../db"
+import { appLogger } from "../observability"
 import { decryptSecret } from "../secrets"
 import { constructStripeWebhookEvent } from "./stripe"
+
+const paymentsLogger = appLogger.child("payments")
 
 export async function processStripeWebhookRequest(
   payload: string,
@@ -32,6 +35,9 @@ export async function processStripeWebhookRequest(
     }
   }
 
+  paymentsLogger.warn("stripe.webhook.invalid_signature", {
+    candidateCount: candidateSettings.length,
+  })
   throw new Error("Invalid Stripe webhook signature")
 }
 
@@ -48,6 +54,9 @@ export async function processStripeWebhookEvent(event: {
   }
 }) {
   if (event.type !== "checkout.session.completed") {
+    paymentsLogger.info("stripe.webhook.unhandled", {
+      eventType: event.type,
+    })
     return { handled: false, alreadyApplied: false }
   }
 
@@ -55,6 +64,9 @@ export async function processStripeWebhookEvent(event: {
   const invoiceId = session.metadata?.invoiceId ?? session.client_reference_id
 
   if (!invoiceId) {
+    paymentsLogger.warn("stripe.webhook.missing_invoice", {
+      eventType: event.type,
+    })
     return { handled: false, alreadyApplied: false }
   }
 
@@ -68,10 +80,18 @@ export async function processStripeWebhookEvent(event: {
   })
 
   if (!invoice) {
+    paymentsLogger.warn("stripe.webhook.invoice_not_found", {
+      eventType: event.type,
+      invoiceId,
+    })
     return { handled: false, alreadyApplied: false }
   }
 
   if (invoice.paymentStatus === "paid" || invoice.status === "paid") {
+    paymentsLogger.info("stripe.webhook.already_applied", {
+      invoiceId: invoice.id,
+      eventType: event.type,
+    })
     return { handled: true, alreadyApplied: true }
   }
 
@@ -90,6 +110,13 @@ export async function processStripeWebhookEvent(event: {
       stripePaymentIntentId: paymentIntentId,
       paymentFailureReason: null,
     },
+  })
+
+  paymentsLogger.info("stripe.webhook.applied", {
+    invoiceId: invoice.id,
+    eventType: event.type,
+    checkoutSessionId: session.id ?? null,
+    paymentIntentId,
   })
 
   return { handled: true, alreadyApplied: false }

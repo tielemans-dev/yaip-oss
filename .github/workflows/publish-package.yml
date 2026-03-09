@@ -40,11 +40,21 @@ jobs:
           JSON.parse(require('node:fs').readFileSync('packages/contracts/package.json',
           'utf8')).version)" >> "$GITHUB_OUTPUT"
 
+      - name: Read shared package version
+        id: shared_version
+        run: >-
+          node -e "console.log('value=' +
+          JSON.parse(require('node:fs').readFileSync('packages/shared/package.json',
+          'utf8')).version)" >> "$GITHUB_OUTPUT"
+
       - name: Verify tag matches package version
         run: test "v${{ steps.package_version.outputs.value }}" = "$GITHUB_REF_NAME"
 
       - name: Verify contracts package version matches app version
         run: test "${{ steps.contracts_version.outputs.value }}" = "${{ steps.package_version.outputs.value }}"
+
+      - name: Verify shared package version matches app version
+        run: test "${{ steps.shared_version.outputs.value }}" = "${{ steps.package_version.outputs.value }}"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -62,6 +72,7 @@ jobs:
         run: |
           mkdir -p release-artifacts
           pnpm --dir packages/contracts pack --pack-destination ../../release-artifacts
+          pnpm --dir packages/shared pack --pack-destination ../../release-artifacts
           pnpm --dir apps/oss pack --pack-destination ../../release-artifacts
 
       - name: Publish GitHub release artifacts

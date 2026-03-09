@@ -2,6 +2,7 @@ import type {
   RuntimeCapabilities,
   RuntimeCapabilityPatch,
 } from "@yaip/contracts/runtime"
+import { readBooleanEnv } from "@yaip/shared/runtimeEnv"
 import { getRuntimeEnv } from "./platform"
 
 export type RuntimeExtension = {
@@ -13,20 +14,6 @@ export type RuntimeExtension = {
 
 const DEFAULT_MAX_PROMPT_CHARS = 4000
 let runtimeExtensions: RuntimeExtension[] = []
-
-function readBooleanFlag(value: string | undefined, defaultValue: boolean) {
-  if (value === undefined) {
-    return defaultValue
-  }
-  const normalized = value.trim().toLowerCase()
-  if (normalized === "true") {
-    return true
-  }
-  if (normalized === "false") {
-    return false
-  }
-  return defaultValue
-}
 
 function mergeCapabilities(
   base: RuntimeCapabilities,
@@ -61,13 +48,13 @@ function readDefaultCapabilities(
 ): RuntimeCapabilities {
   const distribution = env.YAIP_DISTRIBUTION?.trim().toLowerCase()
   const isCloud = distribution === "cloud"
-  const byok = readBooleanFlag(env.YAIP_AI_BYOK_ENABLED, true)
-  const managed = readBooleanFlag(env.YAIP_AI_MANAGED_ENABLED, false)
-  const onboardingAiManaged = readBooleanFlag(
+  const byok = readBooleanEnv(env.YAIP_AI_BYOK_ENABLED, true)
+  const managed = readBooleanEnv(env.YAIP_AI_MANAGED_ENABLED, false)
+  const onboardingAiManaged = readBooleanEnv(
     env.YAIP_ONBOARDING_AI_MANAGED_ENABLED,
     isCloud
   )
-  const onboardingAiEnabled = readBooleanFlag(
+  const onboardingAiEnabled = readBooleanEnv(
     env.YAIP_ONBOARDING_AI_ENABLED,
     onboardingAiManaged
   )

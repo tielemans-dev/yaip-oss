@@ -1,6 +1,7 @@
 import { prismaAdapter } from "better-auth/adapters/prisma"
 import { organization } from "better-auth/plugins"
 import { tanstackStartCookies } from "better-auth/tanstack-start"
+import { readBooleanEnv, resolveUrlOrigin } from "@yaip/shared/runtimeEnv"
 
 import type { PrismaClient } from "../../../generated/prisma/client"
 
@@ -18,16 +19,6 @@ export type AuthHooks = {
 
 type AuthEnvReader = {
   getEnv: (name: string) => string | undefined
-}
-
-function parseOrigin(value: string | undefined): string | null {
-  if (!value) return null
-
-  try {
-    return new URL(value).origin
-  } catch {
-    return null
-  }
 }
 
 function createEnvRecord(reader: AuthEnvReader) {
@@ -53,16 +44,17 @@ export function buildYaipAuthOptions(input: {
   const trustedOrigins = Array.from(
     new Set(
       [
-        parseOrigin(betterAuthUrl),
-        parseOrigin(env.getEnv("YAIP_SHELL_ORIGIN")),
-        parseOrigin(env.getEnv("YAIP_APP_ORIGIN")),
+        resolveUrlOrigin(betterAuthUrl),
+        resolveUrlOrigin(env.getEnv("YAIP_SHELL_ORIGIN")),
+        resolveUrlOrigin(env.getEnv("YAIP_APP_ORIGIN")),
       ].filter((origin): origin is string => Boolean(origin))
     )
   )
 
-  const crossSubDomainEnabled =
-    env.getEnv("YAIP_AUTH_CROSS_SUBDOMAIN")?.trim().toLowerCase() === "true" ||
+  const crossSubDomainEnabled = readBooleanEnv(
+    env.getEnv("YAIP_AUTH_CROSS_SUBDOMAIN"),
     cloudDistribution
+  )
   const crossSubDomainDomain = env.getEnv("YAIP_AUTH_COOKIE_DOMAIN")?.trim()
   const password = hooks.password
 

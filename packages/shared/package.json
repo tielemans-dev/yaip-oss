@@ -1,0 +1,33 @@
+{
+  "name": "@yaip/shared",
+  "version": "0.1.1",
+  "private": false,
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "type": "module",
+  "files": [
+    "src/index.ts",
+    "src/logging.ts",
+    "src/runtimeEnv.ts",
+    "src/http.ts"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./http": "./src/http.ts",
+    "./logging": "./src/logging.ts",
+    "./runtimeEnv": "./src/runtimeEnv.ts"
+  },
+  "scripts": {
+    "lint": "pnpm exec oxlint --deny-warnings --report-unused-disable-directives src",
+    "typecheck": "pnpm exec tsc --noEmit -p tsconfig.json",
+    "test": "pnpm exec vitest run"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "oxlint": "^1.50.0",
+    "typescript": "^5.7.2",
+    "vitest": "^3.0.5"
+  }
+}

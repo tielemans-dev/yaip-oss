@@ -70,5 +70,11 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Install Playwright browser
+        run: pnpm --filter @yaip/oss exec playwright install --with-deps chromium
+
+      - name: Run browser smoke tests
+        run: pnpm test:e2e
+
       - name: Verify packed package artifact
         run: node scripts/check-packed-build.mjs
