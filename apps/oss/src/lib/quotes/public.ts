@@ -1,19 +1,17 @@
 import { createHmac, timingSafeEqual } from "node:crypto"
+import {
+  quotePublicTokenPayloadSchema,
+  type QuotePublicDecision,
+  type QuotePublicDecisionState,
+  type QuotePublicSnapshot,
+  type QuotePublicTokenPayload,
+} from "@yaip/contracts/quotes"
 
-export type QuotePublicDecision = "accepted" | "rejected"
-export type QuotePublicDecisionState = "pending" | QuotePublicDecision
-export type QuotePublicScope = "quote_public"
-
-export type QuotePublicSnapshot = {
-  status: string
-  publicDecisionAt: Date | null
-  publicRejectionReason?: string | null
-}
-
-export type QuotePublicTokenPayload = {
-  quoteId: string
-  keyVersion: number
-  scope: QuotePublicScope
+export type {
+  QuotePublicDecision,
+  QuotePublicDecisionState,
+  QuotePublicSnapshot,
+  QuotePublicTokenPayload,
 }
 
 function base64UrlEncode(value: string) {
@@ -98,16 +96,10 @@ export function verifyQuotePublicToken(
   }
 
   try {
-    const parsed = JSON.parse(base64UrlDecode(encodedPayload)) as QuotePublicTokenPayload
-    if (
-      typeof parsed.quoteId !== "string" ||
-      typeof parsed.keyVersion !== "number" ||
-      parsed.scope !== "quote_public"
-    ) {
-      return null
-    }
-
-    return parsed
+    const parsed = quotePublicTokenPayloadSchema.safeParse(
+      JSON.parse(base64UrlDecode(encodedPayload)) as unknown
+    )
+    return parsed.success ? parsed.data : null
   } catch {
     return null
   }

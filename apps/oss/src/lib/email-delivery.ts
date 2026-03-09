@@ -1,27 +1,9 @@
-export type EmailDeliveryOutcome = "sent" | "skipped" | "failed"
-
-export type EmailDeliveryAttemptRecord = {
-  lastEmailAttemptAt: Date
-  lastEmailAttemptOutcome: EmailDeliveryOutcome
-  lastEmailAttemptCode: string
-  lastEmailAttemptMessage: string
-}
-
-export type EmailDeliveryAttemptSnapshot = {
-  lastEmailAttemptAt: Date | null
-  lastEmailAttemptOutcome: EmailDeliveryOutcome | null
-  lastEmailAttemptCode: string | null
-  lastEmailAttemptMessage: string | null
-}
-
-export type EmailDeliveryRuntimeStatus = {
-  managed: boolean
-  configured: boolean
-  available: boolean
-  sender: string
-  missing: string[]
-  status: "configured" | "missing_configuration" | "managed" | "managed_unavailable"
-}
+import type {
+  EmailDeliveryAttemptRecord,
+  EmailDeliveryAttemptSnapshot,
+  EmailDeliveryOutcome,
+  EmailDeliveryRuntimeStatus,
+} from "@yaip/contracts/email"
 
 export function createEmailDeliveryAttempt(input: {
   at?: Date

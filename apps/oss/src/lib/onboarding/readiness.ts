@@ -1,19 +1,10 @@
-export type SupportedTaxRegime = "us_sales_tax" | "eu_vat" | "custom"
+import type {
+  OnboardingMissingField,
+  OnboardingTaxRegime,
+} from "@yaip/contracts/onboarding"
 
-export type OnboardingMissingField =
-  | "companyName"
-  | "companyAddress"
-  | "companyEmail"
-  | "countryCode"
-  | "locale"
-  | "timezone"
-  | "defaultCurrency"
-  | "taxRegime"
-  | "invoicePrefix"
-  | "invoiceNextNum"
-  | "quotePrefix"
-  | "quoteNextNum"
-  | "primaryTaxId"
+export type SupportedTaxRegime = OnboardingTaxRegime
+export type { OnboardingMissingField }
 
 export type OnboardingReadinessInput = {
   countryCode: string | null

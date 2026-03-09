@@ -1,12 +1,11 @@
 import { createHmac, timingSafeEqual } from "node:crypto"
+import {
+  invoicePaymentTokenPayloadSchema,
+  type InvoicePaymentState,
+  type InvoicePaymentTokenPayload,
+} from "@yaip/contracts/payments"
 
-export type InvoicePaymentState = "unpaid" | "paid"
-export type InvoicePaymentScope = "invoice_payment"
-export type InvoicePaymentTokenPayload = {
-  invoiceId: string
-  keyVersion: number
-  scope: InvoicePaymentScope
-}
+export type { InvoicePaymentState, InvoicePaymentTokenPayload }
 
 function base64UrlEncode(value: string) {
   return Buffer.from(value, "utf8").toString("base64url")
@@ -70,16 +69,10 @@ export function verifyInvoicePaymentToken(
   }
 
   try {
-    const parsed = JSON.parse(base64UrlDecode(encodedPayload)) as InvoicePaymentTokenPayload
-    if (
-      typeof parsed.invoiceId !== "string" ||
-      typeof parsed.keyVersion !== "number" ||
-      parsed.scope !== "invoice_payment"
-    ) {
-      return null
-    }
-
-    return parsed
+    const parsed = invoicePaymentTokenPayloadSchema.safeParse(
+      JSON.parse(base64UrlDecode(encodedPayload)) as unknown
+    )
+    return parsed.success ? parsed.data : null
   } catch {
     return null
   }

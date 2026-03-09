@@ -1,8 +1,11 @@
+import type {
+  OnboardingAiSuggestion,
+  OnboardingMissingField,
+  OnboardingPatch,
+} from "@yaip/contracts/onboarding"
 import { NoopBillingProvider } from "../billing/noop-provider"
 import type { BillingProvider } from "../billing/types"
 import type { DocumentSendingDomainRecord, DocumentSendingDomainStatus } from "../document-email-sending"
-import { type OnboardingAiSuggestion, type OnboardingPatch } from "../onboarding/ai-contract"
-import type { OnboardingMissingField } from "../onboarding/readiness"
 import { suggestOnboardingPatchHeuristically } from "../onboarding/ai-fallback"
 
 export type OnboardingAiSuggestInput = {

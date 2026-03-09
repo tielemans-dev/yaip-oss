@@ -1,42 +1,8 @@
+import type {
+  RuntimeCapabilities,
+  RuntimeCapabilityPatch,
+} from "@yaip/contracts/runtime"
 import { getRuntimeEnv } from "./platform"
-
-export type AIInvoiceDraftCapabilities = {
-  enabled: boolean
-  byok: boolean
-  managed: boolean
-  managedRequiresSubscription: boolean
-  maxPromptChars: number
-}
-
-export type OnboardingAICapabilities = {
-  enabled: boolean
-  managed: boolean
-}
-
-export type PaymentsCapabilities = {
-  enabled: boolean
-  managed: boolean
-  provider: "stripe" | null
-}
-
-export type EmailDeliveryCapabilities = {
-  enabled: boolean
-  managed: boolean
-}
-
-export type RuntimeCapabilities = {
-  aiInvoiceDraft: AIInvoiceDraftCapabilities
-  onboardingAi: OnboardingAICapabilities
-  payments: PaymentsCapabilities
-  emailDelivery: EmailDeliveryCapabilities
-}
-
-export type RuntimeCapabilityPatch = {
-  aiInvoiceDraft?: Partial<AIInvoiceDraftCapabilities>
-  onboardingAi?: Partial<OnboardingAICapabilities>
-  payments?: Partial<PaymentsCapabilities>
-  emailDelivery?: Partial<EmailDeliveryCapabilities>
-}
 
 export type RuntimeExtension = {
   id: string

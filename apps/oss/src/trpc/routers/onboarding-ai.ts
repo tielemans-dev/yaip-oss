@@ -1,67 +1,29 @@
 import { TRPCError } from "@trpc/server"
+import {
+  countryCodeSchema,
+  onboardingApplySourceSchema,
+  onboardingAiSuggestionSchema,
+  onboardingMissingFieldSchema,
+  onboardingPatchSchema,
+  onboardingTaxRegimeSchema,
+  onboardingValuesSchema,
+  type OnboardingMissingField,
+  type OnboardingPatch,
+} from "@yaip/contracts/onboarding"
 import { z } from "zod"
 import { getCloudOnboardingState } from "../../lib/cloud-onboarding"
 import { isCloudDistribution } from "../../lib/distribution"
 import {
-  type OnboardingMissingField,
   evaluateOnboardingReadiness,
 } from "../../lib/onboarding/readiness"
 import {
   getRequirementRules,
   listFollowupQuestions as buildFollowupQuestions,
-  onboardingAiSuggestionSchema,
-  onboardingPatchSchema,
-  onboardingTaxRegimeSchema,
 } from "../../lib/onboarding/ai-contract"
 import { prisma } from "../../lib/db"
 import { getRuntimeCapabilities } from "../../lib/runtime/extensions"
 import { getOnboardingAiService } from "../../lib/runtime/services"
 import { orgProcedure, router } from "../init"
-
-const countryCodeSchema = z
-  .string()
-  .trim()
-  .length(2)
-  .transform((value) => value.toUpperCase())
-
-const onboardingValuesSchema = z
-  .object({
-    companyName: z.string().trim().max(120).nullable().optional(),
-    companyAddress: z.string().trim().max(240).nullable().optional(),
-    companyEmail: z.preprocess(
-      (value) =>
-        typeof value === "string" && value.trim().length === 0 ? null : value,
-      z.string().trim().email().nullable().optional()
-    ),
-    countryCode: countryCodeSchema.nullable().optional(),
-    locale: z.string().trim().min(2).max(16).nullable().optional(),
-    timezone: z.string().trim().min(1).max(120).nullable().optional(),
-    defaultCurrency: z
-      .string()
-      .trim()
-      .regex(/^[A-Z]{3}$/)
-      .nullable()
-      .optional(),
-    taxRegime: onboardingTaxRegimeSchema.nullable().optional(),
-    pricesIncludeTax: z.boolean().nullable().optional(),
-    invoicePrefix: z
-      .string()
-      .trim()
-      .regex(/^[A-Z0-9-]{1,10}$/)
-      .nullable()
-      .optional(),
-    invoiceNextNum: z.number().int().min(1).nullable().optional(),
-    quotePrefix: z
-      .string()
-      .trim()
-      .regex(/^[A-Z0-9-]{1,10}$/)
-      .nullable()
-      .optional(),
-    quoteNextNum: z.number().int().min(1).nullable().optional(),
-    primaryTaxId: z.string().trim().max(40).nullable().optional(),
-    primaryTaxIdScheme: z.string().trim().max(40).nullable().optional(),
-  })
-  .strict()
 
 const getRequirementRulesInputSchema = z.object({
   countryCode: countryCodeSchema.optional(),
@@ -71,12 +33,12 @@ const getRequirementRulesInputSchema = z.object({
 const suggestOnboardingPatchInputSchema = z.object({
   userMessage: z.string().trim().min(4).max(4000),
   currentValues: onboardingValuesSchema.optional(),
-  missing: z.array(z.string().trim().min(1)).optional(),
+  missing: z.array(onboardingMissingFieldSchema).optional(),
 })
 
 const applyOnboardingPatchInputSchema = z.object({
   patch: onboardingPatchSchema,
-  source: z.enum(["ai", "manual"]),
+  source: onboardingApplySourceSchema,
 })
 
 const validateReadinessInputSchema = z.object({
@@ -84,7 +46,7 @@ const validateReadinessInputSchema = z.object({
 })
 
 const listFollowupQuestionsInputSchema = z.object({
-  missing: z.array(z.string().trim().min(1)),
+  missing: z.array(onboardingMissingFieldSchema),
   values: onboardingValuesSchema.optional(),
 })
 
@@ -226,7 +188,7 @@ function toMissingFieldList(fields: readonly string[]): OnboardingMissingField[]
 
 async function applyPatchToOrgSettings(
   organizationId: string,
-  patch: z.infer<typeof onboardingPatchSchema>,
+  patch: OnboardingPatch,
   source: "ai" | "manual"
 ) {
   const updateData: Record<string, unknown> = {

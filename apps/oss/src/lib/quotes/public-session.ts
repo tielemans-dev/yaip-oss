@@ -1,17 +1,11 @@
 import { createServerFn } from "@tanstack/react-start"
-import { z } from "zod"
-
-const publicQuoteTokenSchema = z.object({
-  token: z.string().trim().min(1),
-})
-
-const publicQuoteDecisionSchema = publicQuoteTokenSchema.extend({
-  decision: z.enum(["accepted", "rejected"]),
-  rejectionReason: z.string().trim().max(500).optional(),
-})
+import {
+  publicQuoteDecisionInputSchema,
+  publicQuoteTokenInputSchema,
+} from "@yaip/contracts/quotes"
 
 export const getPublicQuoteSession = createServerFn({ method: "GET" })
-  .inputValidator(publicQuoteTokenSchema)
+  .inputValidator(publicQuoteTokenInputSchema)
   .handler(async ({ data }) => {
     const [{ loadPublicQuoteByToken }, { getPublicQuoteSecret }] = await Promise.all([
       import("./public-access"),
@@ -29,7 +23,7 @@ export const getPublicQuoteSession = createServerFn({ method: "GET" })
   })
 
 export const submitPublicQuoteDecision = createServerFn({ method: "POST" })
-  .inputValidator(publicQuoteDecisionSchema)
+  .inputValidator(publicQuoteDecisionInputSchema)
   .handler(async ({ data }) => {
     try {
       const [{ decidePublicQuoteByToken }, { getPublicQuoteSecret }] = await Promise.all([

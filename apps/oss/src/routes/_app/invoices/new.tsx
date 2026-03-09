@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import type { RuntimeCapabilities } from "@yaip/contracts/runtime"
 import { useState, useEffect } from "react"
 import { trpc } from "../../../trpc/client"
 import { applyCatalogItemToLineItem, type CatalogItemOption } from "../../../lib/catalog"
@@ -39,13 +40,6 @@ type LineItem = {
   catalogItemId?: string
 }
 
-type RuntimeCapabilities = {
-  aiInvoiceDraft: {
-    enabled: boolean
-    byok: boolean
-  }
-}
-
 function NewInvoicePage() {
   const { t, locale } = useI18n()
   const currency = useOrgCurrency()
@@ -63,7 +57,9 @@ function NewInvoicePage() {
   const [loadingContacts, setLoadingContacts] = useState(true)
   const [loadingCatalog, setLoadingCatalog] = useState(true)
   const [catalogItems, setCatalogItems] = useState<CatalogItemOption[]>([])
-  const [aiCapabilities, setAiCapabilities] = useState<RuntimeCapabilities | null>(null)
+  const [aiCapabilities, setAiCapabilities] = useState<
+    Pick<RuntimeCapabilities, "aiInvoiceDraft"> | null
+  >(null)
   const [loadingAiCapabilities, setLoadingAiCapabilities] = useState(true)
   const [aiPrompt, setAiPrompt] = useState("")
   const [aiGenerating, setAiGenerating] = useState(false)
@@ -89,7 +85,9 @@ function NewInvoicePage() {
   useEffect(() => {
     trpc.runtime.capabilities
       .query()
-      .then((data) => setAiCapabilities(data as RuntimeCapabilities))
+      .then((data) =>
+        setAiCapabilities(data as Pick<RuntimeCapabilities, "aiInvoiceDraft">)
+      )
       .catch(() => {})
       .finally(() => setLoadingAiCapabilities(false))
   }, [])

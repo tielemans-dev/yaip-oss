@@ -1,55 +1,24 @@
-import { z } from "zod"
-import type { OnboardingMissingField } from "./readiness"
+import {
+  onboardingAiSuggestionSchema,
+  onboardingPatchSchema,
+  onboardingTaxRegimeSchema,
+  type OnboardingAiSuggestion,
+  type OnboardingMissingField,
+  type OnboardingPatch,
+  type OnboardingTaxRegime,
+} from "@yaip/contracts/onboarding"
 
-export const onboardingTaxRegimeSchema = z.enum([
-  "us_sales_tax",
-  "eu_vat",
-  "custom",
-])
-
-export type OnboardingTaxRegime = z.infer<typeof onboardingTaxRegimeSchema>
-
-export const onboardingPatchSchema = z
-  .object({
-    companyName: z.string().trim().min(1).max(120).optional(),
-    companyAddress: z.string().trim().min(1).max(240).optional(),
-    companyEmail: z.string().trim().email().optional(),
-    countryCode: z
-      .string()
-      .trim()
-      .length(2)
-      .transform((value) => value.toUpperCase())
-      .optional(),
-    locale: z.string().trim().min(2).max(16).optional(),
-    timezone: z.string().trim().min(1).max(120).optional(),
-    defaultCurrency: z
-      .string()
-      .trim()
-      .regex(/^[A-Z]{3}$/)
-      .optional(),
-    taxRegime: onboardingTaxRegimeSchema.optional(),
-    pricesIncludeTax: z.boolean().optional(),
-    primaryTaxId: z
-      .string()
-      .trim()
-      .min(1)
-      .max(40)
-      .optional(),
-    primaryTaxIdScheme: z.string().trim().min(1).max(40).optional(),
-    invoicePrefix: z
-      .string()
-      .trim()
-      .regex(/^[A-Z0-9-]{1,10}$/)
-      .optional(),
-    quotePrefix: z
-      .string()
-      .trim()
-      .regex(/^[A-Z0-9-]{1,10}$/)
-      .optional(),
-  })
-  .strict()
-
-export type OnboardingPatch = z.infer<typeof onboardingPatchSchema>
+export {
+  onboardingAiSuggestionSchema,
+  onboardingPatchSchema,
+  onboardingTaxRegimeSchema,
+}
+export type {
+  OnboardingAiSuggestion,
+  OnboardingMissingField,
+  OnboardingPatch,
+  OnboardingTaxRegime,
+}
 
 export type OnboardingRequirementRules = {
   requiredFields: OnboardingMissingField[]
@@ -131,12 +100,3 @@ export function listFollowupQuestions(
     question: FIELD_QUESTIONS[field],
   }))
 }
-
-export const onboardingAiSuggestionSchema = z.object({
-  patch: onboardingPatchSchema,
-  rationale: z.string().trim().min(1).max(1000),
-  confidence: z.number().min(0).max(1),
-  followupQuestions: z.array(z.string().trim().min(1).max(240)).max(10),
-})
-
-export type OnboardingAiSuggestion = z.infer<typeof onboardingAiSuggestionSchema>

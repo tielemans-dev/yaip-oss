@@ -1,0 +1,41 @@
+{
+  "name": "@yaip/contracts",
+  "version": "0.1.1",
+  "private": false,
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "type": "module",
+  "files": [
+    "src/index.ts",
+    "src/baseSchemas.ts",
+    "src/runtime.ts",
+    "src/email.ts",
+    "src/onboarding.ts",
+    "src/payments.ts",
+    "src/quotes.ts"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./baseSchemas": "./src/baseSchemas.ts",
+    "./email": "./src/email.ts",
+    "./onboarding": "./src/onboarding.ts",
+    "./payments": "./src/payments.ts",
+    "./quotes": "./src/quotes.ts",
+    "./runtime": "./src/runtime.ts"
+  },
+  "scripts": {
+    "lint": "pnpm exec oxlint --deny-warnings --report-unused-disable-directives src",
+    "typecheck": "pnpm exec tsc --noEmit -p tsconfig.json",
+    "test": "pnpm exec vitest run"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "oxlint": "^1.50.0",
+    "typescript": "^5.7.2",
+    "vitest": "^3.0.5"
+  }
+}

@@ -1,4 +1,6 @@
 import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router'
+import type { OnboardingMissingField } from '@yaip/contracts/onboarding'
+import type { RuntimeCapabilities } from '@yaip/contracts/runtime'
 import { useEffect, useState } from 'react'
 import { authClient, useSession } from '../../lib/auth-client'
 import { isCloudDistribution } from '../../lib/distribution'
@@ -38,11 +40,6 @@ function slugify(value: string): string {
 
 type CloudOnboardingMethod = 'manual' | 'ai'
 type CloudTaxRegime = 'us_sales_tax' | 'eu_vat' | 'custom'
-type RuntimeCapabilities = {
-  onboardingAi: {
-    enabled: boolean
-  }
-}
 
 type CloudOnboardingValues = {
   companyName: string
@@ -121,8 +118,10 @@ function OnboardingPage() {
   })
   const [orgAccessLoading, setOrgAccessLoading] = useState(false)
   const [method, setMethod] = useState<CloudOnboardingMethod>('manual')
-  const [missingFields, setMissingFields] = useState<string[]>([])
-  const [runtimeCapabilities, setRuntimeCapabilities] = useState<RuntimeCapabilities | null>(null)
+  const [missingFields, setMissingFields] = useState<OnboardingMissingField[]>([])
+  const [runtimeCapabilities, setRuntimeCapabilities] = useState<
+    Pick<RuntimeCapabilities, 'onboardingAi'> | null
+  >(null)
   const [values, setValues] = useState<CloudOnboardingValues>(
     DEFAULT_CLOUD_ONBOARDING_VALUES
   )
@@ -202,7 +201,9 @@ function OnboardingPage() {
           }
         }
 
-        setMissingFields(Array.isArray(status.missing) ? status.missing : [])
+        setMissingFields(
+          Array.isArray(status.missing) ? (status.missing as OnboardingMissingField[]) : []
+        )
 
         if (status.isComplete) {
           navigate({ to: '/' })
@@ -236,7 +237,9 @@ function OnboardingPage() {
       .query()
       .then((capabilities) => {
         if (!cancelled) {
-          setRuntimeCapabilities(capabilities as RuntimeCapabilities)
+          setRuntimeCapabilities(
+            capabilities as Pick<RuntimeCapabilities, 'onboardingAi'>
+          )
         }
       })
       .catch(() => {

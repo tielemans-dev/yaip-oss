@@ -1,18 +1,21 @@
+import type {
+  OnboardingAiSuggestion,
+  OnboardingMissingField,
+  OnboardingValues,
+} from "@yaip/contracts/onboarding"
 import { useMemo, useState } from "react"
 import { Button } from "../ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
 import { Textarea } from "../ui/textarea"
 import { trpc } from "../../trpc/client"
 
-type OnboardingValues = Record<string, unknown>
-
 type AiAssistantPanelProps = {
   values: OnboardingValues
-  missing: string[]
+  missing: OnboardingMissingField[]
   disabled?: boolean
   onApplied: (result: {
     values: OnboardingValues
-    missing: string[]
+    missing: OnboardingMissingField[]
     isComplete: boolean
   }) => void
 }
@@ -26,12 +29,7 @@ export function AiAssistantPanel({
   const [prompt, setPrompt] = useState("")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [suggestion, setSuggestion] = useState<{
-    patch: Record<string, unknown>
-    rationale: string
-    confidence: number
-    followupQuestions: string[]
-  } | null>(null)
+  const [suggestion, setSuggestion] = useState<OnboardingAiSuggestion | null>(null)
 
   const patchEntries = useMemo(
     () => Object.entries(suggestion?.patch ?? {}),
