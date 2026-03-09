@@ -1,6 +1,6 @@
 {
   "name": "@yaip/workspace",
-  "version": "0.1.1",
+  "version": "0.1.4",
   "private": true,
   "license": "PolyForm-Noncommercial-1.0.0",
   "packageManager": "pnpm@10.28.2",

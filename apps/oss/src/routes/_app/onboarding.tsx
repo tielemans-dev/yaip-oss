@@ -156,7 +156,9 @@ function OnboardingPage() {
           }
 
           await router.invalidate()
-          navigate({ to: '/', replace: true })
+          if (!isCloudDistribution) {
+            navigate({ to: '/', replace: true })
+          }
           return
         }
 

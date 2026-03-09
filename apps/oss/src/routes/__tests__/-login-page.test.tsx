@@ -8,11 +8,13 @@ const {
   signInEmail,
   listOrganizations,
   setActiveOrganization,
+  isCloudDistributionMock,
 } = vi.hoisted(() => ({
   navigate: vi.fn(),
   signInEmail: vi.fn(),
   listOrganizations: vi.fn(),
   setActiveOrganization: vi.fn(),
+  isCloudDistributionMock: vi.fn(() => false),
 }))
 
 vi.mock("@tanstack/react-router", () => ({
@@ -44,6 +46,12 @@ vi.mock("../../lib/i18n/react", () => ({
   }),
 }))
 
+vi.mock("../../lib/distribution", () => ({
+  get isCloudDistribution() {
+    return isCloudDistributionMock()
+  },
+}))
+
 vi.mock("../../lib/auth-client", () => ({
   authClient: {
     signIn: {
@@ -64,10 +72,13 @@ afterEach(() => {
   signInEmail.mockReset()
   listOrganizations.mockReset()
   setActiveOrganization.mockReset()
+  isCloudDistributionMock.mockReset()
+  isCloudDistributionMock.mockReturnValue(false)
 })
 
 describe("LoginPage", () => {
-  it("auto-selects the only organization after login", async () => {
+  it("routes cloud users with one organization to onboarding after auto-select", async () => {
+    isCloudDistributionMock.mockReturnValue(true)
     signInEmail.mockResolvedValue({ data: { user: { id: "user_1" } } })
     listOrganizations.mockResolvedValue({
       data: [
@@ -95,7 +106,7 @@ describe("LoginPage", () => {
       expect(setActiveOrganization).toHaveBeenCalledWith({ organizationId: "org_1" })
     })
 
-    expect(navigate).toHaveBeenCalledWith({ to: "/" })
+    expect(navigate).toHaveBeenCalledWith({ to: "/onboarding" })
   })
 
   it("routes users with multiple orgs to onboarding so they can choose", async () => {

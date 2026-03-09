@@ -9,12 +9,14 @@ const {
   useSessionMock,
   listOrganizations,
   setActiveOrganization,
+  isCloudDistributionMock,
 } = vi.hoisted(() => ({
   navigate: vi.fn(),
   invalidate: vi.fn(),
   useSessionMock: vi.fn(),
   listOrganizations: vi.fn(),
   setActiveOrganization: vi.fn(),
+  isCloudDistributionMock: vi.fn(() => false),
 }))
 
 vi.mock("@tanstack/react-router", () => ({
@@ -43,7 +45,9 @@ vi.mock("../../lib/i18n/react", () => ({
 }))
 
 vi.mock("../../lib/distribution", () => ({
-  isCloudDistribution: false,
+  get isCloudDistribution() {
+    return isCloudDistributionMock()
+  },
 }))
 
 vi.mock("../../lib/auth-client", () => ({
@@ -87,9 +91,43 @@ afterEach(() => {
   useSessionMock.mockReset()
   listOrganizations.mockReset()
   setActiveOrganization.mockReset()
+  isCloudDistributionMock.mockReset()
+  isCloudDistributionMock.mockReturnValue(false)
 })
 
 describe("OnboardingPage org selection", () => {
+  it("keeps cloud users on onboarding after auto-selecting their only org", async () => {
+    isCloudDistributionMock.mockReturnValue(true)
+    useSessionMock.mockReturnValue({
+      data: {
+        user: { id: "user_1", email: "test@example.com" },
+        session: { activeOrganizationId: null },
+      },
+    })
+    listOrganizations.mockResolvedValue({
+      data: [
+        {
+          id: "org_1",
+          name: "Northwind",
+          slug: "northwind",
+          createdAt: new Date("2026-03-09T00:00:00.000Z"),
+        },
+      ],
+    })
+    setActiveOrganization.mockResolvedValue({
+      data: { session: { activeOrganizationId: "org_1" } },
+    })
+
+    render(<Route.component />)
+
+    await waitFor(() => {
+      expect(setActiveOrganization).toHaveBeenCalledWith({ organizationId: "org_1" })
+    })
+
+    expect(invalidate).toHaveBeenCalled()
+    expect(navigate).not.toHaveBeenCalledWith({ to: "/", replace: true })
+  })
+
   it("shows an organization chooser when the user has multiple orgs and no active org", async () => {
     useSessionMock.mockReturnValue({
       data: {
