@@ -1,0 +1,152 @@
+// @vitest-environment jsdom
+
+import { afterEach, describe, expect, it, vi } from "vitest"
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react"
+
+const {
+  navigate,
+  invalidate,
+  useSessionMock,
+  isCloudDistributionMock,
+  onboardingStatusQuery,
+  runtimeCapabilitiesQuery,
+} = vi.hoisted(() => ({
+  navigate: vi.fn(),
+  invalidate: vi.fn(),
+  useSessionMock: vi.fn(),
+  isCloudDistributionMock: vi.fn(() => true),
+  onboardingStatusQuery: vi.fn(),
+  runtimeCapabilitiesQuery: vi.fn(),
+}))
+
+vi.mock("@tanstack/react-router", () => ({
+  createFileRoute: () => (options: unknown) => options,
+  useNavigate: () => navigate,
+  useRouter: () => ({ invalidate }),
+}))
+
+vi.mock("../../lib/i18n/react", () => ({
+  useI18n: () => ({
+    t: (key: string) => key,
+  }),
+}))
+
+vi.mock("../../lib/distribution", () => ({
+  get isCloudDistribution() {
+    return isCloudDistributionMock()
+  },
+}))
+
+vi.mock("../../lib/auth-client", () => ({
+  authClient: {
+    organization: {
+      list: vi.fn(),
+      setActive: vi.fn(),
+      create: vi.fn(),
+    },
+  },
+  useSession: useSessionMock,
+}))
+
+vi.mock("../../trpc/client", () => ({
+  trpc: {
+    onboarding: {
+      getStatus: {
+        query: onboardingStatusQuery,
+      },
+      saveDraft: {
+        mutate: vi.fn(),
+      },
+      completeManual: {
+        mutate: vi.fn(),
+      },
+    },
+    runtime: {
+      capabilities: {
+        query: runtimeCapabilitiesQuery,
+      },
+    },
+  },
+}))
+
+import { Route } from "../_app/onboarding"
+
+afterEach(() => {
+  cleanup()
+  navigate.mockReset()
+  invalidate.mockReset()
+  useSessionMock.mockReset()
+  isCloudDistributionMock.mockReset()
+  isCloudDistributionMock.mockReturnValue(true)
+  onboardingStatusQuery.mockReset()
+  runtimeCapabilitiesQuery.mockReset()
+})
+
+describe("OnboardingPage cloud flow", () => {
+  it("prefills localized defaults and hides irrelevant tax fields", async () => {
+    useSessionMock.mockReturnValue({
+      data: {
+        user: { id: "user_1", email: "test@example.com" },
+        session: { activeOrganizationId: "org_1" },
+      },
+    })
+    onboardingStatusQuery.mockResolvedValue({
+      status: "in_progress",
+      isComplete: false,
+      missing: ["companyName"],
+      values: {
+        companyName: "",
+        companyAddress: "",
+        companyEmail: "",
+        countryCode: "US",
+        invoicingIdentity: "registered_business",
+        locale: "en-US",
+        timezone: "UTC",
+        defaultCurrency: "USD",
+        taxRegime: "us_sales_tax",
+        pricesIncludeTax: false,
+        invoicePrefix: "INV",
+        quotePrefix: "QTE",
+        primaryTaxId: null,
+        primaryTaxIdScheme: "vat",
+      },
+    })
+    runtimeCapabilitiesQuery.mockResolvedValue({
+      onboardingAi: { enabled: false },
+    })
+
+    render(<Route.component />)
+
+    await waitFor(() => {
+      expect(onboardingStatusQuery).toHaveBeenCalled()
+    })
+
+    expect(screen.getByText("Confirm defaults")).toBeTruthy()
+
+    fireEvent.change(screen.getByLabelText("Country"), {
+      target: { value: "DK" },
+    })
+
+    expect((screen.getByLabelText("Locale") as HTMLSelectElement).value).toBe("da-DK")
+    expect((screen.getByLabelText("Timezone") as HTMLInputElement).value).toBe(
+      "Europe/Copenhagen"
+    )
+    expect((screen.getByLabelText("Default currency") as HTMLSelectElement).value).toBe(
+      "DKK"
+    )
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /I invoice as an individual/i })
+    )
+    expect(screen.queryByLabelText("VAT/CVR number")).toBeNull()
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /I invoice through a registered business/i,
+      })
+    )
+    expect(screen.getByLabelText("VAT/CVR number")).toBeTruthy()
+
+    expect(screen.getByText("Advanced defaults")).toBeTruthy()
+  })
+})

@@ -12,6 +12,12 @@ describe("cloud onboarding layout", () => {
     expect(source).toContain('<CardFooter className="pt-3">')
   })
 
+  it("organizes cloud onboarding into confirmation and advanced sections", () => {
+    const source = readFileSync(onboardingRoutePath, "utf8")
+    expect(source).toContain("Confirm defaults")
+    expect(source).toContain("Advanced defaults")
+  })
+
   it("gates the ai onboarding entry on runtime capabilities", () => {
     const source = readFileSync(onboardingRoutePath, "utf8")
     expect(source).toContain("trpc.runtime.capabilities")

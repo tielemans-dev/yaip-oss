@@ -23,6 +23,7 @@ import { Input } from '../../components/ui/input'
 import { Label } from '../../components/ui/label'
 import { useI18n } from '../../lib/i18n/react'
 import { COUNTRY_OPTIONS, LOCALE_OPTIONS, TAX_REGIMES } from '../../lib/compliance/countries'
+import { getOnboardingRules, type OnboardingInvoicingIdentity } from '../../lib/onboarding/rules'
 import { AiAssistantPanel } from '../../components/onboarding/ai-assistant-panel'
 
 export const Route = createFileRoute('/_app/onboarding')({
@@ -40,12 +41,14 @@ function slugify(value: string): string {
 
 type CloudOnboardingMethod = 'manual' | 'ai'
 type CloudTaxRegime = 'us_sales_tax' | 'eu_vat' | 'custom'
+type AutoFillField = 'locale' | 'timezone' | 'defaultCurrency' | 'taxRegime' | 'pricesIncludeTax'
 
 type CloudOnboardingValues = {
   companyName: string
   companyAddress: string
   companyEmail: string
   countryCode: string
+  invoicingIdentity: OnboardingInvoicingIdentity
   locale: string
   timezone: string
   defaultCurrency: string
@@ -71,6 +74,7 @@ const DEFAULT_CLOUD_ONBOARDING_VALUES: CloudOnboardingValues = {
   companyAddress: '',
   companyEmail: '',
   countryCode: 'US',
+  invoicingIdentity: 'registered_business',
   locale: 'en-US',
   timezone: 'UTC',
   defaultCurrency: 'USD',
@@ -88,6 +92,8 @@ function parseCloudOnboardingValues(values?: Record<string, unknown> | null): Cl
     companyAddress: String(values?.companyAddress ?? ''),
     companyEmail: String(values?.companyEmail ?? ''),
     countryCode: String(values?.countryCode ?? 'US'),
+    invoicingIdentity:
+      values?.invoicingIdentity === 'individual' ? 'individual' : 'registered_business',
     locale: String(values?.locale ?? 'en-US'),
     timezone: String(values?.timezone ?? 'UTC'),
     defaultCurrency: String(values?.defaultCurrency ?? 'USD'),
@@ -125,6 +131,19 @@ function OnboardingPage() {
   const [values, setValues] = useState<CloudOnboardingValues>(
     DEFAULT_CLOUD_ONBOARDING_VALUES
   )
+  const [manualOverrides, setManualOverrides] = useState<Record<AutoFillField, boolean>>({
+    locale: false,
+    timezone: false,
+    defaultCurrency: false,
+    taxRegime: false,
+    pricesIncludeTax: false,
+  })
+
+  const onboardingRules = getOnboardingRules({
+    countryCode: values.countryCode,
+    invoicingIdentity: values.invoicingIdentity,
+    taxRegime: values.taxRegime,
+  })
 
   useEffect(() => {
     if (hasActiveOrg) {
@@ -198,6 +217,13 @@ function OnboardingPage() {
 
         if (status.values) {
           setValues(parseCloudOnboardingValues(status.values))
+          setManualOverrides({
+            locale: false,
+            timezone: false,
+            defaultCurrency: false,
+            taxRegime: false,
+            pricesIncludeTax: false,
+          })
           if (status.values.onboardingMethod === 'ai') {
             setMethod('ai')
           }
@@ -271,11 +297,52 @@ function OnboardingPage() {
 
   function updateValue<Key extends keyof CloudOnboardingValues>(
     key: Key,
-    value: CloudOnboardingValues[Key]
+    value: CloudOnboardingValues[Key],
+    options?: { markManual?: boolean }
   ) {
     setValues((current) => ({
       ...current,
       [key]: value,
+    }))
+
+    const shouldTrackManual =
+      options?.markManual !== false &&
+      (key === 'locale' ||
+        key === 'timezone' ||
+        key === 'defaultCurrency' ||
+        key === 'taxRegime' ||
+        key === 'pricesIncludeTax')
+
+    if (shouldTrackManual) {
+      setManualOverrides((current) => ({
+        ...current,
+        [key]: true,
+      }))
+    }
+  }
+
+  function applySuggestedDefaults(
+    countryCode: string,
+    invoicingIdentity: OnboardingInvoicingIdentity
+  ) {
+    const defaults = getOnboardingRules({
+      countryCode,
+      invoicingIdentity,
+    }).defaults
+
+    setValues((current) => ({
+      ...current,
+      countryCode,
+      invoicingIdentity,
+      locale: manualOverrides.locale ? current.locale : defaults.locale,
+      timezone: manualOverrides.timezone ? current.timezone : defaults.timezone,
+      defaultCurrency: manualOverrides.defaultCurrency
+        ? current.defaultCurrency
+        : defaults.defaultCurrency,
+      taxRegime: manualOverrides.taxRegime ? current.taxRegime : defaults.taxRegime,
+      pricesIncludeTax: manualOverrides.pricesIncludeTax
+        ? current.pricesIncludeTax
+        : defaults.pricesIncludeTax,
     }))
   }
 
@@ -333,6 +400,7 @@ function OnboardingPage() {
         companyAddress: values.companyAddress,
         companyEmail: values.companyEmail,
         countryCode: values.countryCode,
+        invoicingIdentity: values.invoicingIdentity,
         locale: values.locale,
         timezone: values.timezone,
         defaultCurrency: values.defaultCurrency,
@@ -542,6 +610,13 @@ function OnboardingPage() {
                 disabled={submitting || statusLoading}
                 onApplied={(result) => {
                   setValues(parseCloudOnboardingValues(result.values))
+                  setManualOverrides({
+                    locale: false,
+                    timezone: false,
+                    defaultCurrency: false,
+                    taxRegime: false,
+                    pricesIncludeTax: false,
+                  })
                   setMissingFields(Array.isArray(result.missing) ? result.missing : [])
                 }}
               />
@@ -553,148 +628,242 @@ function OnboardingPage() {
               </div>
             ) : null}
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="companyName">Company name</Label>
-                <Input
-                  id="companyName"
-                  value={values.companyName}
-                  onChange={(e) => updateValue('companyName', e.target.value)}
-                  required
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="companyEmail">Billing email</Label>
-                <Input
-                  id="companyEmail"
-                  type="email"
-                  value={values.companyEmail}
-                  onChange={(e) => updateValue('companyEmail', e.target.value)}
-                  required
-                />
-              </div>
-              <div className="flex flex-col gap-2 md:col-span-2">
-                <Label htmlFor="companyAddress">Company address</Label>
-                <Input
-                  id="companyAddress"
-                  value={values.companyAddress}
-                  onChange={(e) => updateValue('companyAddress', e.target.value)}
-                  required
-                />
+            <section className="space-y-4 rounded-lg border border-border p-4">
+              <div className="space-y-1">
+                <h2 className="text-lg font-semibold">Business basics</h2>
+                <p className="text-sm text-muted-foreground">
+                  Start with the minimum details that determine which defaults and tax
+                  requirements apply.
+                </p>
               </div>
 
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="countryCode">Country</Label>
-                <select
-                  id="countryCode"
-                  className="h-9 rounded-md border bg-background px-3 text-sm"
-                  value={values.countryCode}
-                  onChange={(e) => updateValue('countryCode', e.target.value)}
-                >
-                  {COUNTRY_OPTIONS.map((country) => (
-                    <option key={country.code} value={country.code}>
-                      {country.label}
-                    </option>
-                  ))}
-                </select>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="companyName">Company name</Label>
+                  <Input
+                    id="companyName"
+                    value={values.companyName}
+                    onChange={(e) => updateValue('companyName', e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="companyEmail">Billing email</Label>
+                  <Input
+                    id="companyEmail"
+                    type="email"
+                    value={values.companyEmail}
+                    onChange={(e) => updateValue('companyEmail', e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="flex flex-col gap-2 md:col-span-2">
+                  <Label htmlFor="companyAddress">Company address</Label>
+                  <Input
+                    id="companyAddress"
+                    value={values.companyAddress}
+                    onChange={(e) => updateValue('companyAddress', e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="countryCode">Country</Label>
+                  <select
+                    id="countryCode"
+                    className="h-9 rounded-md border bg-background px-3 text-sm"
+                    value={values.countryCode}
+                    onChange={(e) =>
+                      applySuggestedDefaults(e.target.value, values.invoicingIdentity)
+                    }
+                  >
+                    {COUNTRY_OPTIONS.map((country) => (
+                      <option key={country.code} value={country.code}>
+                        {country.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="locale">Locale</Label>
-                <select
-                  id="locale"
-                  className="h-9 rounded-md border bg-background px-3 text-sm"
-                  value={values.locale}
-                  onChange={(e) => updateValue('locale', e.target.value)}
-                >
-                  {LOCALE_OPTIONS.map((locale) => (
-                    <option key={locale} value={locale}>
-                      {locale}
-                    </option>
-                  ))}
-                </select>
+              <div className="space-y-2">
+                <Label>How do you invoice?</Label>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <button
+                    type="button"
+                    aria-pressed={values.invoicingIdentity === 'individual'}
+                    className={`rounded-lg border p-4 text-left ${
+                      values.invoicingIdentity === 'individual'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border'
+                    }`}
+                    onClick={() => applySuggestedDefaults(values.countryCode, 'individual')}
+                  >
+                    <p className="text-sm font-semibold">I invoice as an individual</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Use this when you do not invoice through a registered company.
+                    </p>
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={values.invoicingIdentity === 'registered_business'}
+                    className={`rounded-lg border p-4 text-left ${
+                      values.invoicingIdentity === 'registered_business'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border'
+                    }`}
+                    onClick={() =>
+                      applySuggestedDefaults(values.countryCode, 'registered_business')
+                    }
+                  >
+                    <p className="text-sm font-semibold">
+                      I invoice through a registered business
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Use your company defaults and any tax identity the selected setup
+                      requires.
+                    </p>
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            <section className="space-y-4 rounded-lg border border-border p-4">
+              <div className="space-y-1">
+                <h2 className="text-lg font-semibold">Confirm defaults</h2>
+                <p className="text-sm text-muted-foreground">
+                  We suggested these defaults from your country and business type. Review
+                  them now and adjust anything that should work differently for your
+                  invoices.
+                </p>
               </div>
 
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="timezone">Timezone</Label>
-                <Input
-                  id="timezone"
-                  value={values.timezone}
-                  onChange={(e) => updateValue('timezone', e.target.value)}
-                  required
-                />
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="locale">Locale</Label>
+                  <select
+                    id="locale"
+                    className="h-9 rounded-md border bg-background px-3 text-sm"
+                    value={values.locale}
+                    onChange={(e) => updateValue('locale', e.target.value)}
+                  >
+                    {LOCALE_OPTIONS.map((locale) => (
+                      <option key={locale} value={locale}>
+                        {locale}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="timezone">Timezone</Label>
+                  <Input
+                    id="timezone"
+                    value={values.timezone}
+                    onChange={(e) => updateValue('timezone', e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="defaultCurrency">Default currency</Label>
+                  <select
+                    id="defaultCurrency"
+                    className="h-9 rounded-md border bg-background px-3 text-sm"
+                    value={values.defaultCurrency}
+                    onChange={(e) => updateValue('defaultCurrency', e.target.value)}
+                  >
+                    {CURRENCIES.map((currency) => (
+                      <option key={currency.value} value={currency.value}>
+                        {currency.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="taxRegime">Tax setup</Label>
+                  <select
+                    id="taxRegime"
+                    className="h-9 rounded-md border bg-background px-3 text-sm"
+                    value={values.taxRegime}
+                    onChange={(e) => updateValue('taxRegime', e.target.value as CloudTaxRegime)}
+                  >
+                    {TAX_REGIMES.map((regime) => (
+                      <option key={regime.value} value={regime.value}>
+                        {regime.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </section>
+
+            <section className="space-y-4 rounded-lg border border-border p-4">
+              <div className="space-y-1">
+                <h2 className="text-lg font-semibold">Relevant compliance details</h2>
+                <p className="text-sm text-muted-foreground">
+                  We only ask for extra tax identifiers when the selected setup needs
+                  them.
+                </p>
               </div>
 
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="defaultCurrency">Default currency</Label>
-                <select
-                  id="defaultCurrency"
-                  className="h-9 rounded-md border bg-background px-3 text-sm"
-                  value={values.defaultCurrency}
-                  onChange={(e) => updateValue('defaultCurrency', e.target.value)}
-                >
-                  {CURRENCIES.map((currency) => (
-                    <option key={currency.value} value={currency.value}>
-                      {currency.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {onboardingRules.showPrimaryTaxId ? (
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="primaryTaxId">
+                      {onboardingRules.primaryTaxIdCopy.label}
+                    </Label>
+                    <Input
+                      id="primaryTaxId"
+                      value={values.primaryTaxId}
+                      onChange={(e) => updateValue('primaryTaxId', e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {onboardingRules.primaryTaxIdCopy.help}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No additional tax ID is needed for this setup right now.
+                </p>
+              )}
+            </section>
 
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="taxRegime">Tax regime</Label>
-                <select
-                  id="taxRegime"
-                  className="h-9 rounded-md border bg-background px-3 text-sm"
-                  value={values.taxRegime}
-                  onChange={(e) => updateValue('taxRegime', e.target.value as CloudTaxRegime)}
-                >
-                  {TAX_REGIMES.map((regime) => (
-                    <option key={regime.value} value={regime.value}>
-                      {regime.label}
-                    </option>
-                  ))}
-                </select>
+            <details className="rounded-lg border border-border p-4">
+              <summary className="cursor-pointer list-none text-lg font-semibold">
+                Advanced defaults
+              </summary>
+              <p className="mt-2 text-sm text-muted-foreground">
+                These values are prefilled so you can start immediately, but you can
+                still change them before you finish onboarding.
+              </p>
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="invoicePrefix">Invoice prefix</Label>
+                  <Input
+                    id="invoicePrefix"
+                    value={values.invoicePrefix}
+                    onChange={(e) => updateValue('invoicePrefix', e.target.value.toUpperCase())}
+                    required
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="quotePrefix">Quote prefix</Label>
+                  <Input
+                    id="quotePrefix"
+                    value={values.quotePrefix}
+                    onChange={(e) => updateValue('quotePrefix', e.target.value.toUpperCase())}
+                    required
+                  />
+                </div>
+                <label className="flex items-center gap-2 text-sm md:col-span-2">
+                  <input
+                    type="checkbox"
+                    checked={values.pricesIncludeTax}
+                    onChange={(e) => updateValue('pricesIncludeTax', e.target.checked)}
+                  />
+                  Prices include tax
+                </label>
               </div>
-
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="primaryTaxId">Primary tax ID (when required)</Label>
-                <Input
-                  id="primaryTaxId"
-                  value={values.primaryTaxId}
-                  onChange={(e) => updateValue('primaryTaxId', e.target.value)}
-                />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="invoicePrefix">Invoice prefix</Label>
-                <Input
-                  id="invoicePrefix"
-                  value={values.invoicePrefix}
-                  onChange={(e) => updateValue('invoicePrefix', e.target.value.toUpperCase())}
-                  required
-                />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="quotePrefix">Quote prefix</Label>
-                <Input
-                  id="quotePrefix"
-                  value={values.quotePrefix}
-                  onChange={(e) => updateValue('quotePrefix', e.target.value.toUpperCase())}
-                  required
-                />
-              </div>
-            </div>
-
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={values.pricesIncludeTax}
-                onChange={(e) => updateValue('pricesIncludeTax', e.target.checked)}
-              />
-              Prices include tax
-            </label>
+            </details>
           </CardContent>
           <CardFooter className="pt-3">
             <Button type="submit" className="w-full" disabled={submitting || statusLoading}>
