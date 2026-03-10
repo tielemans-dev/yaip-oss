@@ -24,8 +24,7 @@ Source-available invoicing for freelancers and small businesses.
 
 ### Prerequisites
 
-- Node.js 24.x (recommended)
-- pnpm
+- Bun 1.3.9 (see `.bun-version`)
 - PostgreSQL (or Docker)
 
 ### Development Setup
@@ -40,7 +39,7 @@ Source-available invoicing for freelancers and small businesses.
 2. Install dependencies:
 
    ```bash
-   pnpm install
+   bun install
    ```
 
 3. From the workspace root, copy the env file and fill in values:
@@ -57,7 +56,7 @@ Source-available invoicing for freelancers and small businesses.
    openssl rand -base64 32
    ```
 
-4. If `DATABASE_URL` points to localhost, Docker will be used to auto-start Postgres when running `pnpm dev`.
+4. If `DATABASE_URL` points to localhost, Docker will be used to auto-start Postgres when running `bun run dev`.
    You can still start it manually:
 
    ```bash
@@ -72,17 +71,17 @@ Source-available invoicing for freelancers and small businesses.
 5. Start the dev server:
 
    ```bash
-   pnpm dev
+   bun run dev
    ```
 
-   `pnpm dev` now runs a preflight that applies Prisma migrations automatically.
+   `bun run dev` now runs a preflight that applies Prisma migrations automatically.
    In `yaip-oss`, this command is pinned to `selfhost` distribution mode.
 
 6. If you want the full hosted simulation (cloud shell + cloud-configured OSS), run this from the workspace root:
 
    ```bash
    cd /path/to/yaip
-   pnpm dev
+   bun run dev
    ```
 
    Then use:
@@ -122,27 +121,31 @@ The app will be available at [http://localhost:3000](http://localhost:3000).
 Run the standard test suite:
 
 ```bash
-pnpm test
+bun run test
 ```
 
 Run the repo quality gates:
 
 ```bash
-pnpm lint
-pnpm typecheck
+bun run lint
+bun run typecheck
 ```
 
 Run the full application TypeScript backlog check:
 
 ```bash
-pnpm typecheck:app
+bun run typecheck:app
 ```
 
 Run the DB-backed invoice/quote smoke flow (create/edit/send/convert) against your local PostgreSQL configured in `.env`:
 
 ```bash
-pnpm test:integration
+bun run test:integration
 ```
+
+## Bun-Only Repo
+
+This repository is Bun-native. Use `bun install` and `bun run ...` commands for local development, CI reproduction, and self-host deployment workflows.
 
 ## Onboarding Behavior
 

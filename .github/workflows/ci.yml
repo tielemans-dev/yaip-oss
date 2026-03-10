@@ -31,50 +31,50 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: 22
-          cache: pnpm
+          bun-version-file: .bun-version
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
 
       - name: Lint
-        run: pnpm lint
+        run: bun run lint
 
       - name: Typecheck
-        run: pnpm typecheck
+        run: bun run typecheck
 
       - name: Generate Prisma client
-        run: pnpm --filter @yaip/oss exec prisma generate
+        run: bun --filter @yaip/oss prisma:generate
 
       - name: Apply migrations
-        run: pnpm --filter @yaip/oss exec prisma migrate deploy
+        working-directory: apps/oss
+        run: bunx prisma migrate deploy
 
       - name: Validate Prisma schema
-        run: pnpm --filter @yaip/oss exec prisma validate
+        working-directory: apps/oss
+        run: bunx prisma validate
 
       - name: Verify migration status
-        run: pnpm --filter @yaip/oss exec prisma migrate status
+        working-directory: apps/oss
+        run: bunx prisma migrate status
 
       - name: Run unit and router tests
-        run: pnpm test
+        run: bun run test
 
       - name: Run integration smoke tests
-        run: pnpm test:integration
+        run: bun run test:integration
 
       - name: Build
-        run: pnpm build
+        run: bun run build
 
       - name: Install Playwright browser
-        run: pnpm --filter @yaip/oss exec playwright install --with-deps chromium
+        working-directory: apps/oss
+        run: bunx playwright install --with-deps chromium
 
       - name: Run browser smoke tests
-        run: pnpm test:e2e
+        run: bun run test:e2e
 
       - name: Verify packed package artifact
         run: node scripts/check-packed-build.mjs

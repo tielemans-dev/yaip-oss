@@ -2,10 +2,10 @@
 
 ## Task Completion Requirements
 
-- `pnpm lint` must pass before considering work complete.
-- `pnpm typecheck` must pass before considering work complete.
-- Use `pnpm typecheck:app` when working in the application surface that still carries legacy TypeScript backlog.
-- `pnpm test` must pass before considering behavior work complete.
+- `bun run lint` must pass before considering work complete.
+- `bun run typecheck` must pass before considering work complete.
+- Use `bun run typecheck:app` when working in the application surface that still carries legacy TypeScript backlog.
+- `bun run test` must pass before considering behavior work complete.
 - Run targeted browser verification when changing setup, auth, public document, payment, or document-sending flows.
 
 ## Project Snapshot

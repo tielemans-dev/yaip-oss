@@ -17,11 +17,12 @@ Use extension interfaces in `apps/oss/src/lib/runtime/extensions.ts` when you ne
 
 ## Pull Request Expectations
 
+- This is a Bun repo. Use Bun for install, scripts, and local verification.
 - Keep OSS runtime self-deployable.
 - Keep cloud-specific logic outside OSS runtime paths.
 - Add or update tests for behavior changes.
 - Ensure CI and boundary checks pass.
 - Use the pull request template and include screenshots for UI changes.
-- `pnpm lint`, `pnpm typecheck`, and `pnpm test` should pass before asking for review.
+- `bun run lint`, `bun run typecheck`, and `bun run test` should pass before asking for review.
 
 PRs that weaken OSS/cloud boundaries will be closed.

@@ -33,4 +33,22 @@ describe("repository Bun contract", () => {
       expect(text).not.toContain("pnpm")
     }
   })
+
+  it("does not leave pnpm in contributor-facing docs or workflows", () => {
+    const files = [
+      ".github/workflows/ci.yml",
+      ".github/workflows/oss-boundary.yml",
+      ".github/workflows/publish-package.yml",
+      "README.md",
+      "apps/oss/README.md",
+      "CONTRIBUTING.md",
+      "AGENTS.md",
+      "CLAUDE.md",
+    ]
+
+    for (const file of files) {
+      const text = readFileSync(new URL(`../../${file}`, import.meta.url), "utf8")
+      expect(text).not.toContain("pnpm")
+    }
+  })
 })
