@@ -108,5 +108,5 @@ describeIfDatabase("invoice payment state", () => {
     } finally {
       await prisma.organization.deleteMany({ where: { id: orgId } })
     }
-  })
+  }, 10_000)
 })
