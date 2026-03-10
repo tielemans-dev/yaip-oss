@@ -46,6 +46,7 @@ import {
 import { Settings, UserPlus, X, Crown, User, Eye } from "lucide-react"
 import { useI18n } from "../../lib/i18n/react"
 import { shouldAutoLoadOpenRouterModels } from "./-settings.helpers"
+import { getOnboardingRules, type OnboardingInvoicingIdentity } from "../../lib/onboarding/rules"
 
 export const Route = createFileRoute("/_app/settings")({
   component: SettingsPage,
@@ -94,6 +95,7 @@ type SettingsData = {
   locale: string
   timezone: string
   defaultCurrency: string
+  onboardingInvoicingIdentity?: OnboardingInvoicingIdentity | null
   taxRegime: "us_sales_tax" | "eu_vat" | "custom"
   pricesIncludeTax: boolean
   currency: string
@@ -164,6 +166,7 @@ function SettingsPage() {
   const [locale, setLocale] = useState("en-US")
   const [timezone, setTimezone] = useState("UTC")
   const [defaultCurrency, setDefaultCurrency] = useState("USD")
+  const [invoicingIdentity, setInvoicingIdentity] = useState<OnboardingInvoicingIdentity>("registered_business")
   const [taxRegime, setTaxRegime] = useState<"us_sales_tax" | "eu_vat" | "custom">("us_sales_tax")
   const [pricesIncludeTax, setPricesIncludeTax] = useState(false)
   const [primaryTaxId, setPrimaryTaxId] = useState("")
@@ -203,6 +206,11 @@ function SettingsPage() {
     () => new Intl.DisplayNames([locale || "en-US"], { type: "language" }),
     [locale]
   )
+  const taxRules = getOnboardingRules({
+    countryCode,
+    invoicingIdentity,
+    taxRegime,
+  })
 
   useEffect(() => {
     trpc.settings.get
@@ -213,6 +221,7 @@ function SettingsPage() {
         setLocale(data.locale)
         setTimezone(data.timezone)
         setDefaultCurrency(data.defaultCurrency || data.currency)
+        setInvoicingIdentity(data.onboardingInvoicingIdentity ?? "registered_business")
         setTaxRegime(data.taxRegime)
         setPricesIncludeTax(data.pricesIncludeTax)
         setPrimaryTaxId(data.primaryTaxId ?? "")
@@ -380,6 +389,7 @@ function SettingsPage() {
         companyLogo: normalizedCompanyLogo || null,
         invoicePrefix: invoicePrefixInput || undefined,
         quotePrefix: quotePrefixInput || undefined,
+        onboardingInvoicingIdentity: invoicingIdentity,
         aiOpenRouterModel: aiOpenRouterModelInput || undefined,
         aiOpenRouterApiKey: aiOpenRouterApiKeyInput || undefined,
         clearAiOpenRouterApiKey,
@@ -784,30 +794,46 @@ function SettingsPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="primaryTaxId">{t("settings.primaryTaxId.label")}</Label>
-                <Input
-                  id="primaryTaxId"
-                  name="primaryTaxId"
-                  maxLength={40}
-                  placeholder={t("settings.primaryTaxId.placeholder")}
-                  value={primaryTaxId}
-                  onChange={(event) => setPrimaryTaxId(event.target.value)}
-                />
+                {taxRules.showPrimaryTaxId ? (
+                  <>
+                    <Label htmlFor="primaryTaxId">{taxRules.primaryTaxIdCopy.label}</Label>
+                    <Input
+                      id="primaryTaxId"
+                      name="primaryTaxId"
+                      maxLength={40}
+                      placeholder={taxRules.primaryTaxIdCopy.label}
+                      value={primaryTaxId}
+                      onChange={(event) => setPrimaryTaxId(event.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {taxRules.primaryTaxIdCopy.help}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm font-medium">Tax ID</p>
+                    <p className="text-sm text-muted-foreground">
+                      No tax ID required for this tax setup.
+                    </p>
+                  </>
+                )}
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="primaryTaxIdScheme">{t("settings.primaryTaxIdScheme.label")}</Label>
-                <Select value={primaryTaxIdScheme} onValueChange={setPrimaryTaxIdScheme}>
-                  <SelectTrigger id="primaryTaxIdScheme">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="vat">VAT</SelectItem>
-                    <SelectItem value="cvr">CVR</SelectItem>
-                    <SelectItem value="ein">EIN</SelectItem>
-                    <SelectItem value="other">{t("settings.primaryTaxIdScheme.other")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {taxRules.showPrimaryTaxId ? (
+                <div className="grid gap-2">
+                  <Label htmlFor="primaryTaxIdScheme">{t("settings.primaryTaxIdScheme.label")}</Label>
+                  <Select value={primaryTaxIdScheme} onValueChange={setPrimaryTaxIdScheme}>
+                    <SelectTrigger id="primaryTaxIdScheme">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="vat">VAT</SelectItem>
+                      <SelectItem value="cvr">CVR</SelectItem>
+                      <SelectItem value="ein">EIN</SelectItem>
+                      <SelectItem value="other">{t("settings.primaryTaxIdScheme.other")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : null}
             </div>
           </CardContent>
         </Card>

@@ -15,6 +15,7 @@ import { getStripePaymentConfigurationState } from "../../lib/payments/stripe"
 import { getRuntimeCapabilities } from "../../lib/runtime/extensions"
 import { getManagedDocumentDomainProvider } from "../../lib/runtime/services"
 import { COUNTRY_OPTIONS, LOCALE_OPTIONS } from "../../lib/compliance/countries"
+import { onboardingInvoicingIdentitySchema } from "@yaip/contracts/onboarding"
 import {
   getCountryCodeOrFallback,
   validateLocalizedFields,
@@ -83,6 +84,7 @@ export const settingsUpdateSchema = z.object({
     .optional(),
   timezone: timezoneSchema.optional(),
   defaultCurrency: z.string().trim().regex(/^[A-Z]{3}$/).optional(),
+  onboardingInvoicingIdentity: onboardingInvoicingIdentitySchema.optional(),
   taxRegime: taxRegimeSchema.optional(),
   pricesIncludeTax: z.boolean().optional(),
   primaryTaxId: z.string().trim().max(40).optional(),
@@ -128,6 +130,7 @@ export const settingsRouter = router({
       locale: settings.locale,
       timezone: settings.timezone,
       defaultCurrency: settings.defaultCurrency,
+      onboardingInvoicingIdentity: settings.onboardingInvoicingIdentity,
       taxRegime: settings.taxRegime,
       pricesIncludeTax: settings.pricesIncludeTax,
       currency: settings.currency,
