@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import { cleanup, render, screen, waitFor } from "@testing-library/react"
+import type { ComponentType } from "react"
 import { afterEach as afterEachTest, describe, expect, it, vi } from "vitest"
 
 const {
@@ -14,7 +15,7 @@ const {
 }))
 
 vi.mock("@tanstack/react-router", () => ({
-  createFileRoute: () => (options: unknown) => options,
+  createFileRoute: () => (options: Record<string, unknown>) => ({ ...options }),
 }))
 
 vi.mock("../../components/settings/document-email-sending-card", () => ({
@@ -104,6 +105,8 @@ vi.mock("../../trpc/client", () => ({
 
 import { Route } from "../_app/settings"
 
+const RouteComponent = (Route as unknown as { component: ComponentType }).component
+
 function buildSettingsData(overrides: Record<string, unknown> = {}) {
   return {
     id: "settings_1",
@@ -177,7 +180,7 @@ describe("Settings tax relevance", () => {
     let currentSettingsData = buildSettingsData()
     settingsGetQuery.mockImplementation(() => Promise.resolve(currentSettingsData))
 
-    render(<Route.component />)
+    render(<RouteComponent />)
 
     await waitFor(() => {
       expect(settingsGetQuery).toHaveBeenCalled()
@@ -196,7 +199,7 @@ describe("Settings tax relevance", () => {
       pricesIncludeTax: true,
     })
 
-    render(<Route.component />)
+    render(<RouteComponent />)
 
     await waitFor(() => {
       expect(screen.getByLabelText("VAT/CVR number")).toBeTruthy()

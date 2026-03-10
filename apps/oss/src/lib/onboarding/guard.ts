@@ -14,6 +14,7 @@ export async function assertCloudOnboardingComplete(
     where: { organizationId },
     select: {
       onboardingStatus: true,
+      onboardingMethod: true,
       onboardingProfile: true,
       onboardingInvoicingIdentity: true,
       onboardingVersion: true,
@@ -40,10 +41,14 @@ export async function assertCloudOnboardingComplete(
     select: { value: true },
   })
 
-  const onboardingState = getCloudOnboardingState({
-    ...settings,
-    primaryTaxId: primaryTaxId?.value ?? null,
-  })
+  const onboardingState = getCloudOnboardingState(
+    settings
+      ? {
+          ...settings,
+          primaryTaxId: primaryTaxId?.value ?? null,
+        }
+      : null
+  )
 
   if (!onboardingState.isComplete) {
     const missing = onboardingState.readiness?.missing ?? []

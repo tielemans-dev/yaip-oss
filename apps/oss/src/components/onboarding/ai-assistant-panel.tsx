@@ -3,6 +3,7 @@ import type {
   OnboardingMissingField,
   OnboardingValues,
 } from "@yaip/contracts/onboarding"
+import { onboardingValuesSchema } from "@yaip/contracts/onboarding"
 import { useMemo, useState } from "react"
 import { Button } from "../ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
@@ -64,7 +65,10 @@ export function AiAssistantPanel({
         source: "ai",
         patch: suggestion.patch,
       })
-      onApplied(applied)
+      onApplied({
+        ...applied,
+        values: onboardingValuesSchema.parse(applied.values),
+      })
       setSuggestion(null)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Unable to apply suggestion")

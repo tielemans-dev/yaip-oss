@@ -53,11 +53,11 @@ export const onboardingValuesSchema = z
   .object({
     companyName: z.string().trim().max(120).nullable().optional(),
     companyAddress: z.string().trim().max(240).nullable().optional(),
-    companyEmail: z.preprocess(
-      (value) =>
-        typeof value === "string" && value.trim().length === 0 ? null : value,
-      z.string().trim().email().nullable().optional()
-    ),
+    companyEmail: z
+      .union([z.string().trim().email(), z.literal("")])
+      .nullable()
+      .transform((value) => (value === "" ? null : value))
+      .optional(),
     countryCode: countryCodeSchema.nullable().optional(),
     invoicingIdentity: onboardingInvoicingIdentitySchema.nullable().optional(),
     locale: z.string().trim().min(2).max(16).nullable().optional(),

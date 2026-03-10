@@ -195,6 +195,87 @@ function toMissingFieldList(fields: readonly string[]): OnboardingMissingField[]
   )
 }
 
+function toPatchCurrentValues(
+  values: Record<string, unknown> | undefined
+): Partial<OnboardingPatch> {
+  if (!values) return {}
+
+  const candidate: Record<string, unknown> = {}
+
+  if (typeof values.companyName === "string" && values.companyName.length > 0) {
+    candidate.companyName = values.companyName
+  }
+  if (
+    typeof values.companyAddress === "string" &&
+    values.companyAddress.length > 0
+  ) {
+    candidate.companyAddress = values.companyAddress
+  }
+  if (
+    typeof values.companyEmail === "string" &&
+    values.companyEmail.length > 0
+  ) {
+    candidate.companyEmail = values.companyEmail
+  }
+  if (typeof values.countryCode === "string" && values.countryCode.length > 0) {
+    candidate.countryCode = values.countryCode
+  }
+  if (
+    values.invoicingIdentity === "individual" ||
+    values.invoicingIdentity === "registered_business"
+  ) {
+    candidate.invoicingIdentity = values.invoicingIdentity
+  }
+  if (typeof values.locale === "string" && values.locale.length > 0) {
+    candidate.locale = values.locale
+  }
+  if (typeof values.timezone === "string" && values.timezone.length > 0) {
+    candidate.timezone = values.timezone
+  }
+  if (
+    typeof values.defaultCurrency === "string" &&
+    values.defaultCurrency.length > 0
+  ) {
+    candidate.defaultCurrency = values.defaultCurrency
+  }
+  if (
+    values.taxRegime === "us_sales_tax" ||
+    values.taxRegime === "eu_vat" ||
+    values.taxRegime === "custom"
+  ) {
+    candidate.taxRegime = values.taxRegime
+  }
+  if (typeof values.pricesIncludeTax === "boolean") {
+    candidate.pricesIncludeTax = values.pricesIncludeTax
+  }
+  if (
+    typeof values.primaryTaxId === "string" &&
+    values.primaryTaxId.length > 0
+  ) {
+    candidate.primaryTaxId = values.primaryTaxId
+  }
+  if (
+    typeof values.primaryTaxIdScheme === "string" &&
+    values.primaryTaxIdScheme.length > 0
+  ) {
+    candidate.primaryTaxIdScheme = values.primaryTaxIdScheme
+  }
+  if (
+    typeof values.invoicePrefix === "string" &&
+    /^[A-Z0-9-]{1,10}$/.test(values.invoicePrefix)
+  ) {
+    candidate.invoicePrefix = values.invoicePrefix
+  }
+  if (
+    typeof values.quotePrefix === "string" &&
+    /^[A-Z0-9-]{1,10}$/.test(values.quotePrefix)
+  ) {
+    candidate.quotePrefix = values.quotePrefix
+  }
+
+  return onboardingPatchSchema.parse(candidate)
+}
+
 async function applyPatchToOrgSettings(
   organizationId: string,
   patch: OnboardingPatch,
@@ -229,7 +310,8 @@ async function applyPatchToOrgSettings(
     },
   })
 
-  if ("primaryTaxId" in patch) {
+  const primaryTaxId = patch.primaryTaxId
+  if (typeof primaryTaxId === "string" && primaryTaxId.length > 0) {
     const existing = await prisma.organizationTaxId.findFirst({
       where: { organizationId },
       orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
@@ -241,7 +323,7 @@ async function applyPatchToOrgSettings(
       await prisma.organizationTaxId.update({
         where: { id: existing.id },
         data: {
-          value: patch.primaryTaxId,
+          value: primaryTaxId,
           scheme,
           isPrimary: true,
         },
@@ -250,7 +332,7 @@ async function applyPatchToOrgSettings(
       await prisma.organizationTaxId.create({
         data: {
           organizationId,
-          value: patch.primaryTaxId,
+          value: primaryTaxId,
           scheme,
           isPrimary: true,
         },
@@ -290,10 +372,10 @@ export const onboardingAiRouter = router({
       assertCloudOnboardingAiEnabled()
       const snapshot = await loadSnapshot(ctx.organizationId)
       const missing = toMissingFieldList(input.missing ?? snapshot.readiness.missing)
-      const currentValues = {
+      const currentValues = toPatchCurrentValues({
         ...snapshot.values,
         ...input.currentValues,
-      }
+      })
       try {
         const suggestion = await getOnboardingAiService().suggestPatch({
           userMessage: input.userMessage,

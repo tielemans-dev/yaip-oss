@@ -70,7 +70,7 @@ export function getRequirementRules(input: {
   taxRegime?: OnboardingTaxRegime | string | null
 }): OnboardingRequirementRules {
   const rules = getOnboardingRules(input)
-  const requiredFields = rules.requirePrimaryTaxId
+  const requiredFields: OnboardingMissingField[] = rules.requirePrimaryTaxId
     ? [...REQUIRED_BASE_FIELDS, "primaryTaxId"]
     : [...REQUIRED_BASE_FIELDS]
 

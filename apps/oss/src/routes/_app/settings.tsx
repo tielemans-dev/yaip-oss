@@ -216,22 +216,29 @@ function SettingsPage() {
     trpc.settings.get
       .query()
       .then((data) => {
-        setSettings(data as SettingsData)
-        setCountryCode(data.countryCode)
-        setLocale(data.locale)
-        setTimezone(data.timezone)
-        setDefaultCurrency(data.defaultCurrency || data.currency)
-        setInvoicingIdentity(data.onboardingInvoicingIdentity ?? "registered_business")
-        setTaxRegime(data.taxRegime)
-        setPricesIncludeTax(data.pricesIncludeTax)
-        setPrimaryTaxId(data.primaryTaxId ?? "")
-        setPrimaryTaxIdScheme(data.primaryTaxIdScheme ?? "vat")
-        const existingLogo = data.companyLogo ?? ""
+        const nextSettings = data as SettingsData
+
+        setSettings(nextSettings)
+        setCountryCode(nextSettings.countryCode)
+        setLocale(nextSettings.locale)
+        setTimezone(nextSettings.timezone)
+        setDefaultCurrency(nextSettings.defaultCurrency || nextSettings.currency)
+        setInvoicingIdentity(
+          nextSettings.onboardingInvoicingIdentity ?? "registered_business"
+        )
+        setTaxRegime(nextSettings.taxRegime)
+        setPricesIncludeTax(nextSettings.pricesIncludeTax)
+        setPrimaryTaxId(nextSettings.primaryTaxId ?? "")
+        setPrimaryTaxIdScheme(nextSettings.primaryTaxIdScheme ?? "vat")
+        const existingLogo = nextSettings.companyLogo ?? ""
         setCompanyLogo(existingLogo)
         setCompanyLogoUrlInput(isDataImageLogo(existingLogo) ? "" : existingLogo)
-        const nextAiOpenRouterModel = data.aiOpenRouterModel || "openai/gpt-4o-mini"
+        const nextAiOpenRouterModel =
+          nextSettings.aiOpenRouterModel || "openai/gpt-4o-mini"
         setAiOpenRouterModel(nextAiOpenRouterModel)
-        setDocumentSendingDomainInput(data.documentSending.requestedDomain ?? "")
+        setDocumentSendingDomainInput(
+          nextSettings.documentSending.requestedDomain ?? ""
+        )
 
         if (
           shouldAutoLoadOpenRouterModels(
@@ -253,8 +260,14 @@ function SettingsPage() {
     setOpenRouterModelsError(null)
     try {
       const result = await trpc.ai.listModels.query()
-      if (result.models.length > 0) {
-        setOpenRouterModels(result.models)
+      const nextModels: string[] = Array.isArray(result.models)
+        ? result.models.flatMap((model) =>
+            typeof model === "string" ? [model] : []
+          )
+        : []
+
+      if (nextModels.length > 0) {
+        setOpenRouterModels(nextModels)
       }
     } catch {
       setOpenRouterModelsError(

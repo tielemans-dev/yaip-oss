@@ -2,6 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react"
+import type { ComponentType } from "react"
 
 const {
   navigate,
@@ -20,7 +21,7 @@ const {
 }))
 
 vi.mock("@tanstack/react-router", () => ({
-  createFileRoute: () => (options: unknown) => options,
+  createFileRoute: () => (options: Record<string, unknown>) => ({ ...options }),
   useNavigate: () => navigate,
   useRouter: () => ({ invalidate }),
 }))
@@ -71,6 +72,8 @@ vi.mock("../../trpc/client", () => ({
 
 import { Route } from "../_app/onboarding"
 
+const RouteComponent = (Route as unknown as { component: ComponentType }).component
+
 afterEach(() => {
   cleanup()
   navigate.mockReset()
@@ -115,7 +118,7 @@ describe("OnboardingPage cloud flow", () => {
       onboardingAi: { enabled: false },
     })
 
-    render(<Route.component />)
+    render(<RouteComponent />)
 
     await waitFor(() => {
       expect(onboardingStatusQuery).toHaveBeenCalled()

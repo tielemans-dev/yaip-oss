@@ -11,7 +11,12 @@ export const getActiveOrgCloudOnboardingStatus = createServerFn({
   ])
   const headers = getRequestHeaders()
   const session = await auth.api.getSession({ headers })
-  const organizationId = session?.session.activeOrganizationId
+  const organizationId =
+    session?.session &&
+    "activeOrganizationId" in session.session &&
+    typeof session.session.activeOrganizationId === "string"
+      ? session.session.activeOrganizationId
+      : null
 
   if (!organizationId) {
     return getCloudOnboardingState(null)
@@ -21,6 +26,7 @@ export const getActiveOrgCloudOnboardingStatus = createServerFn({
     where: { organizationId },
     select: {
       onboardingStatus: true,
+      onboardingMethod: true,
       onboardingProfile: true,
       onboardingInvoicingIdentity: true,
       onboardingVersion: true,
@@ -47,8 +53,12 @@ export const getActiveOrgCloudOnboardingStatus = createServerFn({
     select: { value: true },
   })
 
-  return getCloudOnboardingState({
-    ...settings,
-    primaryTaxId: primaryTaxId?.value ?? null,
-  })
+  return getCloudOnboardingState(
+    settings
+      ? {
+          ...settings,
+          primaryTaxId: primaryTaxId?.value ?? null,
+        }
+      : null
+  )
 })
