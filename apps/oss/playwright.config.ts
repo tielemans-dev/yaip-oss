@@ -3,6 +3,10 @@ import { defineConfig } from "@playwright/test"
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000"
 const databaseUrl =
   process.env.DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/yaip?schema=public"
+const distribution =
+  process.env.PLAYWRIGHT_YAIP_DISTRIBUTION ??
+  process.env.YAIP_DISTRIBUTION ??
+  "selfhost"
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -27,9 +31,9 @@ export default defineConfig({
       BETTER_AUTH_SECRET:
         process.env.BETTER_AUTH_SECRET ?? "playwright-auth-secret-that-is-over-32-characters",
       BETTER_AUTH_URL: baseURL,
-      VITE_YAIP_DISTRIBUTION: "selfhost",
+      VITE_YAIP_DISTRIBUTION: distribution,
       YAIP_APP_ORIGIN: baseURL,
-      YAIP_DISTRIBUTION: "selfhost",
+      YAIP_DISTRIBUTION: distribution,
       YAIP_JSON_LOGS: "false",
       YAIP_PUBLIC_PAYMENT_SECRET:
         process.env.YAIP_PUBLIC_PAYMENT_SECRET ?? "payment-link-e2e-secret-123456",
