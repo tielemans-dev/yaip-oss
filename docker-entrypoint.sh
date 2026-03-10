@@ -1,8 +1,10 @@
 #!/bin/sh
 set -e
 
+cd /app/apps/oss
+
 echo "Running database migrations..."
-npx prisma migrate deploy
+bunx prisma migrate deploy
 
 echo "Starting server..."
-node .output/server/index.mjs
+exec bun .output/server/index.mjs
