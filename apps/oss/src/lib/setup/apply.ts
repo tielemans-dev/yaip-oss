@@ -114,6 +114,8 @@ export async function applySetupInitialization(
   const adminEmail = input.admin.email.toLowerCase()
   const passwordHash = await hashPassword(input.admin.password)
   const organizationMetadata = buildOrganizationMetadata(input)
+  const companyName = input.email?.fromName?.trim() || input.organization.name
+  const companyEmail = input.email?.replyTo?.trim().toLowerCase() || adminEmail
 
   const created = await prisma.$transaction(async (tx) => {
     const existingUser = await tx.user.findUnique({
@@ -185,7 +187,8 @@ export async function applySetupInitialization(
         timezone: input.locale.timezone,
         defaultCurrency: input.locale.currency,
         currency: input.locale.currency,
-        companyName: input.organization.name,
+        companyName,
+        companyEmail,
       },
       create: {
         organizationId: organization.id,
@@ -194,7 +197,8 @@ export async function applySetupInitialization(
         timezone: input.locale.timezone,
         defaultCurrency: input.locale.currency,
         currency: input.locale.currency,
-        companyName: input.organization.name,
+        companyName,
+        companyEmail,
       },
     })
 

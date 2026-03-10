@@ -6,6 +6,11 @@ test.beforeEach(async () => {
 })
 
 test("completes the setup wizard and lands on login", async ({ page }) => {
+  test.skip(process.env.YAIP_DISTRIBUTION === "cloud", "Setup wizard is selfhost-only")
+
+  const adminEmail = "setup-admin@example.com"
+  const adminPassword = "SetupSmoke123!"
+
   await page.goto("/setup")
   await waitForClientReady(page)
 
@@ -14,14 +19,30 @@ test("completes the setup wizard and lands on login", async ({ page }) => {
   await page.getByRole("button", { name: "Next" }).click()
   await page.getByLabel("Organization name").fill("Setup Smoke Org")
   await page.getByLabel("Admin name").fill("Setup Smoke Admin")
-  await page.getByLabel("Admin email").fill("setup-admin@example.com")
-  await page.getByLabel("Admin password").fill("SetupSmoke123!")
+  await page.getByLabel("Admin email").fill(adminEmail)
+  await page.getByLabel("Admin password").fill(adminPassword)
   await page.getByRole("button", { name: "Next" }).click()
   await page.getByRole("button", { name: "Next" }).click()
+  await page.getByLabel("Email from name (optional)").fill("Setup Billing")
+  await page.getByLabel("Email reply-to (optional)").fill("billing@example.com")
   await page.getByRole("button", { name: "Finish setup" }).click()
 
   await expect(page).toHaveURL(/\/login/)
   await expect(page.getByRole("status")).toContainText(
     "Setup complete. Please sign in to continue."
   )
+
+  await page.getByLabel("Email").fill(adminEmail)
+  await page.getByLabel("Password").fill(adminPassword)
+  await page.getByRole("button", { name: "Sign in" }).click()
+  await page.waitForURL((url) => !url.pathname.startsWith("/login"), {
+    timeout: 10_000,
+  })
+  await waitForClientReady(page)
+
+  await page.goto("/settings")
+  await waitForClientReady(page)
+
+  await expect(page.getByLabel("Company Name")).toHaveValue("Setup Billing")
+  await expect(page.getByLabel("Company Email")).toHaveValue("billing@example.com")
 })

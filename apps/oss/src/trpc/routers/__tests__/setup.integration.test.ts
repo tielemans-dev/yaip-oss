@@ -105,6 +105,10 @@ describeIfDatabase("setup router integration", () => {
         timezone: "UTC",
         currency: "USD",
       },
+      email: {
+        fromName: "Setup Billing",
+        replyTo: "billing-setup@example.com",
+      },
     }
 
     const initialStatus = await caller.setup.getStatus()
@@ -120,6 +124,19 @@ describeIfDatabase("setup router integration", () => {
       expect(statusAfterInitialize.stage).toBe("initialized")
       expect(statusAfterInitialize.hasSeedData).toBe(true)
       expect(statusAfterInitialize.isSetupComplete).toBe(false)
+
+      const settings = await prisma.orgSettings.findUniqueOrThrow({
+        where: { organizationId: initialized.organizationId },
+        select: {
+          companyName: true,
+          companyEmail: true,
+        },
+      })
+
+      expect(settings).toEqual({
+        companyName: "Setup Billing",
+        companyEmail: "billing-setup@example.com",
+      })
     } else {
       await expect(caller.setup.initialize(setupInput)).rejects.toThrow()
     }

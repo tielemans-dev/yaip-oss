@@ -54,6 +54,10 @@ describe("setup route helpers", () => {
         timezone: "Europe/Copenhagen",
         currency: "DKK",
       },
+      email: {
+        fromName: "Acme Billing",
+        replyTo: "billing@example.com",
+      },
     })
   })
 })

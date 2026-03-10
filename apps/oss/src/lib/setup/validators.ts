@@ -26,6 +26,12 @@ export const setupInitializeSchema = z.object({
     timezone: z.string().trim().min(1).max(120),
     currency: z.string().trim().regex(currencyRegex),
   }),
+  email: z
+    .object({
+      fromName: z.string().trim().min(1).max(120).optional(),
+      replyTo: z.string().trim().email().optional(),
+    })
+    .optional(),
 })
 
 export type SetupInitializeInput = z.infer<typeof setupInitializeSchema>

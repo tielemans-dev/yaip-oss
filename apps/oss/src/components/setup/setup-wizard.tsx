@@ -46,6 +46,9 @@ export function deriveInitialStep(stage: SetupStage) {
 }
 
 export function buildSetupInitializePayload(state: SetupWizardState) {
+  const emailFromName = state.emailFromName.trim()
+  const emailReplyTo = state.emailReplyTo.trim().toLowerCase()
+
   return {
     instanceProfile: state.instanceProfile,
     organization: {
@@ -65,6 +68,10 @@ export function buildSetupInitializePayload(state: SetupWizardState) {
       countryCode: state.countryCode.trim().toUpperCase(),
       timezone: state.timezone.trim(),
       currency: state.currency.trim().toUpperCase(),
+    },
+    email: {
+      fromName: emailFromName || undefined,
+      replyTo: emailReplyTo || undefined,
     },
   } as const
 }
